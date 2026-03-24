@@ -1,7 +1,7 @@
 # TODO — Coffer
 
 ## 1. PWA + Offline
-- [ ] Configurar `next-pwa` com service worker
+- [ ] Configurar `vite-plugin-pwa` com service worker
 - [ ] Manifest (`manifest.json`) — nome, ícone, tema
 - [ ] Cache offline do app shell (páginas e assets estáticos)
 - [ ] Testar instalação no browser (desktop e mobile)
