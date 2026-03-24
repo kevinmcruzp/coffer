@@ -1,17 +1,21 @@
-import { uint8ArrayToBase64, base64ToUint8Array } from './encoding'
+import { base64ToUint8Array, uint8ArrayToBase64 } from './encoding'
 
 const PBKDF2_ITERATIONS = 200_000
 const VERIFICATION_PLAINTEXT = 'coffer-v1-ok'
 
-export function generateSalt(): Uint8Array {
-  return crypto.getRandomValues(new Uint8Array(16))
+export function generateSalt(): Uint8Array<ArrayBuffer> {
+  const buf = new Uint8Array(16)
+  crypto.getRandomValues(buf)
+  return buf
 }
 
-export function generateIV(): Uint8Array {
-  return crypto.getRandomValues(new Uint8Array(12))
+export function generateIV(): Uint8Array<ArrayBuffer> {
+  const buf = new Uint8Array(12)
+  crypto.getRandomValues(buf)
+  return buf
 }
 
-export async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
+export async function deriveKey(password: string, salt: Uint8Array<ArrayBuffer>): Promise<CryptoKey> {
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
     new TextEncoder().encode(password),
