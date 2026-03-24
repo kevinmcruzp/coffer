@@ -3,8 +3,9 @@ import { expenseSchema, incomeSchema, monthKeySchema, monthDataSchema } from './
 
 const validExpense = {
   id: 'e1',
-  name: 'Aluguel',
+  name: 'Rent',
   category: 'fixed' as const,
+  currency: 'BRL' as const,
   debit: 1500,
   credit: 0,
   fixed: true,
@@ -12,91 +13,111 @@ const validExpense = {
 
 const validIncome = {
   id: 'i1',
-  source: 'Salário',
+  source: 'Salary',
+  currency: 'USD' as const,
   amount: 5000,
 }
 
 describe('expenseSchema', () => {
-  it('aceita despesa válida com débito', () => {
+  it('accepts valid expense with debit only', () => {
     expect(expenseSchema.safeParse(validExpense).success).toBe(true)
   })
 
-  it('aceita despesa válida com crédito', () => {
+  it('accepts valid expense with credit only', () => {
     const data = { ...validExpense, debit: 0, credit: 200 }
     expect(expenseSchema.safeParse(data).success).toBe(true)
   })
 
-  it('aceita despesa com débito e crédito simultâneos', () => {
+  it('accepts expense with both debit and credit', () => {
     const data = { ...validExpense, debit: 100, credit: 50 }
     expect(expenseSchema.safeParse(data).success).toBe(true)
   })
 
-  it('rejeita quando débito e crédito são zero', () => {
-    const data = { ...validExpense, debit: 0, credit: 0 }
-    const result = expenseSchema.safeParse(data)
-    expect(result.success).toBe(false)
+  it('accepts USD currency', () => {
+    const data = { ...validExpense, currency: 'USD' as const }
+    expect(expenseSchema.safeParse(data).success).toBe(true)
   })
 
-  it('rejeita nome vazio', () => {
+  it('rejects when both debit and credit are zero', () => {
+    const data = { ...validExpense, debit: 0, credit: 0 }
+    expect(expenseSchema.safeParse(data).success).toBe(false)
+  })
+
+  it('rejects empty name', () => {
     const data = { ...validExpense, name: '' }
     expect(expenseSchema.safeParse(data).success).toBe(false)
   })
 
-  it('rejeita débito negativo', () => {
+  it('rejects negative debit', () => {
     const data = { ...validExpense, debit: -1 }
     expect(expenseSchema.safeParse(data).success).toBe(false)
   })
 
-  it('rejeita crédito negativo', () => {
+  it('rejects negative credit', () => {
     const data = { ...validExpense, credit: -0.01 }
     expect(expenseSchema.safeParse(data).success).toBe(false)
   })
 
-  it('rejeita categoria inválida', () => {
+  it('rejects invalid category', () => {
     const data = { ...validExpense, category: 'unknown' }
+    expect(expenseSchema.safeParse(data).success).toBe(false)
+  })
+
+  it('rejects invalid currency', () => {
+    const data = { ...validExpense, currency: 'EUR' }
     expect(expenseSchema.safeParse(data).success).toBe(false)
   })
 })
 
 describe('incomeSchema', () => {
-  it('aceita receita válida', () => {
+  it('accepts valid income', () => {
     expect(incomeSchema.safeParse(validIncome).success).toBe(true)
   })
 
-  it('rejeita fonte vazia', () => {
+  it('accepts BRL currency', () => {
+    const data = { ...validIncome, currency: 'BRL' as const }
+    expect(incomeSchema.safeParse(data).success).toBe(true)
+  })
+
+  it('rejects empty source', () => {
     const data = { ...validIncome, source: '' }
     expect(incomeSchema.safeParse(data).success).toBe(false)
   })
 
-  it('rejeita valor zero', () => {
+  it('rejects zero amount', () => {
     const data = { ...validIncome, amount: 0 }
     expect(incomeSchema.safeParse(data).success).toBe(false)
   })
 
-  it('rejeita valor negativo', () => {
+  it('rejects negative amount', () => {
     const data = { ...validIncome, amount: -100 }
+    expect(incomeSchema.safeParse(data).success).toBe(false)
+  })
+
+  it('rejects invalid currency', () => {
+    const data = { ...validIncome, currency: 'GBP' }
     expect(incomeSchema.safeParse(data).success).toBe(false)
   })
 })
 
 describe('monthKeySchema', () => {
-  it('aceita formato YYYY-MM válido', () => {
+  it('accepts valid YYYY-MM format', () => {
     expect(monthKeySchema.safeParse('2025-01').success).toBe(true)
     expect(monthKeySchema.safeParse('2025-12').success).toBe(true)
   })
 
-  it('rejeita mês 00', () => {
+  it('rejects month 00', () => {
     expect(monthKeySchema.safeParse('2025-00').success).toBe(false)
   })
 
-  it('rejeita mês 13', () => {
+  it('rejects month 13', () => {
     expect(monthKeySchema.safeParse('2025-13').success).toBe(false)
   })
 
-  it('rejeita formato errado', () => {
+  it('rejects wrong format', () => {
     expect(monthKeySchema.safeParse('01-2025').success).toBe(false)
     expect(monthKeySchema.safeParse('2025/01').success).toBe(false)
-    expect(monthKeySchema.safeParse('janeiro').success).toBe(false)
+    expect(monthKeySchema.safeParse('january').success).toBe(false)
   })
 })
 
@@ -109,26 +130,26 @@ describe('monthDataSchema', () => {
     adjustment: 0,
   }
 
-  it('aceita mês válido completo', () => {
+  it('accepts a complete valid month', () => {
     expect(monthDataSchema.safeParse(validMonth).success).toBe(true)
   })
 
-  it('aceita mês com listas vazias', () => {
+  it('accepts month with empty lists', () => {
     const data = { ...validMonth, expenses: [], incomes: [] }
     expect(monthDataSchema.safeParse(data).success).toBe(true)
   })
 
-  it('rejeita poupança negativa', () => {
+  it('rejects negative saving', () => {
     const data = { ...validMonth, saving: -1 }
     expect(monthDataSchema.safeParse(data).success).toBe(false)
   })
 
-  it('aceita ajuste negativo (estorno/correção)', () => {
+  it('accepts negative adjustment (refund or correction)', () => {
     const data = { ...validMonth, adjustment: -200 }
     expect(monthDataSchema.safeParse(data).success).toBe(true)
   })
 
-  it('propaga erro de despesa inválida', () => {
+  it('propagates error from invalid expense', () => {
     const data = { ...validMonth, expenses: [{ ...validExpense, debit: 0, credit: 0 }] }
     expect(monthDataSchema.safeParse(data).success).toBe(false)
   })
