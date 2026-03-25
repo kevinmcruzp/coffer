@@ -8,6 +8,7 @@ export type SessionState =
 
 export type SessionContextType = {
   state: SessionState
+  db: IDBDatabase | null
   setup: (password: string) => Promise<void>
   login: (password: string) => Promise<void>
   logout: () => void
