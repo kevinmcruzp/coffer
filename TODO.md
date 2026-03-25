@@ -67,22 +67,22 @@ Objetivo: primeiro fluxo visível — abrir o app e autenticar.
 
 ---
 
-## Iteração 4 — Despesas (CRUD)
+## Iteração 4 — Despesas (CRUD) ✅
 
 Objetivo: funcionalidade central — registrar e gerenciar despesas do mês.
 
-- [ ] Hook `useExpenses(monthKey)` — CRUD sobre IndexedDB com chave de sessão
-- [ ] Listar despesas agrupadas por categoria: **Fixo** e **Outros**
-- [ ] Colunas por item: Nome | Débito | Cartão de crédito
-- [ ] Formulário inline: adicionar despesa (nome, categoria, valor débito, valor cartão)
-- [ ] Editar despesa inline (clique no campo)
-- [ ] Excluir despesa (com diálogo de confirmação)
-- [ ] Checkbox "Fixa" por despesa (replica no próximo mês)
-- [ ] Totais calculados em tempo real: Total Débito, Total Cartão, Total Geral
-- [ ] Validação de input via Zod antes de salvar
-- [ ] Testes: `useExpenses` — add, edit, delete, totais
-- [ ] Testes: componente de listagem renderiza agrupamentos corretos
-- [ ] Testes: validação rejeita valores negativos e strings em campos numéricos
+- [x] Hook `useExpenses(monthKey)` — CRUD sobre IndexedDB com chave de sessão
+- [x] Listar despesas agrupadas por categoria: **Fixo** e **Outros**
+- [x] Colunas por item: Nome | Moeda | Débito | Cartão de crédito | Fixa
+- [x] Formulário inline: adicionar despesa (nome, moeda, valor débito, valor cartão, fixa)
+- [x] Editar despesa inline (clique no campo)
+- [x] Excluir despesa (com confirmação inline)
+- [x] Checkbox "Fixa" por despesa (replica no próximo mês)
+- [x] Totais calculados em tempo real por moeda: Total Débito, Total Cartão, Total Geral
+- [x] Validação de input via Zod antes de salvar
+- [x] Expor `db` no `SessionContext` para uso nos hooks de dados
+- [x] Testes: `useExpenses` — add, edit, delete, totais por moeda, validação
+- [x] Testes: componente `ExpenseList` — agrupamentos, formulário, delete, edição inline
 
 ---
 
