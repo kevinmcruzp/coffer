@@ -86,17 +86,17 @@ Objetivo: funcionalidade central — registrar e gerenciar despesas do mês.
 
 ---
 
-## Iteração 5 — Receitas (CRUD)
+## Iteração 5 — Receitas (CRUD) ✅
 
 Objetivo: registrar de onde vem o dinheiro do mês.
 
-- [ ] Hook `useIncomes(monthKey)` — CRUD sobre IndexedDB
-- [ ] Formulário: adicionar receita (nome/fonte, valor)
-- [ ] Editar receita inline
-- [ ] Excluir receita (com confirmação)
-- [ ] Suporte a múltiplas fontes no mesmo mês
-- [ ] Total de receitas calculado em tempo real
-- [ ] Testes: `useIncomes` — add, edit, delete, total
+- [x] Hook `useIncomes(monthKey)` — CRUD sobre IndexedDB
+- [x] Formulário: adicionar receita (nome/fonte, valor)
+- [x] Editar receita inline
+- [x] Excluir receita (com confirmação)
+- [x] Suporte a múltiplas fontes no mesmo mês
+- [x] Total de receitas calculado em tempo real
+- [x] Testes: `useIncomes` — add, edit, delete, total
 
 ---
 

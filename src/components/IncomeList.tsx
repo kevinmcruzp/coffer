@@ -1,0 +1,260 @@
+import { useState } from 'react'
+import { useIncomes } from '../hooks/useIncomes'
+import type { Currency, Income } from '../types'
+import type { IncomeTotals } from '../hooks/useIncomes'
+
+// ── IncomeRow ────────────────────────────────────────────────────────────────
+
+type RowProps = {
+  income: Income
+  onUpdate: (id: string, changes: Partial<Omit<Income, 'id'>>) => Promise<void>
+  onRemove: (id: string) => Promise<void>
+}
+
+function IncomeRow({ income, onUpdate, onRemove }: RowProps) {
+  const [editField, setEditField] = useState<'source' | 'amount' | null>(null)
+  const [draft, setDraft] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  function startEdit(field: 'source' | 'amount') {
+    setEditField(field)
+    setDraft(field === 'source' ? income.source : String(income.amount))
+  }
+
+  async function commitEdit() {
+    if (!editField) return
+    const changes: Partial<Omit<Income, 'id'>> = {}
+    if (editField === 'source') changes.source = draft.trim()
+    else if (editField === 'amount') changes.amount = parseFloat(draft) || 0
+    try {
+      await onUpdate(income.id, changes)
+    } catch {
+      // revert: field re-renders with original value
+    }
+    setEditField(null)
+  }
+
+  return (
+    <tr>
+      <td
+        data-testid={`source-${income.id}`}
+        className="px-2 py-1 cursor-pointer"
+        onClick={() => { if (editField !== 'source') startEdit('source') }}
+      >
+        {editField === 'source' ? (
+          <input
+            autoFocus
+            className="w-full bg-gray-800 text-white rounded px-1"
+            value={draft}
+            onChange={e => setDraft(e.target.value)}
+            onBlur={commitEdit}
+            onKeyDown={e => {
+              if (e.key === 'Enter') commitEdit()
+              if (e.key === 'Escape') setEditField(null)
+            }}
+          />
+        ) : (
+          income.source
+        )}
+      </td>
+      <td className="px-2 py-1">
+        <select
+          className="bg-gray-800 text-white rounded px-1 text-sm"
+          value={income.currency}
+          onChange={e => onUpdate(income.id, { currency: e.target.value as Currency })}
+        >
+          <option value="BRL">BRL</option>
+          <option value="USD">USD</option>
+        </select>
+      </td>
+      <td
+        className="px-2 py-1 text-right cursor-pointer"
+        onClick={() => { if (editField !== 'amount') startEdit('amount') }}
+      >
+        {editField === 'amount' ? (
+          <input
+            autoFocus
+            type="number"
+            min="0.01"
+            step="0.01"
+            className="w-28 bg-gray-800 text-white rounded px-1 text-right"
+            value={draft}
+            onChange={e => setDraft(e.target.value)}
+            onBlur={commitEdit}
+            onKeyDown={e => {
+              if (e.key === 'Enter') commitEdit()
+              if (e.key === 'Escape') setEditField(null)
+            }}
+          />
+        ) : (
+          income.amount.toFixed(2)
+        )}
+      </td>
+      <td className="px-2 py-1">
+        {confirmDelete ? (
+          <span className="flex gap-1">
+            <button
+              className="text-xs text-red-400 underline"
+              onClick={() => onRemove(income.id)}
+            >
+              Confirm
+            </button>
+            <button
+              className="text-xs text-gray-400 underline"
+              onClick={() => setConfirmDelete(false)}
+            >
+              Cancel
+            </button>
+          </span>
+        ) : (
+          <button
+            className="text-xs text-gray-500 hover:text-red-400"
+            aria-label={`Delete ${income.source}`}
+            onClick={() => setConfirmDelete(true)}
+          >
+            Delete
+          </button>
+        )}
+      </td>
+    </tr>
+  )
+}
+
+// ── AddIncomeForm ─────────────────────────────────────────────────────────────
+
+type AddFormProps = {
+  onAdd: (input: Omit<Income, 'id'>) => Promise<void>
+}
+
+function AddIncomeForm({ onAdd }: AddFormProps) {
+  const [source, setSource] = useState('')
+  const [currency, setCurrency] = useState<Currency>('BRL')
+  const [amount, setAmount] = useState('0')
+  const [formError, setFormError] = useState<string | null>(null)
+
+  async function handleAdd() {
+    setFormError(null)
+    try {
+      await onAdd({ source: source.trim(), currency, amount: parseFloat(amount) || 0 })
+      setSource('')
+      setAmount('0')
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'Failed to add')
+    }
+  }
+
+  return (
+    <>
+      <tr className="text-gray-400 text-sm">
+        <td className="px-2 py-1">
+          <input
+            className="w-full bg-gray-800 text-white rounded px-1 placeholder-gray-500"
+            placeholder="Source"
+            value={source}
+            onChange={e => setSource(e.target.value)}
+          />
+        </td>
+        <td className="px-2 py-1">
+          <select
+            className="bg-gray-800 text-white rounded px-1 text-sm"
+            value={currency}
+            onChange={e => setCurrency(e.target.value as Currency)}
+          >
+            <option value="BRL">BRL</option>
+            <option value="USD">USD</option>
+          </select>
+        </td>
+        <td className="px-2 py-1">
+          <input
+            type="number"
+            min="0.01"
+            step="0.01"
+            aria-label="Amount"
+            className="w-28 bg-gray-800 text-white rounded px-1 text-right"
+            value={amount}
+            onChange={e => setAmount(e.target.value)}
+          />
+        </td>
+        <td className="px-2 py-1">
+          <button
+            className="text-xs text-emerald-400 hover:text-emerald-300"
+            onClick={handleAdd}
+          >
+            Add
+          </button>
+        </td>
+      </tr>
+      {formError && (
+        <tr>
+          <td colSpan={4} className="px-2 py-1 text-red-400 text-xs">
+            {formError}
+          </td>
+        </tr>
+      )}
+    </>
+  )
+}
+
+// ── TotalsFooter ──────────────────────────────────────────────────────────────
+
+function TotalsFooter({ totals }: { totals: IncomeTotals }) {
+  const currencies: Currency[] = ['BRL', 'USD']
+  const active = currencies.filter(c => totals[c] > 0)
+
+  if (active.length === 0) return null
+
+  return (
+    <div className="border-t border-gray-800 pt-4 mt-4 space-y-2">
+      {active.map(c => (
+        <div
+          key={c}
+          data-testid={`income-totals-${c}`}
+          className="flex gap-6 text-sm text-gray-300"
+        >
+          <span className="font-semibold text-gray-500 w-10">{c}</span>
+          <span>Total: <strong>{totals[c].toFixed(2)}</strong></span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ── IncomeList ────────────────────────────────────────────────────────────────
+
+type Props = {
+  monthKey: string
+}
+
+export function IncomeList({ monthKey }: Props) {
+  const { incomes, loading, error, totals, add, update, remove } = useIncomes(monthKey)
+
+  if (loading) {
+    return <div className="text-gray-400 text-sm text-center py-8">Loading…</div>
+  }
+
+  if (error) {
+    return <div className="text-red-400 text-sm text-center py-8">{error}</div>
+  }
+
+  return (
+    <div>
+      <table className="w-full text-sm text-white">
+        <thead>
+          <tr className="text-gray-500 text-xs border-b border-gray-800">
+            <th className="px-2 py-1 text-left font-normal">Source</th>
+            <th className="px-2 py-1 text-left font-normal">Currency</th>
+            <th className="px-2 py-1 text-right font-normal">Amount</th>
+            <th className="px-2 py-1 font-normal" />
+          </tr>
+        </thead>
+        <tbody>
+          {incomes.map(i => (
+            <IncomeRow key={i.id} income={i} onUpdate={update} onRemove={remove} />
+          ))}
+          <AddIncomeForm onAdd={add} />
+        </tbody>
+      </table>
+      <TotalsFooter totals={totals} />
+    </div>
+  )
+}
