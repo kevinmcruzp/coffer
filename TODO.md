@@ -100,14 +100,14 @@ Objetivo: registrar de onde vem o dinheiro do mês.
 
 ---
 
-## Iteração 6 — Poupança e Sobreajuste
+## Iteração 6 — Poupança e Sobreajuste ✅
 
 Objetivo: registrar quanto foi guardado e corrigir saldo manualmente.
 
-- [ ] Campo de poupança mensal (valor único por mês)
-- [ ] Campo "Sobreajuste" — correção manual de saldo (ex.: estorno, devolução)
-- [ ] Hook `useMonthMeta(monthKey)` — lê e salva poupança + ajuste
-- [ ] Testes: alteração de poupança e ajuste reflete no MonthData salvo
+- [x] Campo de poupança mensal (valor único por mês)
+- [x] Campo "Sobreajuste" — correção manual de saldo (ex.: estorno, devolução)
+- [x] Hook `useMonthMeta(monthKey)` — lê e salva poupança + ajuste
+- [x] Testes: alteração de poupança e ajuste reflete no MonthData salvo
 
 ---
 
