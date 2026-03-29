@@ -111,16 +111,16 @@ Objetivo: registrar quanto foi guardado e corrigir saldo manualmente.
 
 ---
 
-## Iteração 7 — Navegação por mês e clonagem de fixas
+## Iteração 7 — Navegação por mês e clonagem de fixas ✅
 
 Objetivo: navegar entre meses e não redigitar despesas fixas.
 
-- [ ] Componente `MonthNavigator` — exibe "← Mês Ano →" e navega entre meses
-- [ ] Ao avançar para mês inexistente: criar novo `MonthData` clonando despesas fixas do anterior
-- [ ] Ao voltar: carregar mês existente sem alterações
-- [ ] Hook `useCurrentMonth` — controla mês selecionado e dispara carregamento
-- [ ] Testes: clonagem copia apenas despesas com `fixa: true`
-- [ ] Testes: navegar para mês já existente não duplica dados
+- [x] Componente `MonthNavigator` — exibe "← Mês Ano →" e navega entre meses
+- [x] Ao avançar para mês inexistente: criar novo `MonthData` clonando despesas fixas do anterior
+- [x] Ao voltar: carregar mês existente sem alterações
+- [x] Hook `useCurrentMonth` — controla mês selecionado e dispara carregamento
+- [x] Testes: clonagem copia apenas despesas com `fixa: true`
+- [x] Testes: navegar para mês já existente não duplica dados
 
 ---
 
