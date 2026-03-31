@@ -124,18 +124,18 @@ Objetivo: navegar entre meses e não redigitar despesas fixas.
 
 ---
 
-## Iteração 8 — Importação de dados históricos (CSV)
+## Iteração 8 — Importação de dados históricos (CSV) ✅
 
 Objetivo: migrar dados da planilha existente para o Coffer.
 
-- [ ] Definir e documentar o formato CSV esperado (colunas, separador, encoding)
-- [ ] Parser `parseCSV(text)` — extrai linhas e mapeia para `MonthData`
-- [ ] Tela de importação: upload de arquivo, preview tabular dos dados parseados
-- [ ] Confirmação antes de salvar (sobrescreve mês existente?)
-- [ ] Salvar dados importados criptografados no IndexedDB
-- [ ] Testes: parse de CSV válido gera estrutura correta
-- [ ] Testes: CSV com colunas faltando retorna erro descritivo
-- [ ] Testes: CSV malformado não salva nada
+- [x] Definir e documentar o formato CSV esperado (colunas, separador, encoding)
+- [x] Parser `parseCSV(text)` — extrai linhas e mapeia para `MonthData`
+- [x] Tela de importação: upload de arquivo, preview tabular dos dados parseados
+- [x] Confirmação antes de salvar (sobrescreve mês existente?)
+- [x] Salvar dados importados criptografados no IndexedDB
+- [x] Testes: parse de CSV válido gera estrutura correta
+- [x] Testes: CSV com colunas faltando retorna erro descritivo
+- [x] Testes: CSV malformado não salva nada
 
 ---
 
