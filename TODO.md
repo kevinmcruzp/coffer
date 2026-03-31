@@ -166,16 +166,17 @@ Objetivo: visão consolidada do mês — entregue junto com o layout.
 
 ---
 
-## Iteração 11 — Visão anual
+## Iteração 11 — Visão anual ✅
 
 Objetivo: ver todos os meses do ano de uma vez e identificar tendências.
 
-- [ ] Listar todos os meses existentes no IndexedDB
-- [ ] Tabela ou grade: mês | Receitas | Débito | Cartão | Poupança | Saldo
-- [ ] Destacar meses com saldo negativo
-- [ ] Totais anuais no rodapé da tabela
-- [ ] Navegação rápida: clicar no mês abre aquele mês na view principal
-- [ ] Testes: cálculo dos totais anuais
+- [x] Listar todos os meses existentes no IndexedDB
+- [x] Tabela: mês | Income | Debit | Credit | Saving | Adj. | Balance
+- [x] Destacar meses com saldo negativo (vermelho) e positivo (verde)
+- [x] Totais anuais no rodapé da tabela
+- [x] Navegação rápida: clicar no mês abre aquele mês na aba Expenses
+- [x] Seletor de ano (← 2025 →)
+- [x] Testes: cálculo dos totais anuais
 
 ---
 

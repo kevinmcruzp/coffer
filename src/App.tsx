@@ -8,9 +8,10 @@ import { MonthNavigator } from './components/MonthNavigator'
 import { ExpenseList } from './components/ExpenseList'
 import { IncomeList } from './components/IncomeList'
 import { MonthSummary } from './components/MonthSummary'
+import { AnnualView } from './components/AnnualView'
 import { ImportScreen } from './components/ImportScreen'
 
-type Tab = 'expenses' | 'incomes' | 'summary'
+type Tab = 'expenses' | 'incomes' | 'summary' | 'year'
 
 function currentMonthKey(): string {
   const now = new Date()
@@ -19,7 +20,7 @@ function currentMonthKey(): string {
 
 function MainApp() {
   const { logout } = useSession()
-  const { monthKey, goBack, goForward } = useCurrentMonth(currentMonthKey())
+  const { monthKey, goBack, goForward, goTo } = useCurrentMonth(currentMonthKey())
   const [tab, setTab] = useState<Tab>('expenses')
   const [importing, setImporting] = useState(false)
 
@@ -55,7 +56,7 @@ function MainApp() {
 
       {/* Tabs */}
       <div className="flex border-b border-gray-800 px-4">
-        {(['expenses', 'incomes', 'summary'] as Tab[]).map(t => (
+        {(['expenses', 'incomes', 'summary', 'year'] as Tab[]).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -75,6 +76,12 @@ function MainApp() {
         {tab === 'expenses' && <ExpenseList key={monthKey} monthKey={monthKey} />}
         {tab === 'incomes' && <IncomeList key={monthKey} monthKey={monthKey} />}
         {tab === 'summary' && <MonthSummary key={monthKey} monthKey={monthKey} />}
+        {tab === 'year' && (
+          <AnnualView
+            currentYear={parseInt(monthKey.split('-')[0], 10)}
+            onSelectMonth={(key) => { goTo(key); setTab('expenses') }}
+          />
+        )}
       </main>
     </div>
   )

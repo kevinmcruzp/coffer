@@ -28,6 +28,7 @@ export type UseCurrentMonthResult = {
   canGoBack: boolean
   goBack: () => Promise<void>
   goForward: () => Promise<void>
+  goTo: (key: string) => void
 }
 
 export function useCurrentMonth(initial: string): UseCurrentMonthResult {
@@ -58,5 +59,9 @@ export function useCurrentMonth(initial: string): UseCurrentMonthResult {
     setMonthKey(next)
   }, [monthKey, db, cryptoKey])
 
-  return { monthKey, canGoBack: true, goBack, goForward }
+  const goTo = useCallback((key: string) => {
+    setMonthKey(key)
+  }, [])
+
+  return { monthKey, canGoBack: true, goBack, goForward, goTo }
 }
