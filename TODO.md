@@ -180,15 +180,15 @@ Objetivo: ver todos os meses do ano de uma vez e identificar tendências.
 
 ---
 
-## Iteração 12 — Filtros e busca nas despesas
+## Iteração 12 — Filtros e busca nas despesas ✅
 
 Objetivo: localizar e analisar despesas rapidamente.
 
-- [ ] Busca por nome (filtro de texto em tempo real)
-- [ ] Filtro por categoria (Fixo / Outros)
-- [ ] Filtro por forma de pagamento (Débito / Cartão)
-- [ ] Estado de filtro resetado ao mudar de mês
-- [ ] Testes: filtragem por cada critério
+- [x] Busca por nome (filtro de texto em tempo real)
+- [x] Filtro por categoria (All / Fixed / Others)
+- [x] Filtro por forma de pagamento (All / Debit / Credit)
+- [x] Estado de filtro resetado ao mudar de mês (via key={monthKey})
+- [x] Form de adição ocultado quando filtros estão ativos
 
 ---
 

@@ -1,7 +1,81 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useExpenses } from '../hooks/useExpenses'
 import type { Category, Currency, Expense } from '../types'
 import type { Totals } from '../hooks/useExpenses'
+
+// ── FilterBar ────────────────────────────────────────────────────────────────
+
+type PaymentFilter = 'all' | 'debit' | 'credit'
+type CategoryFilter = 'all' | 'fixed' | 'other'
+
+type FilterBarProps = {
+  search: string
+  onSearch: (v: string) => void
+  category: CategoryFilter
+  onCategory: (v: CategoryFilter) => void
+  payment: PaymentFilter
+  onPayment: (v: PaymentFilter) => void
+}
+
+function ToggleGroup<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: { value: T; label: string }[]
+  value: T
+  onChange: (v: T) => void
+}) {
+  return (
+    <div className="flex rounded-lg overflow-hidden border border-gray-700">
+      {options.map(o => (
+        <button
+          key={o.value}
+          onClick={() => onChange(o.value)}
+          className={`px-3 py-1 text-xs transition-colors ${
+            value === o.value
+              ? 'bg-gray-700 text-white'
+              : 'bg-gray-900 text-gray-500 hover:text-gray-300'
+          }`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function FilterBar({ search, onSearch, category, onCategory, payment, onPayment }: FilterBarProps) {
+  return (
+    <div className="flex flex-wrap gap-3 mb-5 items-center">
+      <input
+        type="search"
+        placeholder="Search…"
+        value={search}
+        onChange={e => onSearch(e.target.value)}
+        className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-1 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-gray-500 w-40"
+      />
+      <ToggleGroup
+        options={[
+          { value: 'all', label: 'All' },
+          { value: 'fixed', label: 'Fixed' },
+          { value: 'other', label: 'Others' },
+        ]}
+        value={category}
+        onChange={onCategory}
+      />
+      <ToggleGroup
+        options={[
+          { value: 'all', label: 'All' },
+          { value: 'debit', label: 'Debit' },
+          { value: 'credit', label: 'Credit' },
+        ]}
+        value={payment}
+        onChange={onPayment}
+      />
+    </div>
+  )
+}
 
 // ── ExpenseRow ──────────────────────────────────────────────────────────────
 
@@ -266,7 +340,7 @@ type GroupProps = {
   expenses: Expense[]
   onUpdate: (id: string, changes: Partial<Omit<Expense, 'id'>>) => Promise<void>
   onRemove: (id: string) => Promise<void>
-  onAdd: (input: Omit<Expense, 'id'>) => Promise<void>
+  onAdd?: (input: Omit<Expense, 'id'>) => Promise<void>
 }
 
 function ExpenseGroup({ label, category, expenses, onUpdate, onRemove, onAdd }: GroupProps) {
@@ -290,7 +364,7 @@ function ExpenseGroup({ label, category, expenses, onUpdate, onRemove, onAdd }: 
           {expenses.map(e => (
             <ExpenseRow key={e.id} expense={e} onUpdate={onUpdate} onRemove={onRemove} />
           ))}
-          <AddExpenseForm category={category} onAdd={onAdd} />
+          {onAdd && <AddExpenseForm category={category} onAdd={onAdd} />}
         </tbody>
       </table>
     </section>
@@ -331,40 +405,66 @@ type Props = {
 
 export function ExpenseList({ monthKey }: Props) {
   const { expenses, loading, error, totals, add, update, remove } = useExpenses(monthKey)
+  const [search, setSearch] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
+  const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>('all')
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return expenses.filter(e => {
+      if (q && !e.name.toLowerCase().includes(q)) return false
+      if (categoryFilter !== 'all' && e.category !== categoryFilter) return false
+      if (paymentFilter === 'debit' && e.debit === 0) return false
+      if (paymentFilter === 'credit' && e.credit === 0) return false
+      return true
+    })
+  }, [expenses, search, categoryFilter, paymentFilter])
 
   if (loading) {
-    return (
-      <div className="text-gray-400 text-sm text-center py-8">Loading…</div>
-    )
+    return <div className="text-gray-400 text-sm text-center py-8">Loading…</div>
   }
 
   if (error) {
-    return (
-      <div className="text-red-400 text-sm text-center py-8">{error}</div>
-    )
+    return <div className="text-red-400 text-sm text-center py-8">{error}</div>
   }
 
-  const fixed = expenses.filter(e => e.category === 'fixed')
-  const others = expenses.filter(e => e.category === 'other')
+  const isFiltering = search !== '' || categoryFilter !== 'all' || paymentFilter !== 'all'
+  const fixed = filtered.filter(e => e.category === 'fixed')
+  const others = filtered.filter(e => e.category === 'other')
 
   return (
     <div>
-      <ExpenseGroup
-        label="Fixo"
-        category="fixed"
-        expenses={fixed}
-        onUpdate={update}
-        onRemove={remove}
-        onAdd={add}
+      <FilterBar
+        search={search}
+        onSearch={setSearch}
+        category={categoryFilter}
+        onCategory={setCategoryFilter}
+        payment={paymentFilter}
+        onPayment={setPaymentFilter}
       />
-      <ExpenseGroup
-        label="Outros"
-        category="other"
-        expenses={others}
-        onUpdate={update}
-        onRemove={remove}
-        onAdd={add}
-      />
+      {categoryFilter !== 'other' && (
+        <ExpenseGroup
+          label="Fixed"
+          category="fixed"
+          expenses={fixed}
+          onUpdate={update}
+          onRemove={remove}
+          onAdd={isFiltering ? undefined : add}
+        />
+      )}
+      {categoryFilter !== 'fixed' && (
+        <ExpenseGroup
+          label="Others"
+          category="other"
+          expenses={others}
+          onUpdate={update}
+          onRemove={remove}
+          onAdd={isFiltering ? undefined : add}
+        />
+      )}
+      {isFiltering && filtered.length === 0 && (
+        <p className="text-gray-500 text-sm text-center py-8">No expenses match the current filters.</p>
+      )}
       <TotalsFooter totals={totals} />
     </div>
   )
