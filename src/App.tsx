@@ -10,6 +10,8 @@ import { IncomeList } from './components/IncomeList'
 import { MonthSummary } from './components/MonthSummary'
 import { AnnualView } from './components/AnnualView'
 import { ImportScreen } from './components/ImportScreen'
+import { downloadCSV } from './lib/exportCSV'
+import { readMonth } from './lib/db'
 
 type Tab = 'expenses' | 'incomes' | 'summary' | 'year'
 
@@ -19,10 +21,20 @@ function currentMonthKey(): string {
 }
 
 function MainApp() {
-  const { logout } = useSession()
+  const { state, db, logout } = useSession()
   const { monthKey, goBack, goForward, goTo } = useCurrentMonth(currentMonthKey())
   const [tab, setTab] = useState<Tab>('expenses')
   const [importing, setImporting] = useState(false)
+
+  async function handleExport() {
+    if (!db || state.status !== 'unlocked') return
+    try {
+      const data = await readMonth(db, monthKey, state.key)
+      downloadCSV(data, monthKey)
+    } catch {
+      // month is empty / not yet saved — nothing to export
+    }
+  }
 
   if (importing) {
     return <ImportScreen onDone={() => setImporting(false)} />
@@ -33,7 +45,13 @@ function MainApp() {
       {/* Header */}
       <header className="border-b border-gray-800 px-4 py-3 flex items-center justify-between">
         <span className="font-semibold text-white tracking-tight">Coffer</span>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handleExport}
+            className="text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-gray-800 transition-colors"
+          >
+            Export
+          </button>
           <button
             onClick={() => setImporting(true)}
             className="text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-gray-800 transition-colors"
