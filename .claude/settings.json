@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(sudo:*)",
+      "Bash(brew:*)",
+      "Bash(npm install -g*)",
+      "Bash(npm i -g*)",
+      "Bash(npm uninstall -g*)",
+      "Bash(pip install*)",
+      "Bash(pip3 install*)",
+      "Bash(gem install*)",
+      "Bash(cargo install*)",
+      "Bash(yarn global*)",
+      "Bash(pnpm add -g*)",
+      "Bash(npx --yes*)",
+      "Bash(curl * | sh*)",
+      "Bash(wget * | sh*)",
+      "Bash(chmod +x /usr*)",
+      "Bash(mv * /usr*)",
+      "Bash(cp * /usr*)",
+      "Bash(rm -rf /*)"
+    ]
+  }
+}

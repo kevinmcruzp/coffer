@@ -139,7 +139,70 @@ Objetivo: migrar dados da planilha existente para o Coffer.
 
 ---
 
-## Iteração 9 — PWA e modo offline
+## Iteração 9 — Layout principal e navegação ✅
+
+Objetivo: ligar todos os componentes existentes numa UI navegável e utilizável.
+
+- [x] Layout principal com abas/seções: Expenses | Incomes | Summary
+- [x] `MonthNavigator` integrado no topo do layout
+- [x] UI de poupança e sobreajuste (campos inline na aba Summary)
+- [x] Tela de importação acessível via botão no header
+- [x] Botão de logout acessível no header
+- [x] Responsivo mobile-first
+
+---
+
+## Iteração 10 — Dashboard (Resumo do mês) ✅
+
+Objetivo: visão consolidada do mês — entregue junto com o layout.
+
+- [x] Card: Receitas totais
+- [x] Card: Total Débito
+- [x] Card: Total Cartão de crédito
+- [x] Card: Poupança
+- [x] Card: Sobreajuste
+- [x] Card: Saldo atual (Receitas − Débito − Cartão − Poupança + Ajuste)
+- [x] Indicador visual: saldo positivo (verde) / negativo (vermelho)
+
+---
+
+## Iteração 11 — Visão anual
+
+Objetivo: ver todos os meses do ano de uma vez e identificar tendências.
+
+- [ ] Listar todos os meses existentes no IndexedDB
+- [ ] Tabela ou grade: mês | Receitas | Débito | Cartão | Poupança | Saldo
+- [ ] Destacar meses com saldo negativo
+- [ ] Totais anuais no rodapé da tabela
+- [ ] Navegação rápida: clicar no mês abre aquele mês na view principal
+- [ ] Testes: cálculo dos totais anuais
+
+---
+
+## Iteração 12 — Filtros e busca nas despesas
+
+Objetivo: localizar e analisar despesas rapidamente.
+
+- [ ] Busca por nome (filtro de texto em tempo real)
+- [ ] Filtro por categoria (Fixo / Outros)
+- [ ] Filtro por forma de pagamento (Débito / Cartão)
+- [ ] Estado de filtro resetado ao mudar de mês
+- [ ] Testes: filtragem por cada critério
+
+---
+
+## Iteração 13 — Exportação de dados (CSV)
+
+Objetivo: deixar o usuário exportar os dados do mês no mesmo formato que importa.
+
+- [ ] Botão "Export CSV" na view do mês
+- [ ] Gerar CSV no formato compatível com a planilha original
+- [ ] Download automático via `Blob` + `<a download>`
+- [ ] Testes: CSV gerado bate com o formato esperado
+
+---
+
+## Iteração 14 — PWA e modo offline
 
 Objetivo: app instalável e funcional sem internet.
 
@@ -152,27 +215,12 @@ Objetivo: app instalável e funcional sem internet.
 
 ---
 
-## Iteração 10 — Dashboard
+## Iteração 15 — Internacionalização (i18n)
 
-Objetivo: visão consolidada do mês — últimas prioridade, entregue quando o núcleo está sólido.
-
-- [ ] Card: Receitas totais
-- [ ] Card: Total Débito
-- [ ] Card: Total Cartão de crédito
-- [ ] Card: Poupança
-- [ ] Card: Sobreajuste
-- [ ] Card: Saldo atual (Receitas − Débito − Cartão − Poupança + Ajuste)
-- [ ] Indicador visual: saldo positivo (verde) / negativo (vermelho)
-- [ ] Testes: cálculo do saldo com todos os cenários (zero, positivo, negativo)
-
----
-
-## Iteração 11 — Internacionalização (i18n)
-
-Objetivo: suporte a 3 idiomas — English, Português (BR) e Español.
+Objetivo: suporte a pt-BR e English como idiomas principais.
 
 - [ ] Escolher e instalar biblioteca de i18n (ex: `react-i18next`)
-- [ ] Extrair todos os textos da UI para arquivos de tradução (`en`, `pt-BR`, `es`)
+- [ ] Extrair todos os textos da UI para arquivos de tradução (`en`, `pt-BR`)
 - [ ] Seletor de idioma nas configurações do app
 - [ ] Persistir idioma escolhido no IndexedDB (settings store)
 - [ ] Formatar moedas e datas conforme locale selecionado (`Intl.NumberFormat`, `Intl.DateTimeFormat`)
@@ -187,3 +235,4 @@ Objetivo: suporte a 3 idiomas — English, Português (BR) e Español.
 - [ ] Estados de carregamento em operações assíncronas (leitura/escrita no IndexedDB)
 - [ ] Mensagens de erro amigáveis (sem stack trace exposto ao usuário)
 - [ ] `ErrorBoundary` global para capturar erros inesperados
+- [ ] Gráficos: pizza por categoria, barras por mês (Iteração 11+)

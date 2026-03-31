@@ -1,10 +1,87 @@
+import { useState } from 'react'
 import { SessionProvider } from './contexts/SessionContext'
 import { useSession } from './hooks/useSession'
+import { useCurrentMonth } from './hooks/useCurrentMonth'
 import { SetupScreen } from './components/SetupScreen'
 import { LoginScreen } from './components/LoginScreen'
+import { MonthNavigator } from './components/MonthNavigator'
+import { ExpenseList } from './components/ExpenseList'
+import { IncomeList } from './components/IncomeList'
+import { MonthSummary } from './components/MonthSummary'
+import { ImportScreen } from './components/ImportScreen'
+
+type Tab = 'expenses' | 'incomes' | 'summary'
+
+function currentMonthKey(): string {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+}
+
+function MainApp() {
+  const { logout } = useSession()
+  const { monthKey, goBack, goForward } = useCurrentMonth(currentMonthKey())
+  const [tab, setTab] = useState<Tab>('expenses')
+  const [importing, setImporting] = useState(false)
+
+  if (importing) {
+    return <ImportScreen onDone={() => setImporting(false)} />
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-950 text-white">
+      {/* Header */}
+      <header className="border-b border-gray-800 px-4 py-3 flex items-center justify-between">
+        <span className="font-semibold text-white tracking-tight">Coffer</span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setImporting(true)}
+            className="text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-gray-800 transition-colors"
+          >
+            Import
+          </button>
+          <button
+            onClick={logout}
+            className="text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-gray-800 transition-colors"
+          >
+            Lock
+          </button>
+        </div>
+      </header>
+
+      {/* Month navigator */}
+      <div className="px-4 py-4 flex justify-center border-b border-gray-800">
+        <MonthNavigator monthKey={monthKey} goBack={goBack} goForward={goForward} />
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-gray-800 px-4">
+        {(['expenses', 'incomes', 'summary'] as Tab[]).map(t => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors capitalize ${
+              tab === t
+                ? 'border-white text-white'
+                : 'border-transparent text-gray-500 hover:text-gray-300'
+            }`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      <main className="px-4 py-6 max-w-4xl mx-auto">
+        {tab === 'expenses' && <ExpenseList key={monthKey} monthKey={monthKey} />}
+        {tab === 'incomes' && <IncomeList key={monthKey} monthKey={monthKey} />}
+        {tab === 'summary' && <MonthSummary key={monthKey} monthKey={monthKey} />}
+      </main>
+    </div>
+  )
+}
 
 function AppShell() {
-  const { state, setup, login, logout } = useSession()
+  const { state, setup, login } = useSession()
 
   if (state.status === 'loading') {
     return (
@@ -14,27 +91,10 @@ function AppShell() {
     )
   }
 
-  if (state.status === 'setup') {
-    return <SetupScreen onSetup={setup} />
-  }
+  if (state.status === 'setup') return <SetupScreen onSetup={setup} />
+  if (state.status === 'locked') return <LoginScreen onLogin={login} />
 
-  if (state.status === 'locked') {
-    return <LoginScreen onLogin={login} />
-  }
-
-  return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-950 text-white">
-      <div className="space-y-4 text-center">
-        <h1 className="text-2xl font-semibold">Coffer</h1>
-        <button
-          onClick={logout}
-          className="text-sm text-gray-400 underline hover:text-white"
-        >
-          Lock vault
-        </button>
-      </div>
-    </main>
-  )
+  return <MainApp />
 }
 
 export default function App() {
