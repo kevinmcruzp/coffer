@@ -61,10 +61,10 @@ describe('ExpenseList', () => {
     expect(screen.getByText(/failed to decrypt/i)).toBeInTheDocument()
   })
 
-  it('renders Fixo and Outros sections', () => {
+  it('renders Fixed and Others sections', () => {
     render(<ExpenseList monthKey="2025-03" />)
-    expect(screen.getByText('Fixo')).toBeInTheDocument()
-    expect(screen.getByText('Outros')).toBeInTheDocument()
+    expect(screen.getByTestId('group-fixed')).toBeInTheDocument()
+    expect(screen.getByTestId('group-other')).toBeInTheDocument()
   })
 
   it('renders expenses in the correct category group', () => {
