@@ -192,14 +192,14 @@ Objetivo: localizar e analisar despesas rapidamente.
 
 ---
 
-## Iteração 13 — Exportação de dados (CSV)
+## Iteração 13 — Exportação de dados (CSV) ✅
 
 Objetivo: deixar o usuário exportar os dados do mês no mesmo formato que importa.
 
-- [ ] Botão "Export CSV" na view do mês
-- [ ] Gerar CSV no formato compatível com a planilha original
-- [ ] Download automático via `Blob` + `<a download>`
-- [ ] Testes: CSV gerado bate com o formato esperado
+- [x] Botão "Export" no header
+- [x] Gerar CSV no formato compatível com a planilha original
+- [x] Download automático via `Blob` + `<a download>`
+- [x] Testes: estrutura, valores e round-trip import→export→import
 
 ---
 
