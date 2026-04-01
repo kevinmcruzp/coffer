@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useExpenses } from '../hooks/useExpenses'
 import { useIncomes } from '../hooks/useIncomes'
 import { useMonthMeta } from '../hooks/useMonthMeta'
+import { useToast } from './Toast'
 import type { Currency } from '../types'
 
 type CardProps = {
@@ -43,6 +44,7 @@ export function MonthSummary({ monthKey }: Props) {
 
   const [savingDraft, setSavingDraft] = useState<string | null>(null)
   const [adjustmentDraft, setAdjustmentDraft] = useState<string | null>(null)
+  const { toast } = useToast()
 
   if (loadingExp || loadingInc || loadingMeta) {
     return <div className="text-gray-400 text-sm text-center py-12">Loading…</div>
@@ -58,7 +60,12 @@ export function MonthSummary({ monthKey }: Props) {
     if (savingDraft === null) return
     const value = parseFloat(savingDraft)
     if (!isNaN(value) && value >= 0) {
-      try { await setSaving(value) } catch { /* keep draft */ }
+      try {
+        await setSaving(value)
+        toast('Saving updated')
+      } catch (err) {
+        toast(err instanceof Error ? err.message : 'Failed to save', 'error')
+      }
     }
     setSavingDraft(null)
   }
@@ -67,7 +74,12 @@ export function MonthSummary({ monthKey }: Props) {
     if (adjustmentDraft === null) return
     const value = parseFloat(adjustmentDraft)
     if (!isNaN(value)) {
-      try { await setAdjustment(value) } catch { /* keep draft */ }
+      try {
+        await setAdjustment(value)
+        toast('Adjustment updated')
+      } catch (err) {
+        toast(err instanceof Error ? err.message : 'Failed to save', 'error')
+      }
     }
     setAdjustmentDraft(null)
   }
