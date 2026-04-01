@@ -202,6 +202,10 @@ function AddIncomeForm({ onAdd }: AddFormProps) {
 
 // ── TotalsFooter ──────────────────────────────────────────────────────────────
 
+function fmtCurrency(value: number, currency: Currency): string {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 2 }).format(value)
+}
+
 function TotalsFooter({ totals }: { totals: IncomeTotals }) {
   const currencies: Currency[] = ['BRL', 'USD']
   const active = currencies.filter(c => totals[c] > 0)
@@ -217,7 +221,7 @@ function TotalsFooter({ totals }: { totals: IncomeTotals }) {
           className="flex gap-6 text-sm text-gray-300"
         >
           <span className="font-semibold text-gray-500 w-10">{c}</span>
-          <span>Total: <strong>{totals[c].toFixed(2)}</strong></span>
+          <span>Total: <strong>{fmtCurrency(totals[c], c)}</strong></span>
         </div>
       ))}
     </div>
