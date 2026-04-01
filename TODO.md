@@ -244,9 +244,10 @@ Objetivo: fechar gaps de UX e erros silenciosos encontrados na revisão.
 
 ## Transversal (aplicar ao longo de todas as iterações)
 
-- [ ] Layout responsivo mobile-first em todos os componentes (base → `sm:` → `md:`)
-- [ ] Feedback visual ao salvar/editar (ex.: flash de confirmação inline)
-- [ ] Estados de carregamento em operações assíncronas (leitura/escrita no IndexedDB)
-- [ ] Mensagens de erro amigáveis (sem stack trace exposto ao usuário)
-- [ ] `ErrorBoundary` global para capturar erros inesperados
-- [ ] Gráficos: pizza por categoria, barras por mês (Iteração 11+)
+- [x] Layout responsivo mobile-first em todos os componentes
+- [x] Feedback visual ao salvar/editar (toast system)
+- [x] Estados de carregamento em operações assíncronas
+- [x] Mensagens de erro amigáveis (sem stack trace exposto ao usuário)
+- [x] `ErrorBoundary` global para capturar erros inesperados
+- [ ] Gráficos: pizza por categoria, barras por mês (próxima iteração)
+- [ ] Contagem de itens por mês visível no AnnualView ou header
