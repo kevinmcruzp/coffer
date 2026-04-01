@@ -228,17 +228,17 @@ Objetivo: suporte a pt-BR e English como idiomas principais.
 
 ---
 
-## Iteração 16 — Qualidade e robustez (pós-revisão)
+## Iteração 16 — Qualidade e robustez (pós-revisão) ✅
 
 Objetivo: fechar gaps de UX e erros silenciosos encontrados na revisão.
 
-- [ ] `ErrorBoundary` global — captura erros React, mostra tela de recuperação
-- [ ] Toast system — feedback visual ao salvar/editar (sucesso e erro)
-- [ ] Feedback de erro no export (CSV vazio ou falha de leitura)
-- [ ] Erros de save inline no MonthSummary informados ao usuário
-- [ ] Erros de save no ImportScreen informados ao usuário
-- [ ] Validação de input numérico (rejeitar strings não numéricas silenciosamente)
-- [ ] USD na visão anual (balance separado quando há dados em USD)
+- [x] `ErrorBoundary` global — captura erros React, mostra tela de recuperação
+- [x] Toast system — feedback visual ao salvar/editar (sucesso e erro)
+- [x] Feedback de erro no export (CSV vazio ou falha de leitura)
+- [x] Erros de save inline no MonthSummary informados ao usuário via toast
+- [x] Erros de save no ImportScreen informados ao usuário
+- [x] Validação de input numérico (rejeitar NaN silenciosamente, reverter campo)
+- [x] USD na visão anual (coluna Balance USD aparece quando há dados)
 
 ---
 
