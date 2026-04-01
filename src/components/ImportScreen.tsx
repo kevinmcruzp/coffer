@@ -72,7 +72,8 @@ export function ImportScreen({ onDone }: Props) {
       const monthData: MonthData = { key: preview.monthKey, ...preview.data }
       await writeMonth(db, preview.monthKey, monthData, cryptoKey)
       onDone()
-    } finally {
+    } catch (err) {
+      setParseError(err instanceof Error ? err.message : 'Failed to save data')
       setSaving(false)
     }
   }

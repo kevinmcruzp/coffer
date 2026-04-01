@@ -10,6 +10,8 @@ import { IncomeList } from './components/IncomeList'
 import { MonthSummary } from './components/MonthSummary'
 import { AnnualView } from './components/AnnualView'
 import { ImportScreen } from './components/ImportScreen'
+import { ErrorBoundary } from './components/ErrorBoundary'
+import { ToastProvider, useToast } from './components/Toast'
 import { downloadCSV } from './lib/exportCSV'
 import { readMonth } from './lib/db'
 
@@ -25,14 +27,16 @@ function MainApp() {
   const { monthKey, goBack, goForward, goTo } = useCurrentMonth(currentMonthKey())
   const [tab, setTab] = useState<Tab>('expenses')
   const [importing, setImporting] = useState(false)
+  const { toast } = useToast()
 
   async function handleExport() {
     if (!db || state.status !== 'unlocked') return
     try {
       const data = await readMonth(db, monthKey, state.key)
       downloadCSV(data, monthKey)
+      toast('Exported successfully')
     } catch {
-      // month is empty / not yet saved — nothing to export
+      toast('Nothing to export for this month', 'error')
     }
   }
 
@@ -124,8 +128,12 @@ function AppShell() {
 
 export default function App() {
   return (
-    <SessionProvider>
-      <AppShell />
-    </SessionProvider>
+    <ErrorBoundary>
+      <SessionProvider>
+        <ToastProvider>
+          <AppShell />
+        </ToastProvider>
+      </SessionProvider>
+    </ErrorBoundary>
   )
 }
