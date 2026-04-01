@@ -91,7 +91,13 @@ export function ImportScreen({ onDone }: Props) {
   return (
     <main className="min-h-screen bg-gray-950 text-white p-6">
       <div className="max-w-2xl mx-auto space-y-6">
-        <h1 className="text-xl font-semibold">Import CSV</h1>
+        <div>
+          <h1 className="text-xl font-semibold">Import CSV</h1>
+          <p className="text-xs text-gray-500 mt-1">
+            Expected format: exported from the Coffer Google Sheets template —
+            summary on row 2, expenses from row 4 with Fixo / Outros categories.
+          </p>
+        </div>
 
         <div className="space-y-2">
           <label className="text-sm text-gray-400">Month (YYYY-MM)</label>
