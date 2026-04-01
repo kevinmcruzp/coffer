@@ -173,7 +173,7 @@ describe('IncomeList — totals', () => {
     )
     render(<IncomeList monthKey={MONTH_KEY} />)
 
-    expect(screen.getByTestId('income-totals-BRL')).toHaveTextContent('5000.00')
+    expect(screen.getByTestId('income-totals-BRL')).toHaveTextContent('5.000')
   })
 
   it('does not render totals section when all totals are zero', () => {
