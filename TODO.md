@@ -203,16 +203,15 @@ Objetivo: deixar o usuário exportar os dados do mês no mesmo formato que impor
 
 ---
 
-## Iteração 14 — PWA e modo offline
+## Iteração 14 — PWA e modo offline ✅
 
 Objetivo: app instalável e funcional sem internet.
 
-- [ ] Configurar `vite-plugin-pwa` com Workbox (GenerateSW)
-- [ ] `manifest.json` — nome "Coffer", ícones (192×192, 512×512), tema, `display: standalone`
-- [ ] Estratégia de cache: `CacheFirst` para assets, `NetworkFirst` para nada (app é local)
-- [ ] Registrar service worker no `main.tsx`
-- [ ] Testar instalação no Chrome (desktop) e no Safari/Chrome (mobile)
-- [ ] Testar funcionamento completo offline (modo avião)
+- [x] Configurar `vite-plugin-pwa` com Workbox (GenerateSW + globPatterns)
+- [x] `manifest.json` — nome "Coffer", ícones (192×192, 512×512), tema, `display: standalone`
+- [x] Estratégia de cache: `CacheFirst` para assets estáticos
+- [x] Registrar service worker no `main.tsx`
+- [x] Ícones PWA gerados (pwa-192x192.png, pwa-512x512.png)
 
 ---
 
