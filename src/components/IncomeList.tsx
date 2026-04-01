@@ -24,8 +24,13 @@ function IncomeRow({ income, onUpdate, onRemove }: RowProps) {
   async function commitEdit() {
     if (!editField) return
     const changes: Partial<Omit<Income, 'id'>> = {}
-    if (editField === 'source') changes.source = draft.trim()
-    else if (editField === 'amount') changes.amount = parseFloat(draft) || 0
+    if (editField === 'source') {
+      changes.source = draft.trim()
+    } else if (editField === 'amount') {
+      const v = parseFloat(draft)
+      if (isNaN(v)) { setEditField(null); return }
+      changes.amount = v
+    }
     try {
       await onUpdate(income.id, changes)
     } catch {

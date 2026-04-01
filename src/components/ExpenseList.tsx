@@ -98,9 +98,17 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
   async function commitEdit() {
     if (!editField) return
     const changes: Partial<Omit<Expense, 'id'>> = {}
-    if (editField === 'name') changes.name = draft.trim()
-    else if (editField === 'debit') changes.debit = parseFloat(draft) || 0
-    else if (editField === 'credit') changes.credit = parseFloat(draft) || 0
+    if (editField === 'name') {
+      changes.name = draft.trim()
+    } else if (editField === 'debit') {
+      const v = parseFloat(draft)
+      if (isNaN(v)) { setEditField(null); return }
+      changes.debit = v
+    } else if (editField === 'credit') {
+      const v = parseFloat(draft)
+      if (isNaN(v)) { setEditField(null); return }
+      changes.credit = v
+    }
     try {
       await onUpdate(expense.id, changes)
     } catch {
