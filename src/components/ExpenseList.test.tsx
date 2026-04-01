@@ -171,7 +171,7 @@ describe('ExpenseList', () => {
     render(<ExpenseList monthKey="2025-03" />)
 
     expect(screen.getByTestId('totals-BRL')).toBeInTheDocument()
-    expect(screen.getByTestId('totals-BRL')).toHaveTextContent('1500')
+    expect(screen.getByTestId('totals-BRL')).toHaveTextContent('1.500')
     expect(screen.getByTestId('totals-BRL')).toHaveTextContent('200')
   })
 

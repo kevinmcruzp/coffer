@@ -381,6 +381,10 @@ function ExpenseGroup({ label, category, expenses, onUpdate, onRemove, onAdd }: 
 
 // ── TotalsFooter ─────────────────────────────────────────────────────────────
 
+function fmtCurrency(value: number, currency: Currency): string {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 2 }).format(value)
+}
+
 function TotalsFooter({ totals }: { totals: Totals }) {
   const currencies: Currency[] = ['BRL', 'USD']
   const active = currencies.filter(c => totals[c].total > 0)
@@ -393,12 +397,12 @@ function TotalsFooter({ totals }: { totals: Totals }) {
         <div
           key={c}
           data-testid={`totals-${c}`}
-          className="flex gap-6 text-sm text-gray-300"
+          className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-gray-300"
         >
           <span className="font-semibold text-gray-500 w-10">{c}</span>
-          <span>Debit: <strong>{totals[c].debit.toFixed(2)}</strong></span>
-          <span>Credit: <strong>{totals[c].credit.toFixed(2)}</strong></span>
-          <span>Total: <strong>{totals[c].total.toFixed(2)}</strong></span>
+          <span>Debit: <strong>{fmtCurrency(totals[c].debit, c)}</strong></span>
+          <span>Credit: <strong>{fmtCurrency(totals[c].credit, c)}</strong></span>
+          <span>Total: <strong>{fmtCurrency(totals[c].total, c)}</strong></span>
         </div>
       ))}
     </div>

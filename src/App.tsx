@@ -15,7 +15,14 @@ import { ToastProvider, useToast } from './components/Toast'
 import { downloadCSV } from './lib/exportCSV'
 import { readMonth } from './lib/db'
 
-type Tab = 'expenses' | 'incomes' | 'summary' | 'year'
+type Tab = 'expenses' | 'income' | 'summary' | 'annual'
+
+const TAB_LABELS: Record<Tab, string> = {
+  expenses: 'Expenses',
+  income: 'Income',
+  summary: 'Summary',
+  annual: 'Annual',
+}
 
 function currentMonthKey(): string {
   const now = new Date()
@@ -78,17 +85,17 @@ function MainApp() {
 
       {/* Tabs */}
       <div className="flex border-b border-gray-800 px-4">
-        {(['expenses', 'incomes', 'summary', 'year'] as Tab[]).map(t => (
+        {(Object.keys(TAB_LABELS) as Tab[]).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors capitalize ${
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
               tab === t
                 ? 'border-white text-white'
                 : 'border-transparent text-gray-500 hover:text-gray-300'
             }`}
           >
-            {t}
+            {TAB_LABELS[t]}
           </button>
         ))}
       </div>
@@ -96,9 +103,9 @@ function MainApp() {
       {/* Content */}
       <main className="px-4 py-6 max-w-4xl mx-auto">
         {tab === 'expenses' && <ExpenseList key={monthKey} monthKey={monthKey} />}
-        {tab === 'incomes' && <IncomeList key={monthKey} monthKey={monthKey} />}
+        {tab === 'income' && <IncomeList key={monthKey} monthKey={monthKey} />}
         {tab === 'summary' && <MonthSummary key={monthKey} monthKey={monthKey} />}
-        {tab === 'year' && (
+        {tab === 'annual' && (
           <AnnualView
             currentYear={parseInt(monthKey.split('-')[0], 10)}
             onSelectMonth={(key) => { goTo(key); setTab('expenses') }}
