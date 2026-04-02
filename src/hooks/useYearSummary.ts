@@ -27,6 +27,7 @@ export type UseYearSummaryResult = {
   totals: YearTotals
   loading: boolean
   error: string | null
+  warning: string | null
 }
 
 const CURRENCIES: Currency[] = ['BRL', 'USD']
@@ -55,12 +56,14 @@ export function useYearSummary(year: number): UseYearSummaryResult {
   const [rows, setRows] = useState<MonthRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [warning, setWarning] = useState<string | null>(null)
 
   useEffect(() => {
     if (!db || !cryptoKey) return
 
     setLoading(true)
     setError(null)
+    setWarning(null)
 
     async function load() {
       const allKeys = await listMonths(db!)
@@ -69,6 +72,7 @@ export function useYearSummary(year: number): UseYearSummaryResult {
         .sort()
 
       const result: MonthRow[] = []
+      const failed: string[] = []
 
       for (const monthKey of yearKeys) {
         try {
@@ -94,10 +98,13 @@ export function useYearSummary(year: number): UseYearSummaryResult {
             balance: computeBalance(income, debit, credit, data.saving, data.adjustment),
           })
         } catch {
-          // skip months that fail to decrypt
+          failed.push(monthKey)
         }
       }
 
+      if (failed.length > 0) {
+        setWarning(`Could not load ${failed.length} month(s): ${failed.join(', ')}`)
+      }
       setRows(result)
       setLoading(false)
     }
@@ -131,5 +138,5 @@ export function useYearSummary(year: number): UseYearSummaryResult {
 
   totals.balance = computeBalance(totals.income, totals.debit, totals.credit, totals.saving, totals.adjustment)
 
-  return { rows, totals, loading, error }
+  return { rows, totals, loading, error, warning }
 }

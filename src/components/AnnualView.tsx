@@ -80,7 +80,8 @@ type Props = {
 
 export function AnnualView({ currentYear, onSelectMonth }: Props) {
   const [year, setYear] = useState(currentYear)
-  const { rows, totals, loading, error } = useYearSummary(year)
+  const { rows, totals, loading, error, warning } = useYearSummary(year)
+  const currentYear = new Date().getFullYear()
 
   const showUSD = rows.some(r => r.income.USD > 0 || r.debit.USD > 0 || r.credit.USD > 0)
 
@@ -90,7 +91,8 @@ export function AnnualView({ currentYear, onSelectMonth }: Props) {
       <div className="flex items-center gap-3">
         <button
           onClick={() => setYear(y => y - 1)}
-          className="text-gray-400 hover:text-white px-2 py-1"
+          disabled={year <= 2000}
+          className="text-gray-400 hover:text-white px-2 py-1 disabled:opacity-30 disabled:cursor-not-allowed"
           aria-label="Previous year"
         >
           ←
@@ -98,7 +100,8 @@ export function AnnualView({ currentYear, onSelectMonth }: Props) {
         <span className="text-white font-semibold w-16 text-center">{year}</span>
         <button
           onClick={() => setYear(y => y + 1)}
-          className="text-gray-400 hover:text-white px-2 py-1"
+          disabled={year >= currentYear + 1}
+          className="text-gray-400 hover:text-white px-2 py-1 disabled:opacity-30 disabled:cursor-not-allowed"
           aria-label="Next year"
         >
           →
@@ -111,6 +114,10 @@ export function AnnualView({ currentYear, onSelectMonth }: Props) {
 
       {error && (
         <div className="text-red-400 text-sm text-center py-8">{error}</div>
+      )}
+
+      {warning && (
+        <div className="text-yellow-400 text-xs px-1 py-2">{warning}</div>
       )}
 
       {!loading && !error && rows.length === 0 && (
