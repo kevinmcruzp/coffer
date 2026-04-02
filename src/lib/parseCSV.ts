@@ -86,8 +86,8 @@ export function parseCSV(text: string): ParseCSVResult {
     if (rawCat === 'Fixo') currentCategory = 'fixed'
     else if (rawCat === 'Outros') currentCategory = 'other'
 
-    const debit = parseBRLAmount(cols[2] ?? '')
-    const credit = parseBRLAmount(cols[3] ?? '')
+    const debit = Math.max(0, parseBRLAmount(cols[2] ?? ''))
+    const credit = Math.max(0, parseBRLAmount(cols[3] ?? ''))
 
     if (debit === 0 && credit === 0) continue
 

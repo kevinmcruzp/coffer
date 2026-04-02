@@ -26,7 +26,7 @@ function cloneFixed(prev: MonthData, newKey: string): MonthData {
 export type UseCurrentMonthResult = {
   monthKey: string
   canGoBack: boolean
-  goBack: () => Promise<void>
+  goBack: () => void
   goForward: () => Promise<void>
   goTo: (key: string) => void
 }
@@ -37,7 +37,7 @@ export function useCurrentMonth(initial: string): UseCurrentMonthResult {
 
   const [monthKey, setMonthKey] = useState(initial)
 
-  const goBack = useCallback(async () => {
+  const goBack = useCallback(() => {
     const prev = addMonths(monthKey, -1)
     setMonthKey(prev)
   }, [monthKey])
@@ -63,5 +63,8 @@ export function useCurrentMonth(initial: string): UseCurrentMonthResult {
     setMonthKey(key)
   }, [])
 
-  return { monthKey, canGoBack: true, goBack, goForward, goTo }
+  const year = parseInt(monthKey.split('-')[0], 10)
+  const canGoBack = year > 2000
+
+  return { monthKey, canGoBack, goBack, goForward, goTo }
 }

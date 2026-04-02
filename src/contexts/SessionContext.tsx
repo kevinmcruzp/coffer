@@ -24,7 +24,8 @@ export function SessionProvider({ children, idbFactory }: Props) {
   }, [idbFactory])
 
   async function setup(password: string) {
-    const dbInstance = dbRef.current!
+    const dbInstance = dbRef.current
+    if (!dbInstance) throw new Error('Database not ready')
     const salt = generateSalt()
     const key = await deriveKey(password, salt)
     const token = await generateVerificationToken(key)
@@ -34,7 +35,8 @@ export function SessionProvider({ children, idbFactory }: Props) {
   }
 
   async function login(password: string) {
-    const dbInstance = dbRef.current!
+    const dbInstance = dbRef.current
+    if (!dbInstance) throw new Error('Database not ready')
     const saltB64 = await readSetting(dbInstance, 'salt')
     const token = await readSetting(dbInstance, 'verificationToken')
     if (!saltB64 || !token) throw new Error('App not initialized')
