@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { readMonth, writeMonth } from '../lib/db'
-import { expenseSchema } from '../lib/schemas'
+import { expenseSchema, parseOrThrow } from '../lib/schemas'
 import { useSession } from './useSession'
 import type { Currency, Expense, MonthData } from '../types'
 
@@ -77,7 +77,7 @@ export function useExpenses(monthKey: string): UseExpensesResult {
 
   const add = useCallback(async (input: Omit<Expense, 'id'>) => {
     if (!db || !cryptoKey) throw new Error('Session not active')
-    const expense = expenseSchema.parse({ ...input, id: crypto.randomUUID() })
+    const expense = parseOrThrow(expenseSchema, { ...input, id: crypto.randomUUID() })
     const current = fetchState.monthData
       ?? { key: monthKey, expenses: [], incomes: [], saving: 0, adjustment: 0 }
     const updated: MonthData = { ...current, expenses: [...current.expenses, expense] }
@@ -90,7 +90,7 @@ export function useExpenses(monthKey: string): UseExpensesResult {
     if (!fetchState.monthData) throw new Error('Month not loaded')
     const existing = fetchState.monthData.expenses.find(e => e.id === id)
     if (!existing) throw new Error(`Expense "${id}" not found`)
-    const updated = expenseSchema.parse({ ...existing, ...changes })
+    const updated = parseOrThrow(expenseSchema, { ...existing, ...changes })
     const monthData: MonthData = {
       ...fetchState.monthData,
       expenses: fetchState.monthData.expenses.map(e => e.id === id ? updated : e),

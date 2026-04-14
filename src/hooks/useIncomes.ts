@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { readMonth, writeMonth } from '../lib/db'
-import { incomeSchema } from '../lib/schemas'
+import { incomeSchema, parseOrThrow } from '../lib/schemas'
 import { useSession } from './useSession'
 import type { Currency, Income, MonthData } from '../types'
 
@@ -67,7 +67,7 @@ export function useIncomes(monthKey: string): UseIncomesResult {
 
   const add = useCallback(async (input: Omit<Income, 'id'>) => {
     if (!db || !cryptoKey) throw new Error('Session not active')
-    const income = incomeSchema.parse({ ...input, id: crypto.randomUUID() })
+    const income = parseOrThrow(incomeSchema,{ ...input, id: crypto.randomUUID() })
     const current = fetchState.monthData
       ?? { key: monthKey, expenses: [], incomes: [], saving: 0, adjustment: 0 }
     const updated: MonthData = { ...current, incomes: [...current.incomes, income] }
@@ -80,7 +80,7 @@ export function useIncomes(monthKey: string): UseIncomesResult {
     if (!fetchState.monthData) throw new Error('Month not loaded')
     const existing = fetchState.monthData.incomes.find(i => i.id === id)
     if (!existing) throw new Error(`Income "${id}" not found`)
-    const updated = incomeSchema.parse({ ...existing, ...changes })
+    const updated = parseOrThrow(incomeSchema,{ ...existing, ...changes })
     const monthData: MonthData = {
       ...fetchState.monthData,
       incomes: fetchState.monthData.incomes.map(i => i.id === id ? updated : i),
