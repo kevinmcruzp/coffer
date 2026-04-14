@@ -7,10 +7,12 @@ import type { MonthData } from '../types'
 export type UseMonthMetaResult = {
   saving: number
   adjustment: number
+  budget: number
   loading: boolean
   error: string | null
   setSaving: (value: number) => Promise<void>
   setAdjustment: (value: number) => Promise<void>
+  setBudget: (value: number) => Promise<void>
 }
 
 type FetchState = {
@@ -20,7 +22,7 @@ type FetchState = {
 }
 
 function emptyMonth(key: string): MonthData {
-  return { key, expenses: [], incomes: [], saving: 0, adjustment: 0 }
+  return { key, expenses: [], incomes: [], saving: 0, adjustment: 0, budget: 0 }
 }
 
 export function useMonthMeta(monthKey: string): UseMonthMetaResult {
@@ -68,12 +70,22 @@ export function useMonthMeta(monthKey: string): UseMonthMetaResult {
     setFetchState({ resolvedKey: monthKey, monthData: updated, error: null })
   }, [fetchState.monthData, monthKey, db, cryptoKey])
 
+  const setBudget = useCallback(async (value: number) => {
+    if (!db || !cryptoKey) throw new Error('Session not active')
+    const current = fetchState.monthData ?? emptyMonth(monthKey)
+    const updated = monthDataSchema.parse({ ...current, budget: value })
+    await writeMonth(db, monthKey, updated, cryptoKey)
+    setFetchState({ resolvedKey: monthKey, monthData: updated, error: null })
+  }, [fetchState.monthData, monthKey, db, cryptoKey])
+
   return {
     saving: fetchState.monthData?.saving ?? 0,
     adjustment: fetchState.monthData?.adjustment ?? 0,
+    budget: fetchState.monthData?.budget ?? 0,
     loading,
     error: fetchState.error,
     setSaving,
     setAdjustment,
+    setBudget,
   }
 }

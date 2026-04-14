@@ -54,7 +54,7 @@ export function useIncomes(monthKey: string): UseIncomesResult {
         if (msg.includes('not found')) {
           setFetchState({
             resolvedKey: monthKey,
-            monthData: { key: monthKey, expenses: [], incomes: [], saving: 0, adjustment: 0 },
+            monthData: { key: monthKey, expenses: [], incomes: [], saving: 0, adjustment: 0, budget: 0 },
             error: null,
           })
         } else {
@@ -69,7 +69,7 @@ export function useIncomes(monthKey: string): UseIncomesResult {
     if (!db || !cryptoKey) throw new Error('Session not active')
     const income = parseOrThrow(incomeSchema,{ ...input, id: crypto.randomUUID() })
     const current = fetchState.monthData
-      ?? { key: monthKey, expenses: [], incomes: [], saving: 0, adjustment: 0 }
+      ?? { key: monthKey, expenses: [], incomes: [], saving: 0, adjustment: 0, budget: 0 }
     const updated: MonthData = { ...current, incomes: [...current.incomes, income] }
     await writeMonth(db, monthKey, updated, cryptoKey)
     setFetchState({ resolvedKey: monthKey, monthData: updated, error: null })

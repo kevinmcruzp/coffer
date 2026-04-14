@@ -15,6 +15,8 @@ import { ToastProvider, useToast } from './components/Toast'
 import { downloadCSV } from './lib/exportCSV'
 import { readMonth } from './lib/db'
 import { exportBackup, importBackup } from './lib/backup'
+import { useExpenses } from './hooks/useExpenses'
+import { useMonthMeta } from './hooks/useMonthMeta'
 
 type Tab = 'expenses' | 'income' | 'summary' | 'annual'
 
@@ -28,6 +30,20 @@ const TAB_LABELS: Record<Tab, string> = {
 function currentMonthKey(): string {
   const now = new Date()
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+}
+
+function BudgetBadge({ monthKey }: { monthKey: string }) {
+  const { totals } = useExpenses(monthKey)
+  const { budget } = useMonthMeta(monthKey)
+  if (budget === 0) return null
+  const spent = totals.BRL.total
+  const excess = spent - budget
+  if (excess <= 0) return null
+  return (
+    <span className="text-xs text-red-400 font-medium px-2 py-0.5 rounded-full bg-red-950 border border-red-800">
+      +{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(excess)} over budget
+    </span>
+  )
 }
 
 function MainApp() {
@@ -84,7 +100,10 @@ function MainApp() {
     <div className="min-h-screen bg-gray-950 text-white">
       {/* Header */}
       <header className="border-b border-gray-800 px-4 py-3 flex items-center justify-between">
-        <span className="font-semibold text-white tracking-tight">Coffer</span>
+        <div className="flex items-center gap-3">
+          <span className="font-semibold text-white tracking-tight">Coffer</span>
+          <BudgetBadge monthKey={monthKey} />
+        </div>
         <div className="flex items-center gap-1">
           <button
             onClick={handleExport}
