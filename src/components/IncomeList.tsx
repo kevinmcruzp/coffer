@@ -1,7 +1,27 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useIncomes } from '../hooks/useIncomes'
 import type { Currency, Income } from '../types'
 import type { IncomeTotals } from '../hooks/useIncomes'
+
+// ── Sort ──────────────────────────────────────────────────────────────────────
+
+type IncomeSortCol = 'source' | 'amount'
+type SortDir = 'asc' | 'desc'
+
+function sortIncomes(arr: Income[], col: IncomeSortCol, dir: SortDir): Income[] {
+  return [...arr].sort((a, b) => {
+    const d = col === 'source' ? a.source.localeCompare(b.source) : a.amount - b.amount
+    return dir === 'asc' ? d : -d
+  })
+}
+
+function SortIndicator({ active, dir }: { active: boolean; dir: SortDir }) {
+  return (
+    <span className={active ? 'ml-1' : 'ml-1 text-gray-700'}>
+      {active ? (dir === 'asc' ? '↑' : '↓') : '↕'}
+    </span>
+  )
+}
 
 // ── IncomeRow ────────────────────────────────────────────────────────────────
 
@@ -236,6 +256,15 @@ type Props = {
 
 export function IncomeList({ monthKey }: Props) {
   const { incomes, loading, error, totals, add, update, remove } = useIncomes(monthKey)
+  const [sortCol, setSortCol] = useState<IncomeSortCol>('source')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
+
+  function toggleSort(col: IncomeSortCol) {
+    if (col === sortCol) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortCol(col); setSortDir('asc') }
+  }
+
+  const sorted = useMemo(() => sortIncomes(incomes, sortCol, sortDir), [incomes, sortCol, sortDir])
 
   if (loading) {
     return <div className="text-gray-400 text-sm text-center py-8">Loading…</div>
@@ -249,15 +278,25 @@ export function IncomeList({ monthKey }: Props) {
     <div>
       <table className="w-full text-sm text-white">
         <thead>
-          <tr className="text-gray-500 text-xs border-b border-gray-800">
-            <th className="px-2 py-1 text-left font-normal">Source</th>
+          <tr className="text-gray-500 text-xs border-b border-gray-800 select-none">
+            <th
+              className="px-2 py-1 text-left font-normal cursor-pointer hover:text-gray-300"
+              onClick={() => toggleSort('source')}
+            >
+              Source <SortIndicator active={sortCol === 'source'} dir={sortDir} />
+            </th>
             <th className="px-2 py-1 text-left font-normal">Currency</th>
-            <th className="px-2 py-1 text-right font-normal">Amount</th>
+            <th
+              className="px-2 py-1 text-right font-normal cursor-pointer hover:text-gray-300"
+              onClick={() => toggleSort('amount')}
+            >
+              Amount <SortIndicator active={sortCol === 'amount'} dir={sortDir} />
+            </th>
             <th className="px-2 py-1 font-normal" />
           </tr>
         </thead>
         <tbody>
-          {incomes.map(i => (
+          {sorted.map(i => (
             <IncomeRow key={i.id} income={i} onUpdate={update} onRemove={remove} />
           ))}
           <AddIncomeForm onAdd={add} />

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, within, waitFor } from '@testing-library/react'
+import { render, screen, within, waitFor, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ExpenseList } from './ExpenseList'
 import { useExpenses } from '../hooks/useExpenses'
@@ -27,6 +27,10 @@ const otherExpense: Expense = {
   credit: 25,
   fixed: false,
 }
+
+const expenseA: Expense = { id: 'a', name: 'Alpha', category: 'fixed', currency: 'BRL', debit: 300, credit: 0, fixed: true }
+const expenseB: Expense = { id: 'b', name: 'Beta',  category: 'fixed', currency: 'BRL', debit: 100, credit: 0, fixed: true }
+const expenseC: Expense = { id: 'c', name: 'Gamma', category: 'fixed', currency: 'BRL', debit: 200, credit: 0, fixed: true }
 
 function makeHookResult(overrides: Partial<UseExpensesResult> = {}): UseExpensesResult {
   return {
@@ -219,5 +223,43 @@ describe('ExpenseList', () => {
     await waitFor(() => {
       expect(nameInput).toHaveValue('')
     })
+  })
+})
+
+describe('ExpenseList — sorting', () => {
+  beforeEach(() => {
+    vi.mocked(useExpenses).mockReturnValue(makeHookResult({
+      expenses: [expenseB, expenseC, expenseA],
+    }))
+  })
+
+  function rowOrder(section: HTMLElement): string[] {
+    return within(section).getAllByRole('row')
+      .slice(1) // skip header
+      .map(row => row.cells[0].textContent ?? '')
+      .filter(t => t !== '') // skip add-form row (empty name cell initially)
+  }
+
+  it('default order is name asc', () => {
+    render(<ExpenseList monthKey="2025-03" />)
+    const section = screen.getByTestId('group-fixed')
+    expect(rowOrder(section)).toEqual(['Alpha', 'Beta', 'Gamma'])
+  })
+
+  it('clicking Name header once (already active) switches to desc', () => {
+    render(<ExpenseList monthKey="2025-03" />)
+    const section = screen.getByTestId('group-fixed')
+    const nameHeader = within(section).getByRole('columnheader', { name: /name/i })
+    fireEvent.click(nameHeader) // already active asc → desc
+    expect(rowOrder(section)).toEqual(['Gamma', 'Beta', 'Alpha'])
+  })
+
+  it('clicking Debit header sorts by debit desc after second click', () => {
+    render(<ExpenseList monthKey="2025-03" />)
+    const section = screen.getByTestId('group-fixed')
+    const debitHeader = within(section).getByRole('columnheader', { name: /debit/i })
+    fireEvent.click(debitHeader) // asc: 100, 200, 300
+    fireEvent.click(debitHeader) // desc: 300, 200, 100
+    expect(rowOrder(section)).toEqual(['Alpha', 'Gamma', 'Beta'])
   })
 })
