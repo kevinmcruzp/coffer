@@ -3,6 +3,7 @@ import { useExpenses } from '../hooks/useExpenses'
 import { useIncomes } from '../hooks/useIncomes'
 import { useMonthMeta } from '../hooks/useMonthMeta'
 import { useToast } from './Toast'
+import { PieChart } from './PieChart'
 import type { Currency } from '../types'
 
 type CardProps = {
@@ -38,7 +39,7 @@ type Props = {
 }
 
 export function MonthSummary({ monthKey }: Props) {
-  const { totals: expenseTotals, loading: loadingExp } = useExpenses(monthKey)
+  const { expenses, totals: expenseTotals, loading: loadingExp } = useExpenses(monthKey)
   const { totals: incomeTotals, loading: loadingInc } = useIncomes(monthKey)
   const { saving, adjustment, loading: loadingMeta, setSaving, setAdjustment } = useMonthMeta(monthKey)
 
@@ -119,6 +120,33 @@ export function MonthSummary({ monthKey }: Props) {
       {activeCurrencies.length === 0 && (
         <p className="text-gray-500 text-sm text-center py-8">No data for this month yet.</p>
       )}
+
+      {/* Pie charts — BRL expenses breakdown */}
+      {expenses.some(e => e.currency === 'BRL') && (() => {
+        const brl = expenses.filter(e => e.currency === 'BRL')
+        const fixedTotal = brl.filter(e => e.category === 'fixed').reduce((s, e) => s + e.debit + e.credit, 0)
+        const otherTotal = brl.filter(e => e.category === 'other').reduce((s, e) => s + e.debit + e.credit, 0)
+        const debitTotal = brl.reduce((s, e) => s + e.debit, 0)
+        const creditTotal = brl.reduce((s, e) => s + e.credit, 0)
+        return (
+          <div className="flex justify-around flex-wrap gap-4 pt-2">
+            <PieChart
+              title="By Category"
+              slices={[
+                { label: 'Fixed', value: fixedTotal, color: '#6366f1' },
+                { label: 'Others', value: otherTotal, color: '#ec4899' },
+              ]}
+            />
+            <PieChart
+              title="By Payment"
+              slices={[
+                { label: 'Debit', value: debitTotal, color: '#14b8a6' },
+                { label: 'Credit', value: creditTotal, color: '#f97316' },
+              ]}
+            />
+          </div>
+        )
+      })()}
 
       {/* Saving & Adjustment inputs */}
       <div className="border-t border-gray-800 pt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">

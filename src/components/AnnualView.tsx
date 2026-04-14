@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useYearSummary } from '../hooks/useYearSummary'
+import { BarChart } from './BarChart'
 import type { MonthRow, YearTotals } from '../hooks/useYearSummary'
 
 // ── Sort ──────────────────────────────────────────────────────────────────────
@@ -156,6 +157,13 @@ export function AnnualView({ currentYear, onSelectMonth }: Props) {
 
       {!loading && !error && rows.length === 0 && (
         <p className="text-gray-500 text-sm text-center py-12">No data for {year}.</p>
+      )}
+
+      {!loading && !error && rows.length > 0 && (
+        <BarChart
+          title="Monthly Balance (BRL)"
+          bars={sortedRows.map(r => ({ label: monthLabel(r.monthKey), value: r.balance.BRL }))}
+        />
       )}
 
       {!loading && !error && rows.length > 0 && (
