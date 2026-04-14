@@ -14,6 +14,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { ToastProvider, useToast } from './components/Toast'
 import { downloadCSV } from './lib/exportCSV'
 import { readMonth } from './lib/db'
+import { exportBackup, importBackup } from './lib/backup'
 
 type Tab = 'expenses' | 'income' | 'summary' | 'annual'
 
@@ -47,6 +48,34 @@ function MainApp() {
     }
   }
 
+  async function handleBackup() {
+    if (!db || state.status !== 'unlocked') return
+    try {
+      const blob = await exportBackup(db, state.key)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `coffer-backup-${new Date().toISOString().slice(0, 10)}.coffer`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast('Backup downloaded')
+    } catch {
+      toast('Backup failed', 'error')
+    }
+  }
+
+  async function handleRestore(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file || !db || state.status !== 'unlocked') return
+    try {
+      const count = await importBackup(file, db, state.key)
+      toast(`${count} month${count !== 1 ? 's' : ''} restored`)
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Restore failed', 'error')
+    }
+  }
+
   if (importing) {
     return <ImportScreen onDone={() => setImporting(false)} />
   }
@@ -63,6 +92,16 @@ function MainApp() {
           >
             Export
           </button>
+          <button
+            onClick={handleBackup}
+            className="text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-gray-800 transition-colors"
+          >
+            Backup
+          </button>
+          <label className="text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-gray-800 transition-colors cursor-pointer">
+            Restore
+            <input type="file" accept=".coffer" className="hidden" onChange={handleRestore} />
+          </label>
           <button
             onClick={() => setImporting(true)}
             className="text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-gray-800 transition-colors"
