@@ -242,6 +242,168 @@ Objetivo: fechar gaps de UX e erros silenciosos encontrados na revisão.
 
 ---
 
+## Iteração 17 — Backup completo criptografado
+
+Objetivo: exportar e importar todos os meses de uma vez, em arquivo pequeno e seguro.
+
+**Formato `.coffer`:**
+- Estrutura interna: `{ version: 1, months: Record<string, MonthData> }`
+- Pipeline de export: JSON → `CompressionStream('gzip')` (nativo, sem deps) → `encrypt()` com chave da sessão
+- Pipeline de import: `decrypt()` → `DecompressionStream('gzip')` → JSON.parse → restaurar cada mês via `writeMonth()`
+- O arquivo resultante é ilegível sem a senha mestra — a chave de sessão em memória é usada diretamente
+- Nenhum dado sensível viaja pela rede
+
+**Tarefas:**
+- [ ] `lib/backup.ts` — `exportBackup(db, key): Promise<Blob>` e `importBackup(file, db, key): Promise<number>` (retorna quantidade de meses restaurados)
+- [ ] Botão "Backup" no header → download do `.coffer`
+- [ ] Botão "Restore" no header → upload de `.coffer`, confirmar sobrescrita, restaurar
+- [ ] Feedback: toast com "X months restored" ou erro descritivo
+- [ ] Testes: round-trip export → import restaura todos os meses intactos
+- [ ] Testes: arquivo corrompido ou senha errada retorna erro descritivo sem crashar
+
+---
+
+## Iteração 18 — Navegação contextual (UX)
+
+Objetivo: o `MonthNavigator` aparece onde faz sentido; a aba Annual tem sua própria navegação de ano.
+
+**Problema atual:** o seletor de mês fica visível em todas as abas, incluindo Annual — onde é irrelevante e confuso.
+
+**Solução proposta:**
+- Ocultar o `MonthNavigator` quando a aba ativa for `annual`
+- O seletor de ano (← 2025 →) já existe dentro do `AnnualView` — deixar ele ser o único controle de navegação nessa aba
+- Na aba `annual`, o clique em uma linha já navega para o mês — manter esse comportamento e garantir que ao clicar ele troca para a aba `expenses`
+
+**Tarefas:**
+- [ ] Condicionar renderização do `MonthNavigator` a `tab !== 'annual'`
+- [ ] Ao clicar num mês no `AnnualView` (`onSelect`): chamar `goTo(key)` + `setTab('expenses')`
+- [ ] Garantir que o `AnnualView` receba `onSelect` corretamente do `App.tsx`
+- [ ] Testes: verificar que `onSelect` chama `goTo` com a chave correta
+
+---
+
+## Iteração 19 — Filtros e ordenação nas tabelas
+
+Objetivo: navegação e análise mais rápida nos dados de despesas e receitas.
+
+- [ ] Ordenação por coluna em `ExpenseList` (clique no header: Nome, Débito, Cartão, Total) — toggle asc/desc
+- [ ] Ordenação por coluna em `IncomeList` (Nome, Valor)
+- [ ] Ordenação por coluna no `AnnualView` (Mês, Income, Debit, Credit, Saving, Balance) — padrão: mês asc
+- [ ] Indicador visual de coluna ativa e direção (↑↓ no header)
+- [ ] Estado de ordenação resetado ao trocar de mês (assim como filtros já funcionam via `key={monthKey}`)
+- [ ] Testes: `ExpenseList` com ordenação por nome asc/desc e por valor desc
+
+---
+
+## Iteração 20 — Gráficos (SVG puro)
+
+Objetivo: visualização rápida dos gastos sem dependência externa.
+
+- [ ] Componente `PieChart.tsx` — pizza com proporção Fixo vs Outros e Débito vs Crédito; SVG com `viewBox`, `<path>` por fatia via arco trigonométrico
+- [ ] Componente `BarChart.tsx` — barras de saldo mensal dos últimos 12 meses; SVG responsivo
+- [ ] Integrar `PieChart` na aba Summary do mês
+- [ ] Integrar `BarChart` na aba Annual (acima ou abaixo da tabela)
+- [ ] Tooltip simples ao hover (SVG `<title>` nativo — zero JS extra)
+- [ ] Sem dados → estado vazio com mensagem, sem SVG quebrado
+
+---
+
+## Iteração 21 — Orçamento mensal com alerta
+
+Objetivo: o usuário define um teto e o app avisa quando ultrapassar.
+
+- [ ] Campo "Budget" por mês no `MonthSummary` (salvo no `MonthData`)
+- [ ] Badge no header quando total gasto > budget (vermelho, valor do excesso)
+- [ ] Barra de progresso de gasto vs budget no Summary
+- [ ] Budget `0` = sem limite definido (comportamento padrão, sem alerta)
+- [ ] Testes: cálculo correto de excesso; ausência de alerta quando budget = 0
+
+---
+
+## Iteração 22 — Painel de gastos fixos / assinaturas
+
+Objetivo: visibilidade do custo comprometido mensal.
+
+- [ ] Nova aba ou seção "Fixed" listando todas as despesas com `fixa: true` do mês atual
+- [ ] Total comprometido: soma de débito + cartão de todas as fixas
+- [ ] Comparativo: % do total de receitas comprometido em fixas
+- [ ] Sem dados → mensagem de estado vazio
+
+---
+
+## Iteração 23 — Tendência de saldo no AnnualView
+
+Objetivo: contexto histórico imediato ao olhar o ano.
+
+- [ ] Para cada mês, buscar saldo do mesmo mês do ano anterior
+- [ ] Coluna "vs ano ant." com ↑ (verde) / ↓ (vermelho) e delta absoluto
+- [ ] Ocultar coluna se não houver dados do ano anterior
+
+---
+
+## Iteração 24 — Entrada rápida pelo header
+
+Objetivo: registrar uma despesa em 3 toques no celular sem abrir a lista.
+
+- [ ] Botão "+" flutuante ou no header → abre modal compacto (nome, valor, débito/cartão)
+- [ ] Salva no mês corrente e fecha — sem navegação
+- [ ] Feedback toast de confirmação
+- [ ] Testes: submit salva no mês corrente; cancelar não altera dados
+
+---
+
+## Iteração 25 — Sync de gastos fixos
+
+Objetivo: permitir trazer gastos marcados como Repeat para um mês que já existe, sem sobrescrever dados.
+
+**Problema:** a clonagem automática só ocorre ao criar um mês novo. Se o mês já existe (o usuário já o visitou), marcar Repeat num mês anterior não tem efeito retroativo.
+
+**Solução — merge, não sobrescrita:**
+- Botão discreto "↻ Sync fixed" na aba Expenses
+- Ao clicar: lê os gastos com `fixed: true` do mês anterior
+- Adiciona **apenas os que ainda não existem** no mês atual (comparação por nome + categoria)
+- Não altera nem remove nenhum gasto já presente
+
+**Tarefas:**
+- [ ] Função `syncFixed(prev: MonthData, current: MonthData): Expense[]` — retorna lista dos gastos a adicionar
+- [ ] Botão "↻ Sync" na aba Expenses (visível sempre, desabilitado se não houver mês anterior)
+- [ ] Feedback: toast com "N expense(s) added" ou "Already up to date"
+- [ ] Testes: sync adiciona apenas os ausentes; não duplica os já existentes
+
+---
+
+## Iteração 26 — Parcelas no crédito
+
+Objetivo: registrar compras parceladas no cartão de crédito de forma simples e sem travar valores.
+
+**Modelo de dados:**
+- Novo campo opcional `installments?: number` em `Expense` — parcelas restantes incluindo o mês atual
+- `undefined` ou ausente = pagamento único (comportamento atual, sem quebra de compatibilidade)
+- O campo `credit` existente armazena o valor daquela parcela específica (editável inline como hoje)
+
+**Input ao adicionar:**
+- Quando `credit > 0`: campo opcional "Total ÷ N parcelas"
+- Usuário informa total + quantidade → app calcula e preenche `credit = total / N` (arredondado)
+- O total é apenas auxiliar de cálculo; não é persistido
+
+**Comportamento de clonagem:**
+- `installments > 1` → clona com `installments - 1`
+- `installments === 1` → não clona (última parcela)
+- `installments` undefined → comportamento atual (clona se `fixed: true`)
+
+**Display:**
+- Badge `(Nx)` ao lado do nome na linha — some quando `N = 1`
+- Valor da parcela editável inline como qualquer outro gasto
+
+**Tarefas:**
+- [ ] Atualizar tipo `Expense` e `expenseSchema` com `installments?: number`
+- [ ] Atualizar lógica de clonagem em `cloneFixed()` para decrementar `installments`
+- [ ] Formulário de adição: campo "Total" + "Parcelas" quando crédito > 0; calcular e preencher `credit`
+- [ ] Badge `(Nx)` na linha da despesa
+- [ ] Testes: clonagem decrementa corretamente; última parcela não clona; valor editável
+
+---
+
 ## Transversal (aplicar ao longo de todas as iterações)
 
 - [x] Layout responsivo mobile-first em todos os componentes
@@ -249,5 +411,4 @@ Objetivo: fechar gaps de UX e erros silenciosos encontrados na revisão.
 - [x] Estados de carregamento em operações assíncronas
 - [x] Mensagens de erro amigáveis (sem stack trace exposto ao usuário)
 - [x] `ErrorBoundary` global para capturar erros inesperados
-- [ ] Gráficos: pizza por categoria, barras por mês (próxima iteração)
 - [ ] Contagem de itens por mês visível no AnnualView ou header
