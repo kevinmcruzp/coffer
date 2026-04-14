@@ -60,42 +60,36 @@ export function MonthSummary({ monthKey }: Props) {
 
   async function commitSaving() {
     if (savingDraft === null) return
-    const value = parseFloat(savingDraft)
-    if (!isNaN(value) && value >= 0) {
-      try {
-        await setSaving(value)
-        toast('Saving updated')
-      } catch (err) {
-        toast(err instanceof Error ? err.message : 'Failed to save', 'error')
-      }
+    const value = Math.max(parseFloat(savingDraft) || 0, 0)
+    try {
+      await setSaving(value)
+      toast('Saving updated')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to save', 'error')
     }
     setSavingDraft(null)
   }
 
   async function commitBudget() {
     if (budgetDraft === null) return
-    const value = parseFloat(budgetDraft)
-    if (!isNaN(value) && value >= 0) {
-      try {
-        await setBudget(value)
-        toast('Budget updated')
-      } catch (err) {
-        toast(err instanceof Error ? err.message : 'Failed to save', 'error')
-      }
+    const value = Math.max(parseFloat(budgetDraft) || 0, 0)
+    try {
+      await setBudget(value)
+      toast('Budget updated')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to save', 'error')
     }
     setBudgetDraft(null)
   }
 
   async function commitAdjustment() {
     if (adjustmentDraft === null) return
-    const value = parseFloat(adjustmentDraft)
-    if (!isNaN(value)) {
-      try {
-        await setAdjustment(value)
-        toast('Adjustment updated')
-      } catch (err) {
-        toast(err instanceof Error ? err.message : 'Failed to save', 'error')
-      }
+    const value = parseFloat(adjustmentDraft) || 0
+    try {
+      await setAdjustment(value)
+      toast('Adjustment updated')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to save', 'error')
     }
     setAdjustmentDraft(null)
   }
