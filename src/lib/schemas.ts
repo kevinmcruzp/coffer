@@ -1,4 +1,15 @@
-import { z } from 'zod'
+import { z, ZodError } from 'zod'
+
+export function parseOrThrow<T>(schema: z.ZodType<T>, value: unknown): T {
+  try {
+    return schema.parse(value)
+  } catch (err) {
+    if (err instanceof ZodError) {
+      throw new Error(err.errors.map(e => e.message).join('; '))
+    }
+    throw err
+  }
+}
 
 export const expenseSchema = z.object({
   id: z.string().min(1),
