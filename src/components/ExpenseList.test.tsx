@@ -199,7 +199,7 @@ describe('ExpenseList', () => {
     }))
     render(<ExpenseList monthKey="2025-03" />)
 
-    const checkbox = screen.getByLabelText(/fixed.*rent/i)
+    const checkbox = screen.getByLabelText(/repeat.*rent/i)
     await userEvent.click(checkbox)
 
     expect(update).toHaveBeenCalledWith('e1', { fixed: false })

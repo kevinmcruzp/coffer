@@ -227,7 +227,7 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
         <input
           type="checkbox"
           checked={expense.fixed}
-          aria-label={`Fixed ${expense.name}`}
+          aria-label={`Repeat ${expense.name}`}
           onChange={e => onUpdate(expense.id, { fixed: e.target.checked })}
         />
       </td>
@@ -344,7 +344,7 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
           <input
             type="checkbox"
             checked={fixed}
-            aria-label="Fixed new expense"
+            aria-label="Repeat next month"
             onChange={e => setFixed(e.target.checked)}
           />
         </td>
@@ -416,7 +416,7 @@ function ExpenseGroup({ label, category, expenses, onUpdate, onRemove, onAdd, so
             >
               Total <SortIndicator active={sortCol === 'total'} dir={sortDir} />
             </th>
-            <th className="px-2 py-1 text-center font-normal">Fixed</th>
+            <th className="px-2 py-1 text-center font-normal">Repeat</th>
             <th className="px-2 py-1 font-normal" />
           </tr>
         </thead>
