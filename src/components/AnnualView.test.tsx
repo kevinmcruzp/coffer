@@ -44,7 +44,9 @@ describe('AnnualView — onSelect', () => {
     const onSelectMonth = vi.fn()
     render(<AnnualView currentYear={2025} onSelectMonth={onSelectMonth} />)
 
-    fireEvent.click(screen.getByText('Mar'))
+    // "Mar" also appears in bar chart SVG — find the <td> and click its <tr>
+    const marTd = screen.getAllByText('Mar').find(el => el.tagName.toLowerCase() === 'td')!
+    fireEvent.click(marTd.closest('tr')!)
 
     expect(onSelectMonth).toHaveBeenCalledOnce()
     expect(onSelectMonth).toHaveBeenCalledWith('2025-03')
