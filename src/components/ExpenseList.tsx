@@ -3,6 +3,30 @@ import { useExpenses } from '../hooks/useExpenses'
 import type { Category, Currency, Expense } from '../types'
 import type { Totals } from '../hooks/useExpenses'
 
+// ── Sort ──────────────────────────────────────────────────────────────────────
+
+type ExpenseSortCol = 'name' | 'debit' | 'credit' | 'total'
+type SortDir = 'asc' | 'desc'
+
+function sortExpenses(arr: Expense[], col: ExpenseSortCol, dir: SortDir): Expense[] {
+  return [...arr].sort((a, b) => {
+    let d: number
+    if (col === 'name') d = a.name.localeCompare(b.name)
+    else if (col === 'debit') d = a.debit - b.debit
+    else if (col === 'credit') d = a.credit - b.credit
+    else d = (a.debit + a.credit) - (b.debit + b.credit)
+    return dir === 'asc' ? d : -d
+  })
+}
+
+function SortIndicator({ active, dir }: { active: boolean; dir: SortDir }) {
+  return (
+    <span className={active ? 'ml-1' : 'ml-1 text-gray-700'}>
+      {active ? (dir === 'asc' ? '↑' : '↓') : '↕'}
+    </span>
+  )
+}
+
 // ── FilterBar ────────────────────────────────────────────────────────────────
 
 type PaymentFilter = 'all' | 'debit' | 'credit'
@@ -196,6 +220,9 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
           expense.credit.toFixed(2)
         )}
       </td>
+      <td className="px-2 py-1 text-right text-gray-400">
+        {(expense.debit + expense.credit).toFixed(2)}
+      </td>
       <td className="px-2 py-1 text-center">
         <input
           type="checkbox"
@@ -312,6 +339,7 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
             onChange={e => setCredit(e.target.value)}
           />
         </td>
+        <td />
         <td className="px-2 py-1 text-center">
           <input
             type="checkbox"
@@ -331,7 +359,7 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
       </tr>
       {formError && (
         <tr>
-          <td colSpan={6} className="px-2 py-1 text-red-400 text-xs">
+          <td colSpan={7} className="px-2 py-1 text-red-400 text-xs">
             {formError}
           </td>
         </tr>
@@ -349,9 +377,12 @@ type GroupProps = {
   onUpdate: (id: string, changes: Partial<Omit<Expense, 'id'>>) => Promise<void>
   onRemove: (id: string) => Promise<void>
   onAdd?: (input: Omit<Expense, 'id'>) => Promise<void>
+  sortCol: ExpenseSortCol
+  sortDir: SortDir
+  onSort: (col: ExpenseSortCol) => void
 }
 
-function ExpenseGroup({ label, category, expenses, onUpdate, onRemove, onAdd }: GroupProps) {
+function ExpenseGroup({ label, category, expenses, onUpdate, onRemove, onAdd, sortCol, sortDir, onSort }: GroupProps) {
   return (
     <section data-testid={`group-${category}`} className="mb-6">
       <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">
@@ -359,11 +390,32 @@ function ExpenseGroup({ label, category, expenses, onUpdate, onRemove, onAdd }: 
       </h2>
       <table className="w-full text-sm text-white">
         <thead>
-          <tr className="text-gray-500 text-xs border-b border-gray-800">
-            <th className="px-2 py-1 text-left font-normal">Name</th>
+          <tr className="text-gray-500 text-xs border-b border-gray-800 select-none">
+            <th
+              className="px-2 py-1 text-left font-normal cursor-pointer hover:text-gray-300"
+              onClick={() => onSort('name')}
+            >
+              Name <SortIndicator active={sortCol === 'name'} dir={sortDir} />
+            </th>
             <th className="px-2 py-1 text-left font-normal">Currency</th>
-            <th className="px-2 py-1 text-right font-normal">Debit</th>
-            <th className="px-2 py-1 text-right font-normal">Credit</th>
+            <th
+              className="px-2 py-1 text-right font-normal cursor-pointer hover:text-gray-300"
+              onClick={() => onSort('debit')}
+            >
+              Debit <SortIndicator active={sortCol === 'debit'} dir={sortDir} />
+            </th>
+            <th
+              className="px-2 py-1 text-right font-normal cursor-pointer hover:text-gray-300"
+              onClick={() => onSort('credit')}
+            >
+              Credit <SortIndicator active={sortCol === 'credit'} dir={sortDir} />
+            </th>
+            <th
+              className="px-2 py-1 text-right font-normal cursor-pointer hover:text-gray-300"
+              onClick={() => onSort('total')}
+            >
+              Total <SortIndicator active={sortCol === 'total'} dir={sortDir} />
+            </th>
             <th className="px-2 py-1 text-center font-normal">Fixed</th>
             <th className="px-2 py-1 font-normal" />
           </tr>
@@ -420,6 +472,13 @@ export function ExpenseList({ monthKey }: Props) {
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>('all')
+  const [sortCol, setSortCol] = useState<ExpenseSortCol>('name')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
+
+  function toggleSort(col: ExpenseSortCol) {
+    if (col === sortCol) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortCol(col); setSortDir('asc') }
+  }
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -432,6 +491,11 @@ export function ExpenseList({ monthKey }: Props) {
     })
   }, [expenses, search, categoryFilter, paymentFilter])
 
+  const sorted = useMemo(
+    () => sortExpenses(filtered, sortCol, sortDir),
+    [filtered, sortCol, sortDir],
+  )
+
   if (loading) {
     return <div className="text-gray-400 text-sm text-center py-8">Loading…</div>
   }
@@ -441,8 +505,8 @@ export function ExpenseList({ monthKey }: Props) {
   }
 
   const isFiltering = search !== '' || categoryFilter !== 'all' || paymentFilter !== 'all'
-  const fixed = filtered.filter(e => e.category === 'fixed')
-  const others = filtered.filter(e => e.category === 'other')
+  const fixed = sorted.filter(e => e.category === 'fixed')
+  const others = sorted.filter(e => e.category === 'other')
 
   return (
     <div>
@@ -462,6 +526,9 @@ export function ExpenseList({ monthKey }: Props) {
           onUpdate={update}
           onRemove={remove}
           onAdd={isFiltering ? undefined : add}
+          sortCol={sortCol}
+          sortDir={sortDir}
+          onSort={toggleSort}
         />
       )}
       {categoryFilter !== 'fixed' && (
@@ -472,6 +539,9 @@ export function ExpenseList({ monthKey }: Props) {
           onUpdate={update}
           onRemove={remove}
           onAdd={isFiltering ? undefined : add}
+          sortCol={sortCol}
+          sortDir={sortDir}
+          onSort={toggleSort}
         />
       )}
       {isFiltering && filtered.length === 0 && (

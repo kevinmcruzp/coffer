@@ -1,6 +1,32 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useYearSummary } from '../hooks/useYearSummary'
 import type { MonthRow, YearTotals } from '../hooks/useYearSummary'
+
+// ── Sort ──────────────────────────────────────────────────────────────────────
+
+type AnnualSortCol = 'monthKey' | 'income' | 'debit' | 'credit' | 'saving' | 'balance'
+type SortDir = 'asc' | 'desc'
+
+function sortRows(arr: MonthRow[], col: AnnualSortCol, dir: SortDir): MonthRow[] {
+  return [...arr].sort((a, b) => {
+    let d: number
+    if (col === 'monthKey') d = a.monthKey.localeCompare(b.monthKey)
+    else if (col === 'income') d = a.income.BRL - b.income.BRL
+    else if (col === 'debit') d = a.debit.BRL - b.debit.BRL
+    else if (col === 'credit') d = a.credit.BRL - b.credit.BRL
+    else if (col === 'saving') d = a.saving - b.saving
+    else d = a.balance.BRL - b.balance.BRL
+    return dir === 'asc' ? d : -d
+  })
+}
+
+function SortIndicator({ active, dir }: { active: boolean; dir: SortDir }) {
+  return (
+    <span className={active ? 'ml-1' : 'ml-1 text-gray-700'}>
+      {active ? (dir === 'asc' ? '↑' : '↓') : '↕'}
+    </span>
+  )
+}
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -81,8 +107,16 @@ type Props = {
 export function AnnualView({ currentYear, onSelectMonth }: Props) {
   const [year, setYear] = useState(currentYear)
   const { rows, totals, loading, error, warning } = useYearSummary(year)
-  const currentYear = new Date().getFullYear()
+  const currentYearValue = new Date().getFullYear()
+  const [sortCol, setSortCol] = useState<AnnualSortCol>('monthKey')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
 
+  function toggleSort(col: AnnualSortCol) {
+    if (col === sortCol) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortCol(col); setSortDir('asc') }
+  }
+
+  const sortedRows = useMemo(() => sortRows(rows, sortCol, sortDir), [rows, sortCol, sortDir])
   const showUSD = rows.some(r => r.income.USD > 0 || r.debit.USD > 0 || r.credit.USD > 0)
 
   return (
@@ -100,7 +134,7 @@ export function AnnualView({ currentYear, onSelectMonth }: Props) {
         <span className="text-white font-semibold w-16 text-center">{year}</span>
         <button
           onClick={() => setYear(y => y + 1)}
-          disabled={year >= currentYear + 1}
+          disabled={year >= currentYearValue + 1}
           className="text-gray-400 hover:text-white px-2 py-1 disabled:opacity-30 disabled:cursor-not-allowed"
           aria-label="Next year"
         >
@@ -128,19 +162,49 @@ export function AnnualView({ currentYear, onSelectMonth }: Props) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-gray-500 text-xs uppercase tracking-wider border-b border-gray-800">
-                <th className="px-3 py-2 text-left font-normal">Month</th>
-                <th className="px-3 py-2 text-right font-normal">Income</th>
-                <th className="px-3 py-2 text-right font-normal">Debit</th>
-                <th className="px-3 py-2 text-right font-normal">Credit</th>
-                <th className="px-3 py-2 text-right font-normal">Saving</th>
+              <tr className="text-gray-500 text-xs uppercase tracking-wider border-b border-gray-800 select-none">
+                <th
+                  className="px-3 py-2 text-left font-normal cursor-pointer hover:text-gray-300"
+                  onClick={() => toggleSort('monthKey')}
+                >
+                  Month <SortIndicator active={sortCol === 'monthKey'} dir={sortDir} />
+                </th>
+                <th
+                  className="px-3 py-2 text-right font-normal cursor-pointer hover:text-gray-300"
+                  onClick={() => toggleSort('income')}
+                >
+                  Income <SortIndicator active={sortCol === 'income'} dir={sortDir} />
+                </th>
+                <th
+                  className="px-3 py-2 text-right font-normal cursor-pointer hover:text-gray-300"
+                  onClick={() => toggleSort('debit')}
+                >
+                  Debit <SortIndicator active={sortCol === 'debit'} dir={sortDir} />
+                </th>
+                <th
+                  className="px-3 py-2 text-right font-normal cursor-pointer hover:text-gray-300"
+                  onClick={() => toggleSort('credit')}
+                >
+                  Credit <SortIndicator active={sortCol === 'credit'} dir={sortDir} />
+                </th>
+                <th
+                  className="px-3 py-2 text-right font-normal cursor-pointer hover:text-gray-300"
+                  onClick={() => toggleSort('saving')}
+                >
+                  Saving <SortIndicator active={sortCol === 'saving'} dir={sortDir} />
+                </th>
                 <th className="px-3 py-2 text-right font-normal">Adj.</th>
-                <th className="px-3 py-2 text-right font-normal">Balance BRL</th>
+                <th
+                  className="px-3 py-2 text-right font-normal cursor-pointer hover:text-gray-300"
+                  onClick={() => toggleSort('balance')}
+                >
+                  Balance BRL <SortIndicator active={sortCol === 'balance'} dir={sortDir} />
+                </th>
                 {showUSD && <th className="px-3 py-2 text-right font-normal">Balance USD</th>}
               </tr>
             </thead>
             <tbody>
-              {rows.map(row => (
+              {sortedRows.map(row => (
                 <DataRow key={row.monthKey} row={row} showUSD={showUSD} onSelect={onSelectMonth} />
               ))}
             </tbody>
