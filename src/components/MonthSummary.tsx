@@ -41,10 +41,11 @@ type Props = {
 export function MonthSummary({ monthKey }: Props) {
   const { expenses, totals: expenseTotals, loading: loadingExp } = useExpenses(monthKey)
   const { totals: incomeTotals, loading: loadingInc } = useIncomes(monthKey)
-  const { saving, adjustment, loading: loadingMeta, setSaving, setAdjustment } = useMonthMeta(monthKey)
+  const { saving, adjustment, budget, loading: loadingMeta, setSaving, setAdjustment, setBudget } = useMonthMeta(monthKey)
 
   const [savingDraft, setSavingDraft] = useState<string | null>(null)
   const [adjustmentDraft, setAdjustmentDraft] = useState<string | null>(null)
+  const [budgetDraft, setBudgetDraft] = useState<string | null>(null)
   const { toast } = useToast()
 
   if (loadingExp || loadingInc || loadingMeta) {
@@ -69,6 +70,20 @@ export function MonthSummary({ monthKey }: Props) {
       }
     }
     setSavingDraft(null)
+  }
+
+  async function commitBudget() {
+    if (budgetDraft === null) return
+    const value = parseFloat(budgetDraft)
+    if (!isNaN(value) && value >= 0) {
+      try {
+        await setBudget(value)
+        toast('Budget updated')
+      } catch (err) {
+        toast(err instanceof Error ? err.message : 'Failed to save', 'error')
+      }
+    }
+    setBudgetDraft(null)
   }
 
   async function commitAdjustment() {
@@ -121,6 +136,31 @@ export function MonthSummary({ monthKey }: Props) {
         <p className="text-gray-500 text-sm text-center py-8">No data for this month yet.</p>
       )}
 
+      {/* Budget progress bar */}
+      {budget > 0 && (() => {
+        const spent = expenseTotals.BRL.total
+        const pct = Math.min(spent / budget, 1)
+        const over = spent > budget
+        const barColor = over ? 'bg-red-500' : pct >= 0.8 ? 'bg-yellow-500' : 'bg-emerald-500'
+        return (
+          <div className="space-y-1">
+            <div className="flex justify-between text-xs text-gray-400">
+              <span>Budget</span>
+              <span className={over ? 'text-red-400 font-semibold' : ''}>
+                {fmt(spent, 'BRL')} / {fmt(budget, 'BRL')}
+                {over && <span className="ml-2 text-red-400">+{fmt(spent - budget, 'BRL')} over</span>}
+              </span>
+            </div>
+            <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${barColor}`}
+                style={{ width: `${Math.min(pct * 100, 100)}%` }}
+              />
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Pie charts — BRL expenses breakdown */}
       {expenses.some(e => e.currency === 'BRL') && (() => {
         const brl = expenses.filter(e => e.currency === 'BRL')
@@ -148,7 +188,7 @@ export function MonthSummary({ monthKey }: Props) {
         )
       })()}
 
-      {/* Saving & Adjustment inputs */}
+      {/* Saving, Adjustment & Budget inputs */}
       <div className="border-t border-gray-800 pt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1">
           <label className="text-xs text-gray-500 uppercase tracking-wider">Saving (BRL)</label>
@@ -178,6 +218,22 @@ export function MonthSummary({ monthKey }: Props) {
             onKeyDown={e => {
               if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
               if (e.key === 'Escape') setAdjustmentDraft(null)
+            }}
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs text-gray-500 uppercase tracking-wider">Budget (BRL) <span className="normal-case text-gray-600">— 0 = no limit</span></label>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-gray-500"
+            value={budgetDraft ?? budget}
+            onChange={e => setBudgetDraft(e.target.value)}
+            onBlur={commitBudget}
+            onKeyDown={e => {
+              if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+              if (e.key === 'Escape') setBudgetDraft(null)
             }}
           />
         </div>

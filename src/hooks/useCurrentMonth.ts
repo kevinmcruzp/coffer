@@ -20,6 +20,7 @@ function cloneFixed(prev: MonthData, newKey: string): MonthData {
     incomes: [],
     saving: 0,
     adjustment: 0,
+    budget: 0,
   }
 }
 
@@ -52,7 +53,7 @@ export function useCurrentMonth(initial: string): UseCurrentMonthResult {
         const current = await readMonth(db, monthKey, cryptoKey)
         newMonth = cloneFixed(current, next)
       } catch {
-        newMonth = { key: next, expenses: [], incomes: [], saving: 0, adjustment: 0 }
+        newMonth = { key: next, expenses: [], incomes: [], saving: 0, adjustment: 0, budget: 0 }
       }
       await writeMonth(db, next, newMonth, cryptoKey)
     }

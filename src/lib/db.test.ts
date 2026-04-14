@@ -27,6 +27,7 @@ const sampleMonth: MonthData = {
   ],
   saving: 300,
   adjustment: 0,
+  budget: 0,
 }
 
 async function makeDB() {

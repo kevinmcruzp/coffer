@@ -11,6 +11,7 @@ const month1: MonthData = {
   incomes: [{ id: 'i1', source: 'Salary', currency: 'USD', amount: 5000 }],
   saving: 300,
   adjustment: 0,
+  budget: 0,
 }
 
 const month2: MonthData = {
@@ -19,6 +20,7 @@ const month2: MonthData = {
   incomes: [],
   saving: 0,
   adjustment: 50,
+  budget: 0,
 }
 
 async function makeSetup() {

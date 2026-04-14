@@ -41,6 +41,7 @@ export const monthDataSchema = z.object({
   incomes: z.array(incomeSchema),
   saving: z.number().min(0, 'Saving cannot be negative'),
   adjustment: z.number(),
+  budget: z.number().min(0).default(0),
 })
 
 export type ExpenseInput = z.infer<typeof expenseSchema>

@@ -154,3 +154,27 @@ describe('monthDataSchema', () => {
     expect(monthDataSchema.safeParse(data).success).toBe(false)
   })
 })
+
+describe('budget in monthDataSchema', () => {
+  const base = {
+    key: '2025-03',
+    expenses: [],
+    incomes: [],
+    saving: 0,
+    adjustment: 0,
+  }
+
+  it('defaults to 0 when budget is absent (backward compat)', () => {
+    const result = monthDataSchema.parse(base)
+    expect(result.budget).toBe(0)
+  })
+
+  it('accepts a valid budget', () => {
+    const result = monthDataSchema.parse({ ...base, budget: 1500 })
+    expect(result.budget).toBe(1500)
+  })
+
+  it('rejects negative budget', () => {
+    expect(() => monthDataSchema.parse({ ...base, budget: -1 })).toThrow()
+  })
+})

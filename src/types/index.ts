@@ -27,4 +27,5 @@ export type MonthData = {
   incomes: Income[]
   saving: number
   adjustment: number
+  budget: number
 }
