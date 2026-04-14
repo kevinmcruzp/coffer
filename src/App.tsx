@@ -117,10 +117,12 @@ function MainApp() {
         </div>
       </header>
 
-      {/* Month navigator */}
-      <div className="px-4 py-4 flex justify-center border-b border-gray-800">
-        <MonthNavigator monthKey={monthKey} goBack={goBack} goForward={goForward} />
-      </div>
+      {/* Month navigator — hidden on Annual tab */}
+      {tab !== 'annual' && (
+        <div className="px-4 py-4 flex justify-center border-b border-gray-800">
+          <MonthNavigator monthKey={monthKey} goBack={goBack} goForward={goForward} />
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex border-b border-gray-800 px-4">
