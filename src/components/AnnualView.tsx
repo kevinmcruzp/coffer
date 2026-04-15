@@ -51,10 +51,22 @@ function BalanceCell({ value }: { value: number }) {
 type RowProps = {
   row: MonthRow
   showUSD: boolean
+  showPrev: boolean
   onSelect: (key: string) => void
 }
 
-function DataRow({ row, showUSD, onSelect }: RowProps) {
+function TrendCell({ current, prev }: { current: number; prev: number }) {
+  const delta = current - prev
+  if (delta === 0) return <span className="text-gray-500">—</span>
+  const up = delta > 0
+  return (
+    <span className={up ? 'text-emerald-400' : 'text-red-400'}>
+      {up ? '↑' : '↓'} {fmt(Math.abs(delta))}
+    </span>
+  )
+}
+
+function DataRow({ row, showUSD, showPrev, onSelect }: RowProps) {
   return (
     <tr
       className="border-b border-gray-800 hover:bg-gray-900 cursor-pointer transition-colors"
@@ -74,11 +86,18 @@ function DataRow({ row, showUSD, onSelect }: RowProps) {
           <BalanceCell value={row.balance.USD} />
         </td>
       )}
+      {showPrev && (
+        <td className="px-3 py-2 text-right text-sm">
+          {row.prevBalance !== null
+            ? <TrendCell current={row.balance.BRL} prev={row.prevBalance.BRL} />
+            : <span className="text-gray-700">—</span>}
+        </td>
+      )}
     </tr>
   )
 }
 
-function TotalsRow({ totals, showUSD }: { totals: YearTotals; showUSD: boolean }) {
+function TotalsRow({ totals, showUSD, showPrev }: { totals: YearTotals; showUSD: boolean; showPrev: boolean }) {
   return (
     <tr className="border-t-2 border-gray-700 bg-gray-900">
       <td className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</td>
@@ -95,6 +114,7 @@ function TotalsRow({ totals, showUSD }: { totals: YearTotals; showUSD: boolean }
           <BalanceCell value={totals.balance.USD} />
         </td>
       )}
+      {showPrev && <td />}
     </tr>
   )
 }
@@ -118,6 +138,7 @@ export function AnnualView({ currentYear, onSelectMonth }: Props) {
 
   const sortedRows = useMemo(() => sortRows(rows, sortCol, sortDir), [rows, sortCol, sortDir])
   const showUSD = rows.some(r => r.income.USD > 0 || r.debit.USD > 0 || r.credit.USD > 0)
+  const showPrev = rows.some(r => r.prevBalance !== null)
 
   return (
     <div className="space-y-4">
@@ -201,15 +222,16 @@ export function AnnualView({ currentYear, onSelectMonth }: Props) {
                   Balance BRL <SortIndicator active={sortCol === 'balance'} dir={sortDir} />
                 </th>
                 {showUSD && <th className="px-3 py-2 text-right font-normal">Balance USD</th>}
+                {showPrev && <th className="px-3 py-2 text-right font-normal text-gray-600">vs prev yr</th>}
               </tr>
             </thead>
             <tbody>
               {sortedRows.map(row => (
-                <DataRow key={row.monthKey} row={row} showUSD={showUSD} onSelect={onSelectMonth} />
+                <DataRow key={row.monthKey} row={row} showUSD={showUSD} showPrev={showPrev} onSelect={onSelectMonth} />
               ))}
             </tbody>
             <tfoot>
-              <TotalsRow totals={totals} showUSD={showUSD} />
+              <TotalsRow totals={totals} showUSD={showUSD} showPrev={showPrev} />
             </tfoot>
           </table>
           <p className="text-xs text-gray-600 mt-2 text-right">click a row to open that month</p>

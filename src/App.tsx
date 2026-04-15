@@ -9,6 +9,8 @@ import { ExpenseList } from './components/ExpenseList'
 import { IncomeList } from './components/IncomeList'
 import { MonthSummary } from './components/MonthSummary'
 import { AnnualView } from './components/AnnualView'
+import { FixedPanel } from './components/FixedPanel'
+import { QuickAddModal } from './components/QuickAddModal'
 import { ImportScreen } from './components/ImportScreen'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ToastProvider, useToast } from './components/Toast'
@@ -18,12 +20,13 @@ import { exportBackup, importBackup } from './lib/backup'
 import { useExpenses } from './hooks/useExpenses'
 import { useMonthMeta } from './hooks/useMonthMeta'
 
-type Tab = 'expenses' | 'income' | 'summary' | 'annual'
+type Tab = 'expenses' | 'income' | 'summary' | 'fixed' | 'annual'
 
 const TAB_LABELS: Record<Tab, string> = {
   expenses: 'Expenses',
   income: 'Income',
   summary: 'Summary',
+  fixed: 'Fixed',
   annual: 'Annual',
 }
 
@@ -51,6 +54,7 @@ function MainApp() {
   const { monthKey, goBack, goForward, goTo } = useCurrentMonth(currentMonthKey())
   const [tab, setTab] = useState<Tab>('expenses')
   const [importing, setImporting] = useState(false)
+  const [quickAdd, setQuickAdd] = useState(false)
   const { toast } = useToast()
 
   async function handleExport() {
@@ -106,6 +110,13 @@ function MainApp() {
         </div>
         <div className="flex items-center gap-1">
           <button
+            onClick={() => setQuickAdd(true)}
+            className="text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-gray-800 transition-colors font-medium"
+            aria-label="Quick add expense"
+          >
+            +
+          </button>
+          <button
             onClick={handleExport}
             className="text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-gray-800 transition-colors"
           >
@@ -136,6 +147,8 @@ function MainApp() {
         </div>
       </header>
 
+      {quickAdd && <QuickAddModal monthKey={monthKey} onClose={() => setQuickAdd(false)} />}
+
       {/* Month navigator — hidden on Annual tab */}
       {tab !== 'annual' && (
         <div className="px-4 py-4 flex justify-center border-b border-gray-800">
@@ -165,6 +178,7 @@ function MainApp() {
         {tab === 'expenses' && <ExpenseList key={monthKey} monthKey={monthKey} />}
         {tab === 'income' && <IncomeList key={monthKey} monthKey={monthKey} />}
         {tab === 'summary' && <MonthSummary key={monthKey} monthKey={monthKey} />}
+        {tab === 'fixed' && <FixedPanel key={monthKey} monthKey={monthKey} />}
         {tab === 'annual' && (
           <AnnualView
             currentYear={parseInt(monthKey.split('-')[0], 10)}
