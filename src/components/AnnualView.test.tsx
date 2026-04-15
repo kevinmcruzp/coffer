@@ -32,6 +32,7 @@ const sampleRow = {
   saving: 300,
   adjustment: 0,
   balance: { BRL: 3200, USD: 0 },
+  prevBalance: null,
 }
 
 beforeEach(() => {

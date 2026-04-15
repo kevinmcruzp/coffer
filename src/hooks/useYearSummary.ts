@@ -11,6 +11,7 @@ export type MonthRow = {
   saving: number
   adjustment: number
   balance: Record<Currency, number>
+  prevBalance: Record<Currency, number> | null
 }
 
 export type YearTotals = {
@@ -67,9 +68,23 @@ export function useYearSummary(year: number): UseYearSummaryResult {
 
     async function load() {
       const allKeys = await listMonths(db!)
-      const yearKeys = allKeys
-        .filter(k => k.startsWith(`${year}-`))
-        .sort()
+      const yearKeys = allKeys.filter(k => k.startsWith(`${year}-`)).sort()
+      const prevYearKeys = allKeys.filter(k => k.startsWith(`${year - 1}-`))
+
+      // build prev-year balance map keyed by month suffix (e.g. "03")
+      const prevBalances: Record<string, Record<Currency, number>> = {}
+      for (const k of prevYearKeys) {
+        try {
+          const data = await readMonth(db!, k, cryptoKey!)
+          const inc = zeroCurrencyMap()
+          for (const i of data.incomes) inc[i.currency] += i.amount
+          const deb = zeroCurrencyMap()
+          const crd = zeroCurrencyMap()
+          for (const e of data.expenses) { deb[e.currency] += e.debit; crd[e.currency] += e.credit }
+          const suffix = k.split('-')[1]
+          prevBalances[suffix] = computeBalance(inc, deb, crd, data.saving, data.adjustment)
+        } catch { /* skip */ }
+      }
 
       const result: MonthRow[] = []
       const failed: string[] = []
@@ -88,6 +103,7 @@ export function useYearSummary(year: number): UseYearSummaryResult {
             credit[e.currency] += e.credit
           }
 
+          const suffix = monthKey.split('-')[1]
           result.push({
             monthKey,
             income,
@@ -96,6 +112,7 @@ export function useYearSummary(year: number): UseYearSummaryResult {
             saving: data.saving,
             adjustment: data.adjustment,
             balance: computeBalance(income, debit, credit, data.saving, data.adjustment),
+            prevBalance: prevBalances[suffix] ?? null,
           })
         } catch {
           failed.push(monthKey)
