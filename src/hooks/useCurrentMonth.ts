@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
-import { readMonth, writeMonth, listMonths } from '../lib/db'
+import { readMonth, writeMonth } from '../lib/db'
+import { syncFixed } from '../lib/syncFixed'
 import { useSession } from './useSession'
 import type { MonthData } from '../types'
 
@@ -11,18 +12,9 @@ function addMonths(key: string, delta: number): string {
   return `${year}-${month}`
 }
 
-function cloneFixed(prev: MonthData, newKey: string): MonthData {
-  return {
-    key: newKey,
-    expenses: prev.expenses
-      .filter((e) => e.fixed)
-      .map((e) => ({ ...e, id: crypto.randomUUID() })),
-    incomes: [],
-    saving: 0,
-    adjustment: 0,
-    budget: 0,
-  }
-}
+const EMPTY_MONTH = (key: string): MonthData => ({
+  key, expenses: [], incomes: [], saving: 0, adjustment: 0, budget: 0,
+})
 
 export type UseCurrentMonthResult = {
   monthKey: string
@@ -46,17 +38,38 @@ export function useCurrentMonth(initial: string): UseCurrentMonthResult {
   const goForward = useCallback(async () => {
     if (!db || !cryptoKey) return
     const next = addMonths(monthKey, 1)
-    const existing = await listMonths(db)
-    if (!existing.includes(next)) {
-      let newMonth: MonthData
-      try {
-        const current = await readMonth(db, monthKey, cryptoKey)
-        newMonth = cloneFixed(current, next)
-      } catch {
-        newMonth = { key: next, expenses: [], incomes: [], saving: 0, adjustment: 0, budget: 0 }
-      }
-      await writeMonth(db, next, newMonth, cryptoKey)
+
+    // Read current month (source of fixed expenses)
+    let current: MonthData
+    try {
+      current = await readMonth(db, monthKey, cryptoKey)
+    } catch {
+      current = EMPTY_MONTH(monthKey)
     }
+
+    // Read next month (may or may not exist)
+    let nextMonth: MonthData
+    let nextExists = true
+    try {
+      nextMonth = await readMonth(db, next, cryptoKey)
+    } catch {
+      nextMonth = EMPTY_MONTH(next)
+      nextExists = false
+    }
+
+    // Merge missing fixed expenses (arrive with fixed: false)
+    const toAdd = syncFixed(current, nextMonth)
+    if (toAdd.length > 0 || !nextExists) {
+      const merged: MonthData = {
+        ...nextMonth,
+        expenses: [
+          ...nextMonth.expenses,
+          ...toAdd.map(e => ({ ...e, id: crypto.randomUUID() })),
+        ],
+      }
+      await writeMonth(db, next, merged, cryptoKey)
+    }
+
     setMonthKey(next)
   }, [monthKey, db, cryptoKey])
 

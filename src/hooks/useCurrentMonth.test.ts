@@ -106,7 +106,7 @@ describe('useCurrentMonth — navigation', () => {
 })
 
 describe('useCurrentMonth — cloning fixed expenses', () => {
-  it('creates new month with only fixed expenses cloned', async () => {
+  it('creates new month with only fixed expenses cloned (as non-fixed)', async () => {
     const { db, key } = await makeContext()
     await writeMonth(db, '2025-06', {
       key: '2025-06',
@@ -126,7 +126,7 @@ describe('useCurrentMonth — cloning fixed expenses', () => {
     const newMonth = await readMonth(db, '2025-07', key)
     expect(newMonth.expenses).toHaveLength(1)
     expect(newMonth.expenses[0].name).toBe('Rent')
-    expect(newMonth.expenses[0].fixed).toBe(true)
+    expect(newMonth.expenses[0].fixed).toBe(false)
   })
 
   it('assigns new ids to cloned expenses', async () => {
@@ -189,17 +189,10 @@ describe('useCurrentMonth — cloning fixed expenses', () => {
   })
 })
 
-describe('useCurrentMonth — existing month not overwritten', () => {
-  it('navigating to an existing month does not duplicate data', async () => {
+describe('useCurrentMonth — merge into existing month', () => {
+  it('merges missing fixed expenses into an existing month', async () => {
     const { db, key } = await makeContext()
 
-    const july: MonthData = {
-      key: '2025-07',
-      expenses: [{ id: 'e3', name: 'Custom', category: 'other', currency: 'USD', debit: 99, credit: 0, fixed: false }],
-      incomes: [],
-      saving: 0,
-      adjustment: 0,
-    }
     await writeMonth(db, '2025-06', {
       key: '2025-06',
       expenses: [fixedExpense],
@@ -207,7 +200,44 @@ describe('useCurrentMonth — existing month not overwritten', () => {
       saving: 0,
       adjustment: 0,
     }, key)
-    await writeMonth(db, '2025-07', july, key)
+    await writeMonth(db, '2025-07', {
+      key: '2025-07',
+      expenses: [{ id: 'e3', name: 'Custom', category: 'other', currency: 'USD', debit: 99, credit: 0, fixed: false }],
+      incomes: [],
+      saving: 0,
+      adjustment: 0,
+    }, key)
+    mockSession(db, key)
+
+    const { result } = renderHook(() => useCurrentMonth('2025-06'))
+
+    await act(async () => { await result.current.goForward() })
+
+    const loaded = await readMonth(db, '2025-07', key)
+    expect(loaded.expenses).toHaveLength(2)
+    expect(loaded.expenses[0].name).toBe('Custom')
+    expect(loaded.expenses[1].name).toBe('Rent')
+    expect(loaded.expenses[1].fixed).toBe(false)
+  })
+
+  it('does not duplicate expenses that already exist in the target month', async () => {
+    const { db, key } = await makeContext()
+
+    await writeMonth(db, '2025-06', {
+      key: '2025-06',
+      expenses: [fixedExpense],
+      incomes: [],
+      saving: 0,
+      adjustment: 0,
+    }, key)
+    // July already has Rent (same name + category)
+    await writeMonth(db, '2025-07', {
+      key: '2025-07',
+      expenses: [{ id: 'e3', name: 'Rent', category: 'fixed', currency: 'BRL', debit: 2000, credit: 0, fixed: false }],
+      incomes: [],
+      saving: 0,
+      adjustment: 0,
+    }, key)
     mockSession(db, key)
 
     const { result } = renderHook(() => useCurrentMonth('2025-06'))
@@ -216,6 +246,37 @@ describe('useCurrentMonth — existing month not overwritten', () => {
 
     const loaded = await readMonth(db, '2025-07', key)
     expect(loaded.expenses).toHaveLength(1)
-    expect(loaded.expenses[0].name).toBe('Custom')
+    expect(loaded.expenses[0].name).toBe('Rent')
+  })
+
+  it('preserves existing data (incomes, saving, etc) when merging', async () => {
+    const { db, key } = await makeContext()
+
+    await writeMonth(db, '2025-06', {
+      key: '2025-06',
+      expenses: [fixedExpense],
+      incomes: [],
+      saving: 0,
+      adjustment: 0,
+    }, key)
+    await writeMonth(db, '2025-07', {
+      key: '2025-07',
+      expenses: [],
+      incomes: [{ id: 'i1', source: 'Salary', currency: 'BRL', amount: 5000 }],
+      saving: 500,
+      adjustment: 100,
+    }, key)
+    mockSession(db, key)
+
+    const { result } = renderHook(() => useCurrentMonth('2025-06'))
+
+    await act(async () => { await result.current.goForward() })
+
+    const loaded = await readMonth(db, '2025-07', key)
+    expect(loaded.incomes).toHaveLength(1)
+    expect(loaded.saving).toBe(500)
+    expect(loaded.adjustment).toBe(100)
+    expect(loaded.expenses).toHaveLength(1)
+    expect(loaded.expenses[0].name).toBe('Rent')
   })
 })
