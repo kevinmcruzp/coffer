@@ -235,6 +235,105 @@ describe('ExpenseList', () => {
   })
 })
 
+describe('ExpenseList — installments', () => {
+  beforeEach(() => {
+    vi.mocked(useExpenses).mockReturnValue(makeHookResult())
+  })
+
+  it('renders (Nx) badge when installments > 1', () => {
+    const expense: Expense = {
+      id: 'tv', name: 'TV', category: 'other', currency: 'BRL',
+      debit: 0, credit: 200, fixed: false, installments: 6,
+    }
+    vi.mocked(useExpenses).mockReturnValue(makeHookResult({ expenses: [expense] }))
+
+    render(<ExpenseList monthKey="2025-03" />)
+
+    expect(screen.getByTestId('installments-tv')).toHaveTextContent('(6x)')
+  })
+
+  it('does not render badge when installments is 1 or undefined', () => {
+    const e1: Expense = { id: 'a', name: 'A', category: 'other', currency: 'BRL', debit: 10, credit: 0, fixed: false }
+    const e2: Expense = { id: 'b', name: 'B', category: 'other', currency: 'BRL', debit: 10, credit: 0, fixed: false, installments: 1 }
+    vi.mocked(useExpenses).mockReturnValue(makeHookResult({ expenses: [e1, e2] }))
+
+    render(<ExpenseList monthKey="2025-03" />)
+
+    expect(screen.queryByTestId('installments-a')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('installments-b')).not.toBeInTheDocument()
+  })
+
+  it('divides credit by parcels on submit and persists installments', async () => {
+    const add = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useExpenses).mockReturnValue(makeHookResult({ add }))
+
+    render(<ExpenseList monthKey="2025-03" />)
+    const section = screen.getByTestId('group-other')
+    const nameInput = within(section).getByPlaceholderText(/name/i)
+    const creditInput = within(section).getByLabelText(/credit/i)
+    const parcelsInput = within(section).getByLabelText(/parcels/i)
+
+    await userEvent.type(nameInput, 'Sofa')
+    await userEvent.clear(creditInput)
+    await userEvent.type(creditInput, '400')
+    await userEvent.type(parcelsInput, '4')
+    await userEvent.click(within(section).getByRole('button', { name: /add/i }))
+
+    expect(add).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Sofa', credit: 100, installments: 4 }),
+    )
+  })
+
+  it('shows parcel hint with breakdown when parcels >= 2 and credit > 0', async () => {
+    vi.mocked(useExpenses).mockReturnValue(makeHookResult())
+
+    render(<ExpenseList monthKey="2025-03" />)
+    const section = screen.getByTestId('group-other')
+    const creditInput = within(section).getByLabelText(/credit/i)
+    const parcelsInput = within(section).getByLabelText(/parcels/i)
+
+    await userEvent.clear(creditInput)
+    await userEvent.type(creditInput, '600')
+    await userEvent.type(parcelsInput, '3')
+
+    const hint = within(section).getByTestId('parcel-hint')
+    expect(hint).toHaveTextContent(/3×/)
+    expect(hint).toHaveTextContent(/200/)
+    expect(hint).toHaveTextContent(/600/)
+  })
+
+  it('does not show parcel hint when parcels < 2', async () => {
+    vi.mocked(useExpenses).mockReturnValue(makeHookResult())
+
+    render(<ExpenseList monthKey="2025-03" />)
+    const section = screen.getByTestId('group-other')
+    const creditInput = within(section).getByLabelText(/credit/i)
+
+    await userEvent.clear(creditInput)
+    await userEvent.type(creditInput, '600')
+
+    expect(within(section).queryByTestId('parcel-hint')).not.toBeInTheDocument()
+  })
+
+  it('omits installments from add when parcels < 2', async () => {
+    const add = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useExpenses).mockReturnValue(makeHookResult({ add }))
+
+    render(<ExpenseList monthKey="2025-03" />)
+    const section = screen.getByTestId('group-other')
+    const nameInput = within(section).getByPlaceholderText(/name/i)
+    const creditInput = within(section).getByLabelText(/credit/i)
+
+    await userEvent.type(nameInput, 'Coffee')
+    await userEvent.clear(creditInput)
+    await userEvent.type(creditInput, '15')
+    await userEvent.click(within(section).getByRole('button', { name: /add/i }))
+
+    const call = add.mock.calls[0][0]
+    expect(call).not.toHaveProperty('installments')
+  })
+})
+
 describe('ExpenseList — sorting', () => {
   beforeEach(() => {
     vi.mocked(useExpenses).mockReturnValue(makeHookResult({

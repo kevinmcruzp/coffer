@@ -14,8 +14,14 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
   const [currency, setCurrency] = useState<Currency>('BRL')
   const [debit, setDebit] = useState('')
   const [credit, setCredit] = useState('')
+  const [parcels, setParcels] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+
+  const parcelsNum = parseInt(parcels, 10)
+  const creditNum = parseFloat(credit) || 0
+  const isParceled = parcelsNum >= 2 && creditNum > 0
+  const perParcel = isParceled ? Math.round((creditNum / parcelsNum) * 100) / 100 : creditNum
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -27,8 +33,9 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
         category: 'other',
         currency,
         debit: parseFloat(debit) || 0,
-        credit: parseFloat(credit) || 0,
+        credit: perParcel,
         fixed: false,
+        ...(isParceled ? { installments: parcelsNum } : {}),
       })
       onClose()
     } catch (err) {
@@ -36,6 +43,8 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
       setSaving(false)
     }
   }
+
+  const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 2 }).format(v)
 
   return (
     <div
@@ -91,6 +100,27 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
               value={credit}
               onChange={e => setCredit(e.target.value)}
             />
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-xs text-gray-400 uppercase tracking-wider">
+              Parcels (optional)
+            </label>
+            <input
+              type="number"
+              min="1"
+              step="1"
+              placeholder="1"
+              aria-label="Parcels"
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-amber-500"
+              value={parcels}
+              onChange={e => setParcels(e.target.value)}
+            />
+            {isParceled && (
+              <p data-testid="parcel-hint" className="text-xs text-amber-400/90 pt-1">
+                ↳ {parcelsNum}× de {fmt(perParcel)} = {fmt(creditNum)}
+              </p>
+            )}
           </div>
 
           {error && <p className="text-red-400 text-xs">{error}</p>}

@@ -1,9 +1,14 @@
 import type { Expense, MonthData } from '../types'
 
 /**
- * Returns fixed expenses from `prev` that don't yet exist in `current`.
+ * Returns expenses from `prev` that should propagate into `current` but aren't there yet.
+ * An expense propagates when either:
+ *   - it's marked `fixed: true` and has no installments (recurring), or
+ *   - it has `installments > 1` (mid-installment, parcels left to pay).
+ *
  * Comparison is by name + category (case-insensitive name).
- * Returned expenses have `fixed: false` — they don't auto-propagate further.
+ * Returned expenses have `fixed: false` — propagation is driven by the rules above,
+ * not by the flag itself. For installment items, `installments` is decremented by 1.
  */
 export function syncFixed(prev: MonthData, current: MonthData): Omit<Expense, 'id'>[] {
   const existingKeys = new Set(
@@ -11,7 +16,16 @@ export function syncFixed(prev: MonthData, current: MonthData): Omit<Expense, 'i
   )
 
   return prev.expenses
-    .filter(e => e.fixed)
+    .filter(e => {
+      if (e.installments !== undefined) return e.installments > 1
+      return e.fixed
+    })
     .filter(e => !existingKeys.has(`${e.name.toLowerCase()}::${e.category}`))
-    .map(({ id: _, ...rest }) => ({ ...rest, fixed: false }))
+    .map(({ id: _, installments, ...rest }) => {
+      const next: Omit<Expense, 'id'> = { ...rest, fixed: false }
+      if (installments !== undefined && installments > 1) {
+        next.installments = installments - 1
+      }
+      return next
+    })
 }

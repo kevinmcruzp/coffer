@@ -19,6 +19,7 @@ export const expenseSchema = z.object({
   debit: z.number().min(0, 'Debit cannot be negative'),
   credit: z.number().min(0, 'Credit cannot be negative'),
   fixed: z.boolean(),
+  installments: z.number().int('Installments must be an integer').min(1, 'Installments must be at least 1').optional(),
 }).refine(
   (data) => data.debit > 0 || data.credit > 0,
   { message: 'At least one value (debit or credit) must be greater than zero' },

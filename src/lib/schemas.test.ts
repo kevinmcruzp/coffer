@@ -67,6 +67,23 @@ describe('expenseSchema', () => {
     const data = { ...validExpense, currency: 'EUR' }
     expect(expenseSchema.safeParse(data).success).toBe(false)
   })
+
+  it('accepts installments when omitted', () => {
+    expect(expenseSchema.safeParse(validExpense).success).toBe(true)
+  })
+
+  it('accepts installments >= 1', () => {
+    expect(expenseSchema.safeParse({ ...validExpense, installments: 1 }).success).toBe(true)
+    expect(expenseSchema.safeParse({ ...validExpense, installments: 12 }).success).toBe(true)
+  })
+
+  it('rejects installments below 1', () => {
+    expect(expenseSchema.safeParse({ ...validExpense, installments: 0 }).success).toBe(false)
+  })
+
+  it('rejects non-integer installments', () => {
+    expect(expenseSchema.safeParse({ ...validExpense, installments: 2.5 }).success).toBe(false)
+  })
 })
 
 describe('incomeSchema', () => {

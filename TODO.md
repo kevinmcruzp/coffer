@@ -349,11 +349,11 @@ Objetivo: registrar uma despesa em 3 toques no celular sem abrir a lista.
 - [x] Botão "+" flutuante ou no header → abre modal compacto (nome, valor, débito/cartão)
 - [x] Salva no mês corrente e fecha — sem navegação
 - [x] Feedback toast de confirmação
-- [ ] Testes: submit salva no mês corrente; cancelar não altera dados
+- [x] Testes: submit salva no mês corrente; cancelar não altera dados
 
 ---
 
-## Iteração 25 — Sync de gastos fixos
+## Iteração 25 — Sync de gastos fixos ✅
 
 Objetivo: permitir trazer gastos marcados como Repeat para um mês que já existe, sem sobrescrever dados.
 
@@ -366,14 +366,14 @@ Objetivo: permitir trazer gastos marcados como Repeat para um mês que já exist
 - Não altera nem remove nenhum gasto já presente
 
 **Tarefas:**
-- [ ] Função `syncFixed(prev: MonthData, current: MonthData): Expense[]` — retorna lista dos gastos a adicionar
-- [ ] Botão "↻ Sync" na aba Expenses (visível sempre, desabilitado se não houver mês anterior)
-- [ ] Feedback: toast com "N expense(s) added" ou "Already up to date"
-- [ ] Testes: sync adiciona apenas os ausentes; não duplica os já existentes
+- [x] Função `syncFixed(prev: MonthData, current: MonthData): Expense[]` — retorna lista dos gastos a adicionar
+- [x] Botão "↻ Sync" na aba Expenses (visível sempre, desabilitado se não houver mês anterior)
+- [x] Feedback: toast com "N expense(s) added" ou "Already up to date"
+- [x] Testes: sync adiciona apenas os ausentes; não duplica os já existentes
 
 ---
 
-## Iteração 26 — Parcelas no crédito
+## Iteração 26 — Parcelas no crédito ✅
 
 Objetivo: registrar compras parceladas no cartão de crédito de forma simples e sem travar valores.
 
@@ -397,11 +397,11 @@ Objetivo: registrar compras parceladas no cartão de crédito de forma simples e
 - Valor da parcela editável inline como qualquer outro gasto
 
 **Tarefas:**
-- [ ] Atualizar tipo `Expense` e `expenseSchema` com `installments?: number`
-- [ ] Atualizar lógica de clonagem em `cloneFixed()` para decrementar `installments`
-- [ ] Formulário de adição: campo "Total" + "Parcelas" quando crédito > 0; calcular e preencher `credit`
-- [ ] Badge `(Nx)` na linha da despesa
-- [ ] Testes: clonagem decrementa corretamente; última parcela não clona; valor editável
+- [x] Atualizar tipo `Expense` e `expenseSchema` com `installments?: number`
+- [x] Atualizar lógica de clonagem em `cloneFixed()` para decrementar `installments`
+- [x] Formulário de adição: campo "Total" + "Parcelas" quando crédito > 0; calcular e preencher `credit`
+- [x] Badge `(Nx)` na linha da despesa
+- [x] Testes: clonagem decrementa corretamente; última parcela não clona; valor editável
 
 ---
 
