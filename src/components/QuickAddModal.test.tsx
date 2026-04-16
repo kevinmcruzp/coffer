@@ -12,7 +12,7 @@ function makeHook(overrides: Partial<UseExpensesResult> = {}): UseExpensesResult
     expenses: [],
     loading: false,
     error: null,
-    totals: { BRL: { debit: 0, credit: 0, total: 0 }, USD: { debit: 0, credit: 0, total: 0 } },
+    totals: { BRL: { debit: 0, credit: 0, total: 0 }, USD: { debit: 0, credit: 0, total: 0 }, CLP: { debit: 0, credit: 0, total: 0 } },
     add: vi.fn().mockResolvedValue(undefined),
     update: vi.fn().mockResolvedValue(undefined),
     remove: vi.fn().mockResolvedValue(undefined),

@@ -21,7 +21,7 @@ function makeHook(overrides: Partial<UseIncomesResult> = {}): UseIncomesResult {
     incomes: [],
     loading: false,
     error: null,
-    totals: { BRL: 0, USD: 0 },
+    totals: { BRL: 0, USD: 0, CLP: 0 },
     add: vi.fn(),
     update: vi.fn(),
     remove: vi.fn(),
@@ -169,7 +169,7 @@ describe('IncomeList — delete', () => {
 describe('IncomeList — totals', () => {
   it('renders totals for active currencies', () => {
     vi.mocked(useIncomes).mockReturnValue(
-      makeHook({ incomes: [baseIncome], totals: { BRL: 5000, USD: 0 } }),
+      makeHook({ incomes: [baseIncome], totals: { BRL: 5000, USD: 0, CLP: 0 } }),
     )
     render(<IncomeList monthKey={MONTH_KEY} />)
 

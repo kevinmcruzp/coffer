@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { listMonths, readMonth } from '../lib/db'
 import { useSession } from './useSession'
+import { CURRENCIES } from '../types'
 import type { Currency } from '../types'
 
 export type MonthRow = {
@@ -31,10 +32,10 @@ export type UseYearSummaryResult = {
   warning: string | null
 }
 
-const CURRENCIES: Currency[] = ['BRL', 'USD']
-
 function zeroCurrencyMap(): Record<Currency, number> {
-  return { BRL: 0, USD: 0 }
+  const result = {} as Record<Currency, number>
+  for (const c of CURRENCIES) result[c] = 0
+  return result
 }
 
 function computeBalance(
@@ -44,10 +45,14 @@ function computeBalance(
   saving: number,
   adjustment: number,
 ): Record<Currency, number> {
-  return {
-    BRL: income.BRL - debit.BRL - credit.BRL - saving + adjustment,
-    USD: income.USD - debit.USD - credit.USD,
+  const result = zeroCurrencyMap()
+  for (const c of CURRENCIES) {
+    result[c] = income[c] - debit[c] - credit[c]
   }
+  // saving and adjustment apply only to BRL
+  result.BRL -= saving
+  result.BRL += adjustment
+  return result
 }
 
 export function useYearSummary(year: number): UseYearSummaryResult {

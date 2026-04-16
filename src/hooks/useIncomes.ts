@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { readMonth, writeMonth } from '../lib/db'
 import { incomeSchema, parseOrThrow } from '../lib/schemas'
 import { useSession } from './useSession'
+import { CURRENCIES } from '../types'
 import type { Currency, Income, MonthData } from '../types'
 
 export type IncomeTotals = Record<Currency, number>
@@ -22,15 +23,21 @@ type FetchState = {
   error: string | null
 }
 
+function zeroCurrencyMap(): IncomeTotals {
+  const result = {} as IncomeTotals
+  for (const c of CURRENCIES) result[c] = 0
+  return result
+}
+
 function computeTotals(incomes: Income[]): IncomeTotals {
-  const result: IncomeTotals = { BRL: 0, USD: 0 }
+  const result = zeroCurrencyMap()
   for (const i of incomes) {
     result[i.currency] += i.amount
   }
   return result
 }
 
-const ZERO_TOTALS: IncomeTotals = { BRL: 0, USD: 0 }
+const ZERO_TOTALS: IncomeTotals = zeroCurrencyMap()
 
 export function useIncomes(monthKey: string): UseIncomesResult {
   const { state, db } = useSession()

@@ -4,6 +4,7 @@ import { useIncomes } from '../hooks/useIncomes'
 import { useMonthMeta } from '../hooks/useMonthMeta'
 import { useToast } from './Toast'
 import { PieChart } from './PieChart'
+import { CURRENCIES } from '../types'
 import type { Currency } from '../types'
 
 type CardProps = {
@@ -52,7 +53,7 @@ export function MonthSummary({ monthKey }: Props) {
     return <div className="text-gray-400 text-sm text-center py-12">Loading…</div>
   }
 
-  const currencies: Currency[] = ['BRL', 'USD']
+  const currencies = CURRENCIES
   const activeCurrencies = currencies.filter(c =>
     incomeTotals[c] > 0 ||
     expenseTotals[c].total > 0

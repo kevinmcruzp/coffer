@@ -15,7 +15,7 @@ export const expenseSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1, 'Name is required').max(100),
   category: z.enum(['fixed', 'other']),
-  currency: z.enum(['USD', 'BRL']),
+  currency: z.enum(['BRL', 'USD', 'CLP']),
   debit: z.number().min(0, 'Debit cannot be negative'),
   credit: z.number().min(0, 'Credit cannot be negative'),
   fixed: z.boolean(),
@@ -27,7 +27,7 @@ export const expenseSchema = z.object({
 export const incomeSchema = z.object({
   id: z.string().min(1),
   source: z.string().min(1, 'Source is required').max(100),
-  currency: z.enum(['USD', 'BRL']),
+  currency: z.enum(['BRL', 'USD', 'CLP']),
   amount: z.number().positive('Amount must be greater than zero'),
 })
 

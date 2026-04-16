@@ -1,5 +1,6 @@
 import { useExpenses } from '../hooks/useExpenses'
 import { useIncomes } from '../hooks/useIncomes'
+import { CURRENCIES } from '../types'
 import type { Currency } from '../types'
 
 function fmt(value: number, currency: Currency): string {
@@ -30,18 +31,16 @@ export function FixedPanel({ monthKey }: Props) {
     )
   }
 
-  const currencies: Currency[] = ['BRL', 'USD']
-
   // totals per currency
-  const committed = currencies.reduce<Record<Currency, number>>(
+  const committed = CURRENCIES.reduce<Record<Currency, number>>(
     (acc, c) => {
       acc[c] = fixed.filter(e => e.currency === c).reduce((s, e) => s + e.debit + e.credit, 0)
       return acc
     },
-    { BRL: 0, USD: 0 },
+    Object.fromEntries(CURRENCIES.map(c => [c, 0])) as Record<Currency, number>,
   )
 
-  const activeCurrencies = currencies.filter(c => committed[c] > 0)
+  const activeCurrencies = CURRENCIES.filter(c => committed[c] > 0)
   const totalIncomeBRL = incomeTotals.BRL
   const pct = totalIncomeBRL > 0 ? (committed.BRL / totalIncomeBRL) * 100 : null
 

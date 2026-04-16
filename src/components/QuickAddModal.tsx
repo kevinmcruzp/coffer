@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useExpenses } from '../hooks/useExpenses'
+import { CURRENCIES } from '../types'
 import type { Currency } from '../types'
 
 type Props = {
@@ -68,8 +69,7 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
               value={currency}
               onChange={e => setCurrency(e.target.value as Currency)}
             >
-              <option value="BRL">BRL</option>
-              <option value="USD">USD</option>
+              {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
             <input
               type="number"
