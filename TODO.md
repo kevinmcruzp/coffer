@@ -242,7 +242,7 @@ Objetivo: fechar gaps de UX e erros silenciosos encontrados na revisão.
 
 ---
 
-## Iteração 17 — Backup completo criptografado
+## Iteração 17 — Backup completo criptografado ✅
 
 Objetivo: exportar e importar todos os meses de uma vez, em arquivo pequeno e seguro.
 
@@ -254,16 +254,17 @@ Objetivo: exportar e importar todos os meses de uma vez, em arquivo pequeno e se
 - Nenhum dado sensível viaja pela rede
 
 **Tarefas:**
-- [ ] `lib/backup.ts` — `exportBackup(db, key): Promise<Blob>` e `importBackup(file, db, key): Promise<number>` (retorna quantidade de meses restaurados)
-- [ ] Botão "Backup" no header → download do `.coffer`
-- [ ] Botão "Restore" no header → upload de `.coffer`, confirmar sobrescrita, restaurar
-- [ ] Feedback: toast com "X months restored" ou erro descritivo
-- [ ] Testes: round-trip export → import restaura todos os meses intactos
-- [ ] Testes: arquivo corrompido ou senha errada retorna erro descritivo sem crashar
+- [x] `lib/backup.ts` — `exportBackup(db, key): Promise<Blob>` e `importBackup(file, db, key): Promise<number>` (retorna quantidade de meses restaurados)
+- [x] Botão "Backup" no header → download do `.coffer`
+- [x] Botão "Restore" no header → upload de `.coffer`, confirmar sobrescrita, restaurar
+- [x] Feedback: toast com "X months restored" ou erro descritivo
+- [x] Testes: round-trip export → import restaura todos os meses intactos
+- [x] Testes: arquivo corrompido ou senha errada retorna erro descritivo sem crashar
+- [x] Fix: salt embutido no arquivo para restore cross-browser
 
 ---
 
-## Iteração 18 — Navegação contextual (UX)
+## Iteração 18 — Navegação contextual (UX) ✅
 
 Objetivo: o `MonthNavigator` aparece onde faz sentido; a aba Annual tem sua própria navegação de ano.
 
@@ -275,79 +276,79 @@ Objetivo: o `MonthNavigator` aparece onde faz sentido; a aba Annual tem sua pró
 - Na aba `annual`, o clique em uma linha já navega para o mês — manter esse comportamento e garantir que ao clicar ele troca para a aba `expenses`
 
 **Tarefas:**
-- [ ] Condicionar renderização do `MonthNavigator` a `tab !== 'annual'`
-- [ ] Ao clicar num mês no `AnnualView` (`onSelect`): chamar `goTo(key)` + `setTab('expenses')`
-- [ ] Garantir que o `AnnualView` receba `onSelect` corretamente do `App.tsx`
-- [ ] Testes: verificar que `onSelect` chama `goTo` com a chave correta
+- [x] Condicionar renderização do `MonthNavigator` a `tab !== 'annual'`
+- [x] Ao clicar num mês no `AnnualView` (`onSelect`): chamar `goTo(key)` + `setTab('expenses')`
+- [x] Garantir que o `AnnualView` receba `onSelect` corretamente do `App.tsx`
+- [x] Testes: verificar que `onSelect` chama `goTo` com a chave correta
 
 ---
 
-## Iteração 19 — Filtros e ordenação nas tabelas
+## Iteração 19 — Filtros e ordenação nas tabelas ✅
 
 Objetivo: navegação e análise mais rápida nos dados de despesas e receitas.
 
-- [ ] Ordenação por coluna em `ExpenseList` (clique no header: Nome, Débito, Cartão, Total) — toggle asc/desc
-- [ ] Ordenação por coluna em `IncomeList` (Nome, Valor)
-- [ ] Ordenação por coluna no `AnnualView` (Mês, Income, Debit, Credit, Saving, Balance) — padrão: mês asc
-- [ ] Indicador visual de coluna ativa e direção (↑↓ no header)
-- [ ] Estado de ordenação resetado ao trocar de mês (assim como filtros já funcionam via `key={monthKey}`)
-- [ ] Testes: `ExpenseList` com ordenação por nome asc/desc e por valor desc
+- [x] Ordenação por coluna em `ExpenseList` (clique no header: Nome, Débito, Cartão, Total) — toggle asc/desc
+- [x] Ordenação por coluna em `IncomeList` (Nome, Valor)
+- [x] Ordenação por coluna no `AnnualView` (Mês, Income, Debit, Credit, Saving, Balance) — padrão: mês asc
+- [x] Indicador visual de coluna ativa e direção (↑↓ no header)
+- [x] Estado de ordenação resetado ao trocar de mês (assim como filtros já funcionam via `key={monthKey}`)
+- [x] Testes: `ExpenseList` com ordenação por nome asc/desc e por valor desc
 
 ---
 
-## Iteração 20 — Gráficos (SVG puro)
+## Iteração 20 — Gráficos (SVG puro) ✅
 
 Objetivo: visualização rápida dos gastos sem dependência externa.
 
-- [ ] Componente `PieChart.tsx` — pizza com proporção Fixo vs Outros e Débito vs Crédito; SVG com `viewBox`, `<path>` por fatia via arco trigonométrico
-- [ ] Componente `BarChart.tsx` — barras de saldo mensal dos últimos 12 meses; SVG responsivo
-- [ ] Integrar `PieChart` na aba Summary do mês
-- [ ] Integrar `BarChart` na aba Annual (acima ou abaixo da tabela)
-- [ ] Tooltip simples ao hover (SVG `<title>` nativo — zero JS extra)
-- [ ] Sem dados → estado vazio com mensagem, sem SVG quebrado
+- [x] Componente `PieChart.tsx` — pizza com proporção Fixo vs Outros e Débito vs Crédito; SVG com `viewBox`, `<path>` por fatia via arco trigonométrico
+- [x] Componente `BarChart.tsx` — barras de saldo mensal dos últimos 12 meses; SVG responsivo
+- [x] Integrar `PieChart` na aba Summary do mês
+- [x] Integrar `BarChart` na aba Annual (acima ou abaixo da tabela)
+- [x] Tooltip simples ao hover (SVG `<title>` nativo — zero JS extra)
+- [x] Sem dados → estado vazio com mensagem, sem SVG quebrado
 
 ---
 
-## Iteração 21 — Orçamento mensal com alerta
+## Iteração 21 — Orçamento mensal com alerta ✅
 
 Objetivo: o usuário define um teto e o app avisa quando ultrapassar.
 
-- [ ] Campo "Budget" por mês no `MonthSummary` (salvo no `MonthData`)
-- [ ] Badge no header quando total gasto > budget (vermelho, valor do excesso)
-- [ ] Barra de progresso de gasto vs budget no Summary
-- [ ] Budget `0` = sem limite definido (comportamento padrão, sem alerta)
-- [ ] Testes: cálculo correto de excesso; ausência de alerta quando budget = 0
+- [x] Campo "Budget" por mês no `MonthSummary` (salvo no `MonthData`)
+- [x] Badge no header quando total gasto > budget (vermelho, valor do excesso)
+- [x] Barra de progresso de gasto vs budget no Summary
+- [x] Budget `0` = sem limite definido (comportamento padrão, sem alerta)
+- [x] Testes: cálculo correto de excesso; ausência de alerta quando budget = 0
 
 ---
 
-## Iteração 22 — Painel de gastos fixos / assinaturas
+## Iteração 22 — Painel de gastos fixos / assinaturas ✅
 
 Objetivo: visibilidade do custo comprometido mensal.
 
-- [ ] Nova aba ou seção "Fixed" listando todas as despesas com `fixa: true` do mês atual
-- [ ] Total comprometido: soma de débito + cartão de todas as fixas
-- [ ] Comparativo: % do total de receitas comprometido em fixas
-- [ ] Sem dados → mensagem de estado vazio
+- [x] Nova aba ou seção "Fixed" listando todas as despesas com `fixa: true` do mês atual
+- [x] Total comprometido: soma de débito + cartão de todas as fixas
+- [x] Comparativo: % do total de receitas comprometido em fixas
+- [x] Sem dados → mensagem de estado vazio
 
 ---
 
-## Iteração 23 — Tendência de saldo no AnnualView
+## Iteração 23 — Tendência de saldo no AnnualView ✅
 
 Objetivo: contexto histórico imediato ao olhar o ano.
 
-- [ ] Para cada mês, buscar saldo do mesmo mês do ano anterior
-- [ ] Coluna "vs ano ant." com ↑ (verde) / ↓ (vermelho) e delta absoluto
-- [ ] Ocultar coluna se não houver dados do ano anterior
+- [x] Para cada mês, buscar saldo do mesmo mês do ano anterior
+- [x] Coluna "vs ano ant." com ↑ (verde) / ↓ (vermelho) e delta absoluto
+- [x] Ocultar coluna se não houver dados do ano anterior
 
 ---
 
-## Iteração 24 — Entrada rápida pelo header
+## Iteração 24 — Entrada rápida pelo header ✅
 
 Objetivo: registrar uma despesa em 3 toques no celular sem abrir a lista.
 
-- [ ] Botão "+" flutuante ou no header → abre modal compacto (nome, valor, débito/cartão)
-- [ ] Salva no mês corrente e fecha — sem navegação
-- [ ] Feedback toast de confirmação
+- [x] Botão "+" flutuante ou no header → abre modal compacto (nome, valor, débito/cartão)
+- [x] Salva no mês corrente e fecha — sem navegação
+- [x] Feedback toast de confirmação
 - [ ] Testes: submit salva no mês corrente; cancelar não altera dados
 
 ---
