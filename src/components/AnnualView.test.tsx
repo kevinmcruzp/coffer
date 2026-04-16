@@ -10,12 +10,12 @@ function makeHook(overrides: Partial<UseYearSummaryResult> = {}): UseYearSummary
   return {
     rows: [],
     totals: {
-      income: { BRL: 0, USD: 0 },
-      debit: { BRL: 0, USD: 0 },
-      credit: { BRL: 0, USD: 0 },
+      income: { BRL: 0, USD: 0, CLP: 0 },
+      debit: { BRL: 0, USD: 0, CLP: 0 },
+      credit: { BRL: 0, USD: 0, CLP: 0 },
       saving: 0,
       adjustment: 0,
-      balance: { BRL: 0, USD: 0 },
+      balance: { BRL: 0, USD: 0, CLP: 0 },
     },
     loading: false,
     error: null,
@@ -26,12 +26,12 @@ function makeHook(overrides: Partial<UseYearSummaryResult> = {}): UseYearSummary
 
 const sampleRow = {
   monthKey: '2025-03',
-  income: { BRL: 5000, USD: 0 },
-  debit: { BRL: 1000, USD: 0 },
-  credit: { BRL: 500, USD: 0 },
+  income: { BRL: 5000, USD: 0, CLP: 0 },
+  debit: { BRL: 1000, USD: 0, CLP: 0 },
+  credit: { BRL: 500, USD: 0, CLP: 0 },
   saving: 300,
   adjustment: 0,
-  balance: { BRL: 3200, USD: 0 },
+  balance: { BRL: 3200, USD: 0, CLP: 0 },
   prevBalance: null,
 }
 

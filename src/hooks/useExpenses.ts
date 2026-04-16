@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { readMonth, writeMonth } from '../lib/db'
 import { expenseSchema, parseOrThrow } from '../lib/schemas'
 import { useSession } from './useSession'
+import { CURRENCIES } from '../types'
 import type { Currency, Expense, MonthData } from '../types'
 
 export type CurrencyTotals = { debit: number; credit: number; total: number }
@@ -23,11 +24,14 @@ type FetchState = {
   error: string | null
 }
 
+function zeroCurrencyTotals(): Totals {
+  const result = {} as Totals
+  for (const c of CURRENCIES) result[c] = { debit: 0, credit: 0, total: 0 }
+  return result
+}
+
 function computeTotals(expenses: Expense[]): Totals {
-  const result: Totals = {
-    BRL: { debit: 0, credit: 0, total: 0 },
-    USD: { debit: 0, credit: 0, total: 0 },
-  }
+  const result = zeroCurrencyTotals()
   for (const e of expenses) {
     result[e.currency].debit += e.debit
     result[e.currency].credit += e.credit
@@ -36,10 +40,7 @@ function computeTotals(expenses: Expense[]): Totals {
   return result
 }
 
-const ZERO_TOTALS: Totals = {
-  BRL: { debit: 0, credit: 0, total: 0 },
-  USD: { debit: 0, credit: 0, total: 0 },
-}
+const ZERO_TOTALS: Totals = zeroCurrencyTotals()
 
 export function useExpenses(monthKey: string): UseExpensesResult {
   const { state, db } = useSession()

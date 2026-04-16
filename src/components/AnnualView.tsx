@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useYearSummary } from '../hooks/useYearSummary'
+import { CURRENCIES } from '../types'
+import type { Currency } from '../types'
 import type { MonthRow, YearTotals } from '../hooks/useYearSummary'
 
 // ── Sort ──────────────────────────────────────────────────────────────────────
@@ -50,7 +52,7 @@ function BalanceCell({ value }: { value: number }) {
 
 type RowProps = {
   row: MonthRow
-  showUSD: boolean
+  extraCurrencies: Currency[]
   showPrev: boolean
   onSelect: (key: string) => void
 }
@@ -66,7 +68,7 @@ function TrendCell({ current, prev }: { current: number; prev: number }) {
   )
 }
 
-function DataRow({ row, showUSD, showPrev, onSelect }: RowProps) {
+function DataRow({ row, extraCurrencies, showPrev, onSelect }: RowProps) {
   return (
     <tr
       className="border-b border-gray-800 hover:bg-gray-900 cursor-pointer transition-colors"
@@ -81,11 +83,11 @@ function DataRow({ row, showUSD, showPrev, onSelect }: RowProps) {
       <td className="px-3 py-2 text-right font-semibold">
         <BalanceCell value={row.balance.BRL} />
       </td>
-      {showUSD && (
-        <td className="px-3 py-2 text-right font-semibold text-gray-500">
-          <BalanceCell value={row.balance.USD} />
+      {extraCurrencies.map(c => (
+        <td key={c} className="px-3 py-2 text-right font-semibold text-gray-500">
+          <BalanceCell value={row.balance[c]} />
         </td>
-      )}
+      ))}
       {showPrev && (
         <td className="px-3 py-2 text-right text-sm">
           {row.prevBalance !== null
@@ -97,7 +99,7 @@ function DataRow({ row, showUSD, showPrev, onSelect }: RowProps) {
   )
 }
 
-function TotalsRow({ totals, showUSD, showPrev }: { totals: YearTotals; showUSD: boolean; showPrev: boolean }) {
+function TotalsRow({ totals, extraCurrencies, showPrev }: { totals: YearTotals; extraCurrencies: Currency[]; showPrev: boolean }) {
   return (
     <tr className="border-t-2 border-gray-700 bg-gray-900">
       <td className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</td>
@@ -109,11 +111,11 @@ function TotalsRow({ totals, showUSD, showPrev }: { totals: YearTotals; showUSD:
       <td className="px-3 py-2 text-right font-semibold">
         <BalanceCell value={totals.balance.BRL} />
       </td>
-      {showUSD && (
-        <td className="px-3 py-2 text-right font-semibold">
-          <BalanceCell value={totals.balance.USD} />
+      {extraCurrencies.map(c => (
+        <td key={c} className="px-3 py-2 text-right font-semibold">
+          <BalanceCell value={totals.balance[c]} />
         </td>
-      )}
+      ))}
       {showPrev && <td />}
     </tr>
   )
@@ -137,7 +139,9 @@ export function AnnualView({ currentYear, onSelectMonth }: Props) {
   }
 
   const sortedRows = useMemo(() => sortRows(rows, sortCol, sortDir), [rows, sortCol, sortDir])
-  const showUSD = rows.some(r => r.income.USD > 0 || r.debit.USD > 0 || r.credit.USD > 0)
+  const extraCurrencies = CURRENCIES.filter(c =>
+    c !== 'BRL' && rows.some(r => r.income[c] > 0 || r.debit[c] > 0 || r.credit[c] > 0)
+  )
   const showPrev = rows.some(r => r.prevBalance !== null)
 
   return (
@@ -221,17 +225,19 @@ export function AnnualView({ currentYear, onSelectMonth }: Props) {
                 >
                   Balance BRL <SortIndicator active={sortCol === 'balance'} dir={sortDir} />
                 </th>
-                {showUSD && <th className="px-3 py-2 text-right font-normal">Balance USD</th>}
+                {extraCurrencies.map(c => (
+                  <th key={c} className="px-3 py-2 text-right font-normal">Balance {c}</th>
+                ))}
                 {showPrev && <th className="px-3 py-2 text-right font-normal text-gray-600">vs prev yr</th>}
               </tr>
             </thead>
             <tbody>
               {sortedRows.map(row => (
-                <DataRow key={row.monthKey} row={row} showUSD={showUSD} showPrev={showPrev} onSelect={onSelectMonth} />
+                <DataRow key={row.monthKey} row={row} extraCurrencies={extraCurrencies} showPrev={showPrev} onSelect={onSelectMonth} />
               ))}
             </tbody>
             <tfoot>
-              <TotalsRow totals={totals} showUSD={showUSD} showPrev={showPrev} />
+              <TotalsRow totals={totals} extraCurrencies={extraCurrencies} showPrev={showPrev} />
             </tfoot>
           </table>
           <p className="text-xs text-gray-600 mt-2 text-right">click a row to open that month</p>

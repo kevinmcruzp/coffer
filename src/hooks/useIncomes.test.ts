@@ -53,7 +53,7 @@ describe('useIncomes — empty month', () => {
     const { result } = renderHook(() => useIncomes(MONTH_KEY))
     await waitFor(() => expect(result.current.loading).toBe(false))
 
-    expect(result.current.totals).toEqual({ BRL: 0, USD: 0 })
+    expect(result.current.totals).toEqual({ BRL: 0, USD: 0, CLP: 0 })
   })
 })
 

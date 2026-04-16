@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useIncomes } from '../hooks/useIncomes'
+import { CURRENCIES } from '../types'
 import type { Currency, Income } from '../types'
 import type { IncomeTotals } from '../hooks/useIncomes'
 
@@ -88,8 +89,7 @@ function IncomeRow({ income, onUpdate, onRemove }: RowProps) {
           value={income.currency}
           onChange={e => onUpdate(income.id, { currency: e.target.value as Currency })}
         >
-          <option value="BRL">BRL</option>
-          <option value="USD">USD</option>
+          {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
       </td>
       <td
@@ -227,7 +227,7 @@ function fmtCurrency(value: number, currency: Currency): string {
 }
 
 function TotalsFooter({ totals }: { totals: IncomeTotals }) {
-  const currencies: Currency[] = ['BRL', 'USD']
+  const currencies = CURRENCIES
   const active = currencies.filter(c => totals[c] > 0)
 
   if (active.length === 0) return null

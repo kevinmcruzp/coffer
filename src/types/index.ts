@@ -1,4 +1,6 @@
-export type Currency = 'USD' | 'BRL'
+export type Currency = 'BRL' | 'USD' | 'CLP'
+
+export const CURRENCIES: Currency[] = ['BRL', 'USD', 'CLP']
 
 export type Category = 'fixed' | 'other'
 
