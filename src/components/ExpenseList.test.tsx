@@ -7,6 +7,12 @@ import type { Expense } from '../types'
 import type { UseExpensesResult } from '../hooks/useExpenses'
 
 vi.mock('../hooks/useExpenses')
+vi.mock('../hooks/useSession', () => ({
+  useSession: () => ({ state: { status: 'unlocked', key: {} }, db: {} }),
+}))
+vi.mock('./Toast', () => ({
+  useToast: () => ({ toast: vi.fn() }),
+}))
 
 const fixedExpense: Expense = {
   id: 'e1',
@@ -40,6 +46,7 @@ function makeHookResult(overrides: Partial<UseExpensesResult> = {}): UseExpenses
     totals: {
       BRL: { debit: 0, credit: 0, total: 0 },
       USD: { debit: 0, credit: 0, total: 0 },
+      CLP: { debit: 0, credit: 0, total: 0 },
     },
     add: vi.fn().mockResolvedValue(undefined),
     update: vi.fn().mockResolvedValue(undefined),
@@ -170,6 +177,7 @@ describe('ExpenseList', () => {
       totals: {
         BRL: { debit: 1500, credit: 200, total: 1700 },
         USD: { debit: 0, credit: 0, total: 0 },
+        CLP: { debit: 0, credit: 0, total: 0 },
       },
     }))
     render(<ExpenseList monthKey="2025-03" />)
@@ -184,6 +192,7 @@ describe('ExpenseList', () => {
       totals: {
         BRL: { debit: 100, credit: 0, total: 100 },
         USD: { debit: 0, credit: 0, total: 0 },
+        CLP: { debit: 0, credit: 0, total: 0 },
       },
     }))
     render(<ExpenseList monthKey="2025-03" />)

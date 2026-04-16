@@ -1,5 +1,10 @@
 import { useMemo, useState } from 'react'
 import { useExpenses } from '../hooks/useExpenses'
+import { useSession } from '../hooks/useSession'
+import { readMonth } from '../lib/db'
+import { syncFixed } from '../lib/syncFixed'
+import { useToast } from './Toast'
+import { CURRENCIES } from '../types'
 import type { Category, Currency, Expense } from '../types'
 import type { Totals } from '../hooks/useExpenses'
 
@@ -71,7 +76,7 @@ function ToggleGroup<T extends string>({
 
 function FilterBar({ search, onSearch, category, onCategory, payment, onPayment }: FilterBarProps) {
   return (
-    <div className="flex flex-wrap gap-3 mb-5 items-center">
+    <div className="flex flex-wrap gap-3 items-center">
       <input
         type="search"
         placeholder="Search…"
@@ -170,8 +175,7 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
           value={expense.currency}
           onChange={e => onUpdate(expense.id, { currency: e.target.value as Currency })}
         >
-          <option value="BRL">BRL</option>
-          <option value="USD">USD</option>
+          {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
       </td>
       <td
@@ -438,7 +442,7 @@ function fmtCurrency(value: number, currency: Currency): string {
 }
 
 function TotalsFooter({ totals }: { totals: Totals }) {
-  const currencies: Currency[] = ['BRL', 'USD']
+  const currencies = CURRENCIES
   const active = currencies.filter(c => totals[c].total > 0)
 
   if (active.length === 0) return null
@@ -467,13 +471,48 @@ type Props = {
   monthKey: string
 }
 
+function prevMonthKey(key: string): string {
+  const [y, m] = key.split('-').map(Number)
+  const date = new Date(y, m - 2, 1)
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+}
+
 export function ExpenseList({ monthKey }: Props) {
   const { expenses, loading, error, totals, add, update, remove } = useExpenses(monthKey)
+  const { state, db } = useSession()
+  const { toast } = useToast()
+  const [syncing, setSyncing] = useState(false)
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>('all')
   const [sortCol, setSortCol] = useState<ExpenseSortCol>('name')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
+
+  async function handleSync() {
+    if (!db || state.status !== 'unlocked') return
+    setSyncing(true)
+    try {
+      const prev = await readMonth(db, prevMonthKey(monthKey), state.key)
+      const currentData = { key: monthKey, expenses, incomes: [], saving: 0, adjustment: 0, budget: 0 }
+      const toAdd = syncFixed(prev, currentData)
+      if (toAdd.length === 0) {
+        toast('Already up to date')
+      } else {
+        for (const expense of toAdd) {
+          await add(expense)
+        }
+        toast(`${toAdd.length} expense${toAdd.length !== 1 ? 's' : ''} added`)
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Sync failed'
+      if (msg.includes('not found')) {
+        toast('No previous month data found', 'error')
+      } else {
+        toast(msg, 'error')
+      }
+    }
+    setSyncing(false)
+  }
 
   function toggleSort(col: ExpenseSortCol) {
     if (col === sortCol) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -510,14 +549,23 @@ export function ExpenseList({ monthKey }: Props) {
 
   return (
     <div>
-      <FilterBar
-        search={search}
-        onSearch={setSearch}
-        category={categoryFilter}
-        onCategory={setCategoryFilter}
-        payment={paymentFilter}
-        onPayment={setPaymentFilter}
-      />
+      <div className="flex flex-wrap gap-3 mb-3 items-center justify-between">
+        <FilterBar
+          search={search}
+          onSearch={setSearch}
+          category={categoryFilter}
+          onCategory={setCategoryFilter}
+          payment={paymentFilter}
+          onPayment={setPaymentFilter}
+        />
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          className="text-xs text-gray-500 hover:text-white px-2 py-1 rounded border border-gray-700 hover:border-gray-500 transition-colors disabled:opacity-50"
+        >
+          {syncing ? 'Syncing…' : '↻ Sync fixed'}
+        </button>
+      </div>
       {categoryFilter !== 'other' && (
         <ExpenseGroup
           label="Fixed"
