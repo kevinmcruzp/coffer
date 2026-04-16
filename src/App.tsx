@@ -55,6 +55,8 @@ function MainApp() {
   const [tab, setTab] = useState<Tab>('expenses')
   const [importing, setImporting] = useState(false)
   const [quickAdd, setQuickAdd] = useState(false)
+  const [restoreFile, setRestoreFile] = useState<File | null>(null)
+  const [restorePassword, setRestorePassword] = useState('')
   const { toast } = useToast()
 
   async function handleExport() {
@@ -87,13 +89,21 @@ function MainApp() {
   async function handleRestore(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     e.target.value = ''
-    if (!file || !db || state.status !== 'unlocked') return
+    if (!file) return
+    setRestoreFile(file)
+    setRestorePassword('')
+  }
+
+  async function confirmRestore() {
+    if (!restoreFile || !db || state.status !== 'unlocked') return
     try {
-      const count = await importBackup(file, db, state.key)
+      const count = await importBackup(restoreFile, db, restorePassword, state.key)
       toast(`${count} month${count !== 1 ? 's' : ''} restored`)
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Restore failed', 'error')
     }
+    setRestoreFile(null)
+    setRestorePassword('')
   }
 
   if (importing) {
@@ -148,6 +158,43 @@ function MainApp() {
       </header>
 
       {quickAdd && <QuickAddModal monthKey={monthKey} onClose={() => setQuickAdd(false)} />}
+
+      {restoreFile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <form
+            onSubmit={(e) => { e.preventDefault(); confirmRestore() }}
+            className="bg-gray-900 border border-gray-700 rounded-lg p-6 w-full max-w-sm mx-4"
+          >
+            <h2 className="text-sm font-semibold text-white mb-1">Restore Backup</h2>
+            <p className="text-xs text-gray-400 mb-4">
+              Enter the password used when this backup was created.
+            </p>
+            <input
+              type="password"
+              value={restorePassword}
+              onChange={(e) => setRestorePassword(e.target.value)}
+              placeholder="Backup password"
+              className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 text-white text-sm focus:outline-none focus:border-gray-500 mb-4"
+              autoFocus
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => { setRestoreFile(null); setRestorePassword('') }}
+                className="px-3 py-1.5 text-xs text-gray-400 hover:text-white rounded hover:bg-gray-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-3 py-1.5 text-xs text-white bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+              >
+                Restore
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Month navigator — hidden on Annual tab */}
       {tab !== 'annual' && (
