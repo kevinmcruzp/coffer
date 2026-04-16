@@ -14,6 +14,7 @@ export type Expense = {
   debit: number
   credit: number
   fixed: boolean
+  installments?: number
 }
 
 export type Income = {

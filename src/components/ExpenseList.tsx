@@ -166,7 +166,17 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
             }}
           />
         ) : (
-          expense.name
+          <>
+            {expense.name}
+            {expense.installments !== undefined && expense.installments > 1 && (
+              <span
+                data-testid={`installments-${expense.id}`}
+                className="ml-2 text-xs text-amber-400"
+              >
+                ({expense.installments}x)
+              </span>
+            )}
+          </>
         )}
       </td>
       <td className="px-2 py-1">
@@ -277,8 +287,14 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
   const [currency, setCurrency] = useState<Currency>('BRL')
   const [debit, setDebit] = useState('0')
   const [credit, setCredit] = useState('0')
+  const [parcels, setParcels] = useState('')
   const [fixed, setFixed] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+
+  const parcelsNum = parseInt(parcels, 10)
+  const creditNum = parseFloat(credit) || 0
+  const isParceled = parcelsNum >= 2 && creditNum > 0
+  const perParcel = isParceled ? Math.round((creditNum / parcelsNum) * 100) / 100 : creditNum
 
   async function handleAdd() {
     setFormError(null)
@@ -288,12 +304,14 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
         category,
         currency,
         debit: parseFloat(debit) || 0,
-        credit: parseFloat(credit) || 0,
+        credit: perParcel,
         fixed,
+        ...(isParceled ? { installments: parcelsNum } : {}),
       })
       setName('')
       setDebit('0')
       setCredit('0')
+      setParcels('')
       setFixed(false)
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Failed to add')
@@ -338,12 +356,26 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
             min="0"
             step="0.01"
             aria-label="Credit"
-            className="w-24 bg-gray-800 text-white rounded px-1 text-right"
+            className="w-24 bg-gray-800 text-white rounded px-1 text-right border border-gray-700 focus:outline-none focus:border-gray-500"
             value={credit}
             onChange={e => setCredit(e.target.value)}
           />
         </td>
-        <td />
+        <td className="px-2 py-1">
+          <div className="flex items-center gap-1 justify-end">
+            <span className="text-gray-500 text-xs">×</span>
+            <input
+              type="number"
+              min="1"
+              step="1"
+              placeholder="1"
+              aria-label="Parcels"
+              className="w-12 bg-gray-700 text-white rounded px-1 text-center text-sm border border-gray-600 focus:outline-none focus:border-amber-500 placeholder-gray-500"
+              value={parcels}
+              onChange={e => setParcels(e.target.value)}
+            />
+          </div>
+        </td>
         <td className="px-2 py-1 text-center">
           <input
             type="checkbox"
@@ -361,6 +393,13 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
           </button>
         </td>
       </tr>
+      {isParceled && (
+        <tr data-testid="parcel-hint">
+          <td colSpan={7} className="px-2 pb-2 text-xs text-amber-400/90">
+            ↳ {parcelsNum}× de {fmtCurrency(perParcel, currency)} = {fmtCurrency(creditNum, currency)}
+          </td>
+        </tr>
+      )}
       {formError && (
         <tr>
           <td colSpan={7} className="px-2 py-1 text-red-400 text-xs">

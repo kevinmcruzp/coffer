@@ -129,4 +129,63 @@ describe('syncFixed', () => {
 
     expect(result[0].fixed).toBe(false)
   })
+
+  describe('installments', () => {
+    it('clones items with installments > 1, decremented by 1', () => {
+      const prev = makeMonth([
+        makeExpense({ name: 'TV', fixed: false, debit: 0, credit: 200, installments: 6 }),
+      ])
+      const current = makeMonth([], '2025-04')
+
+      const result = syncFixed(prev, current)
+
+      expect(result).toHaveLength(1)
+      expect(result[0].installments).toBe(5)
+    })
+
+    it('does not clone last parcel (installments === 1)', () => {
+      const prev = makeMonth([
+        makeExpense({ name: 'TV', fixed: false, debit: 0, credit: 200, installments: 1 }),
+      ])
+      const current = makeMonth([], '2025-04')
+
+      const result = syncFixed(prev, current)
+
+      expect(result).toHaveLength(0)
+    })
+
+    it('clones an installment item even when fixed is false', () => {
+      const prev = makeMonth([
+        makeExpense({ name: 'Sofa', fixed: false, debit: 0, credit: 100, installments: 3 }),
+      ])
+      const current = makeMonth([], '2025-04')
+
+      const result = syncFixed(prev, current)
+
+      expect(result).toHaveLength(1)
+      expect(result[0].name).toBe('Sofa')
+    })
+
+    it('omits installments key when item is fixed without installments', () => {
+      const prev = makeMonth([makeExpense({ name: 'Rent', fixed: true })])
+      const current = makeMonth([], '2025-04')
+
+      const result = syncFixed(prev, current)
+
+      expect(result[0]).not.toHaveProperty('installments')
+    })
+
+    it('does not duplicate when installment item already exists in current', () => {
+      const prev = makeMonth([
+        makeExpense({ name: 'Phone', category: 'other', credit: 100, debit: 0, installments: 4 }),
+      ])
+      const current = makeMonth([
+        makeExpense({ name: 'Phone', category: 'other', credit: 100, debit: 0, installments: 3 }),
+      ], '2025-04')
+
+      const result = syncFixed(prev, current)
+
+      expect(result).toHaveLength(0)
+    })
+  })
 })
