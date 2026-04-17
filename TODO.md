@@ -422,19 +422,19 @@ Objetivo: `npm run build` e `npm run lint` voltarem a passar. Hoje só `dev` fun
 
 ---
 
-## Iteração 28 — Segurança de sessão e onboarding
+## Iteração 28 — Segurança de sessão e onboarding ✅
 
 Objetivo: fechar brechas óbvias de segurança num cofre que roda no browser.
 
 **Problema:** hoje, se o usuário abrir o Coffer e deixar a aba aberta, a chave derivada fica em memória indefinidamente. Alguém com acesso físico à máquina vê tudo. Além disso, o setup não avisa que a senha não tem recovery.
 
 **Tarefas:**
-- [ ] Auto-lock por inatividade — timeout configurável (default 15 min). Monitorar atividade (mousemove, keydown, visibilitychange); depois do timeout, chamar `logout()` e voltar para LoginScreen
-- [ ] Campo nas settings para o usuário ajustar o timeout (5/15/30/60 min ou "never")
-- [ ] Lock automático quando a aba perde foco por mais do que o timeout (não imediatamente, ou atrapalha copiar/colar)
-- [ ] Aviso explícito no SetupScreen: "Se você esquecer esta senha, todos os seus dados ficarão inacessíveis — não há como recuperar. Anote em local seguro."
-- [ ] Checkbox "Eu entendo que não há recuperação de senha" obrigatório antes de criar o cofre
-- [ ] Testes: inatividade dispara logout; checkbox bloqueia submit
+- [x] Auto-lock por inatividade — timeout configurável (default 15 min). Monitorar atividade (mousemove, keydown, visibilitychange); depois do timeout, chamar `logout()` e voltar para LoginScreen
+- [x] Campo nas settings para o usuário ajustar o timeout (5/15/30/60 min ou "never")
+- [x] Lock automático quando a aba perde foco por mais do que o timeout (não imediatamente, ou atrapalha copiar/colar)
+- [x] Aviso explícito no SetupScreen: "Se você esquecer esta senha, todos os seus dados ficarão inacessíveis — não há como recuperar. Anote em local seguro."
+- [x] Checkbox "Eu entendo que não há recuperação de senha" obrigatório antes de criar o cofre
+- [x] Testes: inatividade dispara logout; checkbox bloqueia submit
 
 ---
 

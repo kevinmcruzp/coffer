@@ -7,12 +7,14 @@ type Props = {
 export function SetupScreen({ onSetup }: Props) {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
+  const [acknowledged, setAcknowledged] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   const passwordTooShort = password.length > 0 && password.length < 8
   const mismatch = confirm.length > 0 && password !== confirm
-  const canSubmit = password.length >= 8 && password === confirm && !loading
+  const canSubmit =
+    password.length >= 8 && password === confirm && acknowledged && !loading
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -70,6 +72,22 @@ export function SetupScreen({ onSetup }: Props) {
             {mismatch && (
               <p className="text-xs text-red-400">Passwords do not match.</p>
             )}
+          </div>
+
+          <div className="rounded-lg border border-amber-900/60 bg-amber-950/30 p-3 space-y-2">
+            <p className="text-xs text-amber-300 leading-relaxed">
+              If you forget this password, all your data will be unrecoverable — there is no reset.
+              Write it down somewhere safe.
+            </p>
+            <label className="flex items-start gap-2 text-xs text-amber-200 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={acknowledged}
+                onChange={(e) => setAcknowledged(e.target.checked)}
+                className="mt-0.5 accent-amber-500"
+              />
+              <span>I understand there is no password recovery.</span>
+            </label>
           </div>
 
           {error && <p className="text-sm text-red-400">{error}</p>}
