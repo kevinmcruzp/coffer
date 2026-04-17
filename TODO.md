@@ -438,15 +438,15 @@ Objetivo: fechar brechas óbvias de segurança num cofre que roda no browser.
 
 ---
 
-## Iteração 29 — Receita recorrente
+## Iteração 29 — Receita recorrente ✅
 
 Objetivo: parar de redigitar salário todo mês. Hoje só despesa com `fixed: true` clona; renda não.
 
 **Tarefas:**
-- [ ] Campo `recurring?: boolean` em `Income` e `incomeSchema`
-- [ ] Ao navegar para mês novo em `useCurrentMonth.goForward`, clonar também incomes `recurring: true` (como já faz com fixed expenses)
-- [ ] Checkbox "Repeat" na linha de Income (mesmo padrão visual de Expense)
-- [ ] Testes: clonagem inclui apenas recorrentes; não duplica em mês já existente
+- [x] Campo `recurring?: boolean` em `Income` e `incomeSchema`
+- [x] Ao navegar para mês novo em `useCurrentMonth.goForward`, clonar também incomes `recurring: true` (como já faz com fixed expenses)
+- [x] Checkbox "Repeat" na linha de Income (mesmo padrão visual de Expense)
+- [x] Testes: clonagem inclui apenas recorrentes; não duplica em mês já existente
 
 ---
 

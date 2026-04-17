@@ -22,6 +22,7 @@ export type Income = {
   source: string
   currency: Currency
   amount: number
+  recurring?: boolean
 }
 
 export type MonthData = {

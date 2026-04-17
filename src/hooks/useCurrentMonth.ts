@@ -57,15 +57,25 @@ export function useCurrentMonth(initial: string): UseCurrentMonthResult {
       nextExists = false
     }
 
-    // Merge missing fixed expenses (arrive with fixed: false)
-    const toAdd = syncFixed(current, nextMonth)
-    if (toAdd.length > 0 || !nextExists) {
+    // Merge missing fixed expenses
+    const toAddExpenses = syncFixed(current, nextMonth)
+
+    // Clone recurring incomes not yet present in next month (match by source + currency)
+    const existingSources = new Set(
+      nextMonth.incomes.map(i => `${i.source}|${i.currency}`)
+    )
+    const toAddIncomes = current.incomes
+      .filter(i => i.recurring && !existingSources.has(`${i.source}|${i.currency}`))
+      .map(i => ({ ...i, id: crypto.randomUUID() }))
+
+    if (toAddExpenses.length > 0 || toAddIncomes.length > 0 || !nextExists) {
       const merged: MonthData = {
         ...nextMonth,
         expenses: [
           ...nextMonth.expenses,
-          ...toAdd.map(e => ({ ...e, id: crypto.randomUUID() })),
+          ...toAddExpenses.map(e => ({ ...e, id: crypto.randomUUID() })),
         ],
+        incomes: [...nextMonth.incomes, ...toAddIncomes],
       }
       await writeMonth(db, next, merged, cryptoKey)
     }
