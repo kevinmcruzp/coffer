@@ -166,6 +166,35 @@ describe('IncomeList — delete', () => {
   })
 })
 
+describe('IncomeList — repeat checkbox', () => {
+  it('renders unchecked Repeat checkbox by default', () => {
+    vi.mocked(useIncomes).mockReturnValue(makeHook({ incomes: [baseIncome] }))
+    render(<IncomeList monthKey={MONTH_KEY} />)
+    const checkbox = screen.getByLabelText('Repeat')
+    expect(checkbox).not.toBeChecked()
+  })
+
+  it('renders checked Repeat checkbox when recurring is true', () => {
+    vi.mocked(useIncomes).mockReturnValue(
+      makeHook({ incomes: [{ ...baseIncome, recurring: true }] }),
+    )
+    render(<IncomeList monthKey={MONTH_KEY} />)
+    expect(screen.getByLabelText('Repeat')).toBeChecked()
+  })
+
+  it('calls update with recurring: true when checkbox is checked', async () => {
+    const update = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useIncomes).mockReturnValue(makeHook({ incomes: [baseIncome], update }))
+    render(<IncomeList monthKey={MONTH_KEY} />)
+
+    fireEvent.click(screen.getByLabelText('Repeat'))
+
+    await waitFor(() => {
+      expect(update).toHaveBeenCalledWith('i1', { recurring: true })
+    })
+  })
+})
+
 describe('IncomeList — totals', () => {
   it('renders totals for active currencies', () => {
     vi.mocked(useIncomes).mockReturnValue(

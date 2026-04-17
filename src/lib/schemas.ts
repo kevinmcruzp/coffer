@@ -30,6 +30,7 @@ export const incomeSchema = z.object({
   source: z.string().min(1, 'Source is required').max(100),
   currency: z.enum(['BRL', 'USD', 'CLP']),
   amount: z.number().positive('Amount must be greater than zero'),
+  recurring: z.boolean().optional(),
 })
 
 export const monthKeySchema = z

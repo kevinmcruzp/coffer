@@ -5,7 +5,7 @@ import { useCurrentMonth } from './useCurrentMonth'
 import { useSession } from './useSession'
 import { openDB, writeMonth, readMonth } from '../lib/db'
 import { deriveKey, generateSalt } from '../lib/crypto'
-import type { Expense } from '../types'
+import type { Expense, Income } from '../types'
 
 vi.mock('./useSession')
 
@@ -43,6 +43,22 @@ const nonFixedExpense: Expense = {
   debit: 150,
   credit: 0,
   fixed: false,
+}
+
+const recurringIncome: Income = {
+  id: 'i1',
+  source: 'Salary',
+  currency: 'BRL',
+  amount: 5000,
+  recurring: true,
+}
+
+const nonRecurringIncome: Income = {
+  id: 'i2',
+  source: 'Bonus',
+  currency: 'BRL',
+  amount: 1000,
+  recurring: false,
 }
 
 describe('useCurrentMonth — navigation', () => {
@@ -186,6 +202,76 @@ describe('useCurrentMonth — cloning fixed expenses', () => {
 
     const newMonth = await readMonth(db, '2025-07', key)
     expect(newMonth.expenses).toHaveLength(0)
+  })
+})
+
+describe('useCurrentMonth — cloning recurring incomes', () => {
+  it('clones recurring incomes to new month', async () => {
+    const { db, key } = await makeContext()
+    await writeMonth(db, '2025-06', {
+      key: '2025-06',
+      expenses: [],
+      incomes: [recurringIncome, nonRecurringIncome],
+      saving: 0,
+      adjustment: 0,
+      budget: 0,
+    }, key)
+    mockSession(db, key)
+
+    const { result } = renderHook(() => useCurrentMonth('2025-06'))
+    await act(async () => { await result.current.goForward() })
+
+    const newMonth = await readMonth(db, '2025-07', key)
+    expect(newMonth.incomes).toHaveLength(1)
+    expect(newMonth.incomes[0].source).toBe('Salary')
+    expect(newMonth.incomes[0].recurring).toBe(true)
+  })
+
+  it('assigns new ids to cloned recurring incomes', async () => {
+    const { db, key } = await makeContext()
+    await writeMonth(db, '2025-06', {
+      key: '2025-06',
+      expenses: [],
+      incomes: [recurringIncome],
+      saving: 0,
+      adjustment: 0,
+      budget: 0,
+    }, key)
+    mockSession(db, key)
+
+    const { result } = renderHook(() => useCurrentMonth('2025-06'))
+    await act(async () => { await result.current.goForward() })
+
+    const newMonth = await readMonth(db, '2025-07', key)
+    expect(newMonth.incomes[0].id).not.toBe(recurringIncome.id)
+  })
+
+  it('does not duplicate recurring income already in target month', async () => {
+    const { db, key } = await makeContext()
+    await writeMonth(db, '2025-06', {
+      key: '2025-06',
+      expenses: [],
+      incomes: [recurringIncome],
+      saving: 0,
+      adjustment: 0,
+      budget: 0,
+    }, key)
+    await writeMonth(db, '2025-07', {
+      key: '2025-07',
+      expenses: [],
+      incomes: [{ ...recurringIncome, id: 'i-existing' }],
+      saving: 0,
+      adjustment: 0,
+      budget: 0,
+    }, key)
+    mockSession(db, key)
+
+    const { result } = renderHook(() => useCurrentMonth('2025-06'))
+    await act(async () => { await result.current.goForward() })
+
+    const newMonth = await readMonth(db, '2025-07', key)
+    expect(newMonth.incomes).toHaveLength(1)
+    expect(newMonth.incomes[0].id).toBe('i-existing')
   })
 })
 
