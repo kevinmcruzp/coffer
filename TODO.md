@@ -450,20 +450,20 @@ Objetivo: parar de redigitar salário todo mês. Hoje só despesa com `fixed: tr
 
 ---
 
-## Iteração 30 — README e docs de open source
+## Iteração 30 — README e docs de open source ✅
 
 Objetivo: deixar o projeto apresentável para contribuidores e usuários. Hoje o README tem 20 linhas.
 
 **Tarefas:**
-- [ ] Reescrever `README.md` com: hero com logo/banner, descrição curta, **badges** (licença, build, versão), lista de features, screenshots/gifs, seção "Why Coffer?" (motivação), stack, instruções de instalação/dev, privacy/security model, roadmap, link para CONTRIBUTING
+- [x] Reescrever `README.md` com: descrição curta, **badges** (licença, build), lista de features, seção "Why Coffer?" (motivação), stack, instruções de instalação/dev, privacy/security model, roadmap, link para CONTRIBUTING
 - [ ] Criar `docs/screenshots/` com prints do Setup, Expenses, Summary, Annual, QuickAdd, Backup — referenciar no README
 - [ ] (Opcional) Gravar gif demo curto (~15s) do fluxo principal: setup → adicionar despesa → ver summary → backup
-- [ ] Criar `CONTRIBUTING.md`: como rodar, como abrir issue, como abrir PR, estilo de commit (Conventional Commits), estilo de código (eslint/prettier), como rodar testes
-- [ ] Criar `LICENSE` (MIT sugerido — simples, permissivo)
-- [ ] Criar `CODE_OF_CONDUCT.md` (Contributor Covenant boilerplate)
-- [ ] `.github/ISSUE_TEMPLATE/` com bug report e feature request
-- [ ] `.github/PULL_REQUEST_TEMPLATE.md`
-- [ ] `.github/workflows/ci.yml` — GitHub Actions rodando lint + test + build em cada PR
+- [x] Criar `CONTRIBUTING.md`: como rodar, como abrir issue, como abrir PR, estilo de commit (Conventional Commits), estilo de código (eslint/prettier), como rodar testes
+- [x] Criar `LICENSE` (MIT sugerido — simples, permissivo)
+- [x] Criar `CODE_OF_CONDUCT.md` (Contributor Covenant boilerplate)
+- [x] `.github/ISSUE_TEMPLATE/` com bug report e feature request
+- [x] `.github/PULL_REQUEST_TEMPLATE.md`
+- [x] `.github/workflows/ci.yml` — GitHub Actions rodando lint + test + build em cada PR
 
 ---
 
