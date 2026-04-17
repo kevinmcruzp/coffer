@@ -32,10 +32,12 @@ describe('SetupScreen', () => {
     expect(screen.getByText('Passwords do not match.')).toBeInTheDocument()
   })
 
-  it('enables submit when passwords match and meet length requirement', async () => {
+  it('keeps submit disabled until no-recovery is acknowledged', async () => {
     render(<SetupScreen onSetup={noop} />)
     await userEvent.type(screen.getByLabelText('Master password'), 'password123')
     await userEvent.type(screen.getByLabelText('Confirm password'), 'password123')
+    expect(screen.getByRole('button', { name: 'Create vault' })).toBeDisabled()
+    await userEvent.click(screen.getByLabelText(/no password recovery/i))
     expect(screen.getByRole('button', { name: 'Create vault' })).toBeEnabled()
   })
 
@@ -44,6 +46,7 @@ describe('SetupScreen', () => {
     render(<SetupScreen onSetup={onSetup} />)
     await userEvent.type(screen.getByLabelText('Master password'), 'password123')
     await userEvent.type(screen.getByLabelText('Confirm password'), 'password123')
+    await userEvent.click(screen.getByLabelText(/no password recovery/i))
     await userEvent.click(screen.getByRole('button', { name: 'Create vault' }))
     expect(onSetup).toHaveBeenCalledWith('password123')
   })
@@ -53,6 +56,7 @@ describe('SetupScreen', () => {
     render(<SetupScreen onSetup={onSetup} />)
     await userEvent.type(screen.getByLabelText('Master password'), 'password123')
     await userEvent.type(screen.getByLabelText('Confirm password'), 'password123')
+    await userEvent.click(screen.getByLabelText(/no password recovery/i))
     await userEvent.click(screen.getByRole('button', { name: 'Create vault' }))
     expect(await screen.findByText('Failed to set up. Please try again.')).toBeInTheDocument()
   })

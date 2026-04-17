@@ -11,6 +11,7 @@ import { MonthSummary } from './components/MonthSummary'
 import { AnnualView } from './components/AnnualView'
 import { FixedPanel } from './components/FixedPanel'
 import { QuickAddModal } from './components/QuickAddModal'
+import { SettingsModal } from './components/SettingsModal'
 import { ImportScreen } from './components/ImportScreen'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ToastProvider } from './components/Toast'
@@ -56,6 +57,7 @@ function MainApp() {
   const [tab, setTab] = useState<Tab>('expenses')
   const [importing, setImporting] = useState(false)
   const [quickAdd, setQuickAdd] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [restoreFile, setRestoreFile] = useState<File | null>(null)
   const [restorePassword, setRestorePassword] = useState('')
   const { toast } = useToast()
@@ -150,6 +152,12 @@ function MainApp() {
             Import
           </button>
           <button
+            onClick={() => setSettingsOpen(true)}
+            className="text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-gray-800 transition-colors"
+          >
+            Settings
+          </button>
+          <button
             onClick={logout}
             className="text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-gray-800 transition-colors"
           >
@@ -159,6 +167,8 @@ function MainApp() {
       </header>
 
       {quickAdd && <QuickAddModal monthKey={monthKey} onClose={() => setQuickAdd(false)} />}
+
+      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
 
       {restoreFile && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
