@@ -26,7 +26,7 @@ async function compress(text: string): Promise<Uint8Array> {
 async function decompress(bytes: Uint8Array): Promise<string> {
   const stream = new DecompressionStream('gzip')
   const writer = stream.writable.getWriter()
-  writer.write(bytes)
+  writer.write(new Uint8Array(bytes))
   writer.close()
   const buffer = await new Response(stream.readable).arrayBuffer()
   return new TextDecoder().decode(buffer)

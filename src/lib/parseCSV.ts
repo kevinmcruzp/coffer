@@ -108,6 +108,6 @@ export function parseCSV(text: string): ParseCSVResult {
 
   return {
     ok: true,
-    data: { expenses, incomes, saving, adjustment },
+    data: { expenses, incomes, saving, adjustment, budget: 0 },
   }
 }

@@ -35,14 +35,16 @@ export function PieChart({ slices, title }: Props) {
   }
 
   const active = slices.filter(s => s.value > 0)
-  let cursor = -90
-  const paths = active.map(s => {
-    const sweep = (s.value / total) * 360
-    const start = cursor
-    const end = cursor + sweep
-    cursor = end
-    return { ...s, start, end, sweep }
-  })
+  const paths = active.reduce<Array<Slice & { start: number; end: number; sweep: number }>>(
+    (acc, s) => {
+      const sweep = (s.value / total) * 360
+      const start = acc.length === 0 ? -90 : acc[acc.length - 1].end
+      const end = start + sweep
+      acc.push({ ...s, start, end, sweep })
+      return acc
+    },
+    [],
+  )
 
   return (
     <div className="flex flex-col items-center gap-1">

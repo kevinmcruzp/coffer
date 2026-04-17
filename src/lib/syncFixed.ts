@@ -21,10 +21,17 @@ export function syncFixed(prev: MonthData, current: MonthData): Omit<Expense, 'i
       return e.fixed
     })
     .filter(e => !existingKeys.has(`${e.name.toLowerCase()}::${e.category}`))
-    .map(({ id: _, installments, ...rest }) => {
-      const next: Omit<Expense, 'id'> = { ...rest, fixed: false }
-      if (installments !== undefined && installments > 1) {
-        next.installments = installments - 1
+    .map(e => {
+      const next: Omit<Expense, 'id'> = {
+        name: e.name,
+        category: e.category,
+        currency: e.currency,
+        debit: e.debit,
+        credit: e.credit,
+        fixed: false,
+      }
+      if (e.installments !== undefined && e.installments > 1) {
+        next.installments = e.installments - 1
       }
       return next
     })

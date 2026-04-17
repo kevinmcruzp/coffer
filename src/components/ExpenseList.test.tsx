@@ -10,7 +10,7 @@ vi.mock('../hooks/useExpenses')
 vi.mock('../hooks/useSession', () => ({
   useSession: () => ({ state: { status: 'unlocked', key: {} }, db: {} }),
 }))
-vi.mock('./Toast', () => ({
+vi.mock('../hooks/useToast', () => ({
   useToast: () => ({ toast: vi.fn() }),
 }))
 

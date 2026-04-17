@@ -5,7 +5,7 @@ export function parseOrThrow<T>(schema: z.ZodType<T>, value: unknown): T {
     return schema.parse(value)
   } catch (err) {
     if (err instanceof ZodError) {
-      throw new Error(err.errors.map(e => e.message).join('; '))
+      throw new Error(err.issues.map(i => i.message).join('; '))
     }
     throw err
   }
