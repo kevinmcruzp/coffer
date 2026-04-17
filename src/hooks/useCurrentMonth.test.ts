@@ -5,7 +5,7 @@ import { useCurrentMonth } from './useCurrentMonth'
 import { useSession } from './useSession'
 import { openDB, writeMonth, readMonth } from '../lib/db'
 import { deriveKey, generateSalt } from '../lib/crypto'
-import type { Expense, MonthData } from '../types'
+import type { Expense } from '../types'
 
 vi.mock('./useSession')
 

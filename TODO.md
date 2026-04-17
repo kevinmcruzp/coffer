@@ -405,19 +405,20 @@ Objetivo: registrar compras parceladas no cartão de crédito de forma simples e
 
 ---
 
-## Iteração 27 — Tech debt: destravar produção
+## Iteração 27 — Tech debt: destravar produção ✅
 
 Objetivo: `npm run build` e `npm run lint` voltarem a passar. Hoje só `dev` funciona; deploy e CI estão quebrados.
 
 **Tarefas:**
-- [ ] `src/lib/schemas.ts` — migrar `err.errors` → `err.issues` (Zod v4) e tipar o map
-- [ ] `src/lib/backup.ts:29` — resolver incompatibilidade de `Uint8Array<ArrayBufferLike>` com `BufferSource` (cast ou `new Uint8Array(bytes)` de cópia)
-- [ ] `src/lib/parseCSV.ts:111` — incluir `budget: 0` no retorno de `Omit<MonthData, 'key'>`
-- [ ] `src/hooks/useYearSummary.ts` — tirar `setState` de dentro do effect body (mover para dentro do `.then`/`.catch`)
-- [ ] `src/components/Toast.tsx` — mover `useToast` hook para um arquivo separado (react-refresh exige só componentes no arquivo)
-- [ ] `src/lib/syncFixed.ts` — eliminar o `_` não-usado (desestruturar sem atribuir id)
-- [ ] `src/hooks/useCurrentMonth.test.ts` — remover import `MonthData` não usado
-- [ ] Garantir que `npm run build` e `npm run lint` passem limpos
+- [x] `src/lib/schemas.ts` — migrar `err.errors` → `err.issues` (Zod v4) e tipar o map
+- [x] `src/lib/backup.ts:29` — resolver incompatibilidade de `Uint8Array<ArrayBufferLike>` com `BufferSource` (cast ou `new Uint8Array(bytes)` de cópia)
+- [x] `src/lib/parseCSV.ts:111` — incluir `budget: 0` no retorno de `Omit<MonthData, 'key'>`
+- [x] `src/hooks/useYearSummary.ts` — tirar `setState` de dentro do effect body (mover para dentro do `.then`/`.catch`)
+- [x] `src/components/Toast.tsx` — mover `useToast` hook para um arquivo separado (react-refresh exige só componentes no arquivo)
+- [x] `src/components/PieChart.tsx` — eliminar reassign de `cursor` após render (react-hooks/immutability) via `reduce`
+- [x] `src/lib/syncFixed.ts` — eliminar o `_` não-usado (desestruturar sem atribuir id)
+- [x] `src/hooks/useCurrentMonth.test.ts` — remover import `MonthData` não usado
+- [x] Garantir que `npm run build` e `npm run lint` passem limpos
 
 ---
 

@@ -67,9 +67,7 @@ export function useYearSummary(year: number): UseYearSummaryResult {
   useEffect(() => {
     if (!db || !cryptoKey) return
 
-    setLoading(true)
-    setError(null)
-    setWarning(null)
+    let cancelled = false
 
     async function load() {
       const allKeys = await listMonths(db!)
@@ -124,17 +122,24 @@ export function useYearSummary(year: number): UseYearSummaryResult {
         }
       }
 
-      if (failed.length > 0) {
-        setWarning(`Could not load ${failed.length} month(s): ${failed.join(', ')}`)
-      }
-      setRows(result)
-      setLoading(false)
+      return { result, failed }
     }
 
-    load().catch(err => {
-      setError(err instanceof Error ? err.message : String(err))
-      setLoading(false)
-    })
+    load()
+      .then(({ result, failed }) => {
+        if (cancelled) return
+        setRows(result)
+        setError(null)
+        setWarning(failed.length > 0 ? `Could not load ${failed.length} month(s): ${failed.join(', ')}` : null)
+        setLoading(false)
+      })
+      .catch(err => {
+        if (cancelled) return
+        setError(err instanceof Error ? err.message : String(err))
+        setLoading(false)
+      })
+
+    return () => { cancelled = true }
   }, [year, db, cryptoKey])
 
   const totals: YearTotals = rows.reduce<YearTotals>(
