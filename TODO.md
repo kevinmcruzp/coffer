@@ -405,6 +405,98 @@ Objetivo: registrar compras parceladas no cartão de crédito de forma simples e
 
 ---
 
+## Iteração 27 — Tech debt: destravar produção
+
+Objetivo: `npm run build` e `npm run lint` voltarem a passar. Hoje só `dev` funciona; deploy e CI estão quebrados.
+
+**Tarefas:**
+- [ ] `src/lib/schemas.ts` — migrar `err.errors` → `err.issues` (Zod v4) e tipar o map
+- [ ] `src/lib/backup.ts:29` — resolver incompatibilidade de `Uint8Array<ArrayBufferLike>` com `BufferSource` (cast ou `new Uint8Array(bytes)` de cópia)
+- [ ] `src/lib/parseCSV.ts:111` — incluir `budget: 0` no retorno de `Omit<MonthData, 'key'>`
+- [ ] `src/hooks/useYearSummary.ts` — tirar `setState` de dentro do effect body (mover para dentro do `.then`/`.catch`)
+- [ ] `src/components/Toast.tsx` — mover `useToast` hook para um arquivo separado (react-refresh exige só componentes no arquivo)
+- [ ] `src/lib/syncFixed.ts` — eliminar o `_` não-usado (desestruturar sem atribuir id)
+- [ ] `src/hooks/useCurrentMonth.test.ts` — remover import `MonthData` não usado
+- [ ] Garantir que `npm run build` e `npm run lint` passem limpos
+
+---
+
+## Iteração 28 — Segurança de sessão e onboarding
+
+Objetivo: fechar brechas óbvias de segurança num cofre que roda no browser.
+
+**Problema:** hoje, se o usuário abrir o Coffer e deixar a aba aberta, a chave derivada fica em memória indefinidamente. Alguém com acesso físico à máquina vê tudo. Além disso, o setup não avisa que a senha não tem recovery.
+
+**Tarefas:**
+- [ ] Auto-lock por inatividade — timeout configurável (default 15 min). Monitorar atividade (mousemove, keydown, visibilitychange); depois do timeout, chamar `logout()` e voltar para LoginScreen
+- [ ] Campo nas settings para o usuário ajustar o timeout (5/15/30/60 min ou "never")
+- [ ] Lock automático quando a aba perde foco por mais do que o timeout (não imediatamente, ou atrapalha copiar/colar)
+- [ ] Aviso explícito no SetupScreen: "Se você esquecer esta senha, todos os seus dados ficarão inacessíveis — não há como recuperar. Anote em local seguro."
+- [ ] Checkbox "Eu entendo que não há recuperação de senha" obrigatório antes de criar o cofre
+- [ ] Testes: inatividade dispara logout; checkbox bloqueia submit
+
+---
+
+## Iteração 29 — Receita recorrente
+
+Objetivo: parar de redigitar salário todo mês. Hoje só despesa com `fixed: true` clona; renda não.
+
+**Tarefas:**
+- [ ] Campo `recurring?: boolean` em `Income` e `incomeSchema`
+- [ ] Ao navegar para mês novo em `useCurrentMonth.goForward`, clonar também incomes `recurring: true` (como já faz com fixed expenses)
+- [ ] Checkbox "Repeat" na linha de Income (mesmo padrão visual de Expense)
+- [ ] Testes: clonagem inclui apenas recorrentes; não duplica em mês já existente
+
+---
+
+## Iteração 30 — README e docs de open source
+
+Objetivo: deixar o projeto apresentável para contribuidores e usuários. Hoje o README tem 20 linhas.
+
+**Tarefas:**
+- [ ] Reescrever `README.md` com: hero com logo/banner, descrição curta, **badges** (licença, build, versão), lista de features, screenshots/gifs, seção "Why Coffer?" (motivação), stack, instruções de instalação/dev, privacy/security model, roadmap, link para CONTRIBUTING
+- [ ] Criar `docs/screenshots/` com prints do Setup, Expenses, Summary, Annual, QuickAdd, Backup — referenciar no README
+- [ ] (Opcional) Gravar gif demo curto (~15s) do fluxo principal: setup → adicionar despesa → ver summary → backup
+- [ ] Criar `CONTRIBUTING.md`: como rodar, como abrir issue, como abrir PR, estilo de commit (Conventional Commits), estilo de código (eslint/prettier), como rodar testes
+- [ ] Criar `LICENSE` (MIT sugerido — simples, permissivo)
+- [ ] Criar `CODE_OF_CONDUCT.md` (Contributor Covenant boilerplate)
+- [ ] `.github/ISSUE_TEMPLATE/` com bug report e feature request
+- [ ] `.github/PULL_REQUEST_TEMPLATE.md`
+- [ ] `.github/workflows/ci.yml` — GitHub Actions rodando lint + test + build em cada PR
+
+---
+
+## Fase 2 — Depois que a Fase 1 estiver estável
+
+Objetivo: ampliar o alcance da aplicação sem perder o local-first.
+
+### 2.1 — Executável desktop
+
+- [ ] Avaliar Tauri vs Electron (Tauri preferível: binário ~5 MB vs ~150 MB, usa WebView do SO)
+- [ ] Wrapper Tauri com o build Vite — `tauri init` + configurar ícone/meta
+- [ ] Builds assinados para macOS (.dmg), Windows (.msi), Linux (.AppImage)
+- [ ] CI cross-platform para gerar releases automaticamente
+- [ ] Auto-updater (Tauri tem embutido)
+
+### 2.2 — Sync de backup para cloud (opcional, E2E)
+
+- [ ] Modelo: usuário escolhe provider (Google Drive / Dropbox / iCloud / WebDAV), Coffer faz upload do `.coffer` criptografado — nunca a chave
+- [ ] O arquivo `.coffer` já é self-contained (salt embutido + ciphertext); serve como unidade de sync
+- [ ] Implementar OAuth para Google Drive primeiro (maior alcance)
+- [ ] Sync automático configurável: após cada write, a cada N minutos, ou só manual
+- [ ] Detectar conflito (arquivo remoto mais recente) e oferecer merge/escolha
+- [ ] Tela de configuração "Cloud sync" nas settings
+- [ ] Nunca enviar senha/chave — o provider só vê o arquivo criptografado
+
+### 2.3 — Nice-to-haves
+
+- [ ] Deletar mês (com confirmação forte, ex: digitar o `YYYY-MM`)
+- [ ] Import OFX/QIF (formatos de extrato bancário)
+- [ ] Export para PDF do resumo mensal
+- [ ] Modo light (hoje só dark)
+
+---
+
 ## Transversal (aplicar ao longo de todas as iterações)
 
 - [x] Layout responsivo mobile-first em todos os componentes
