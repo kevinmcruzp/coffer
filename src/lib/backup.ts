@@ -1,6 +1,7 @@
 import { encrypt, decrypt, deriveKey } from './crypto'
 import { uint8ArrayToBase64, base64ToUint8Array } from './encoding'
 import { listMonths, readMonth, readSetting, writeMonth } from './db'
+import { monthDataSchema } from './schemas'
 import type { MonthData } from '../types'
 
 type BackupPayload = {
@@ -93,7 +94,9 @@ export async function importBackup(
 
   let count = 0
   for (const [k, monthData] of Object.entries(payload.months)) {
-    await writeMonth(db, k, monthData, sessionKey)
+    const parsed = monthDataSchema.safeParse(monthData)
+    if (!parsed.success) throw new Error('Corrupted backup file')
+    await writeMonth(db, k, parsed.data, sessionKey)
     count++
   }
   return count
