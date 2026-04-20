@@ -16,6 +16,8 @@ function fmtBRL(value: number): string {
 }
 
 export function exportCSV(data: MonthData): string {
+  // Only BRL amounts are included — the Sheets template is BRL-only.
+  // Non-BRL entries are silently excluded from the export.
   const totalIncome = data.incomes
     .filter(i => i.currency === 'BRL')
     .reduce((s, i) => s + i.amount, 0)
@@ -28,6 +30,7 @@ export function exportCSV(data: MonthData): string {
     .filter(e => e.currency === 'BRL')
     .reduce((s, e) => s + e.credit, 0)
 
+  // balance = income - expenses - saving + adjustment
   const balance = totalIncome - totalDebit - totalCredit - data.saving + data.adjustment
   const totalSpent = totalDebit + totalCredit
 

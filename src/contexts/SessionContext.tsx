@@ -33,6 +33,9 @@ export function SessionProvider({ children, idbFactory }: Props) {
     })
   }, [idbFactory])
 
+  // First-time setup: generates a random salt, derives a key from the password,
+  // and stores an encrypted verification token. The salt is stored in plaintext
+  // (it must be readable without a key to allow re-derivation on future logins).
   async function setup(password: string) {
     const dbInstance = dbRef.current
     if (!dbInstance) throw new Error('Database not ready')
@@ -44,6 +47,8 @@ export function SessionProvider({ children, idbFactory }: Props) {
     setState({ status: 'unlocked', key })
   }
 
+  // Subsequent logins: retrieves the stored salt, re-derives the key from the
+  // password + salt, then verifies correctness by decrypting the stored token.
   async function login(password: string) {
     const dbInstance = dbRef.current
     if (!dbInstance) throw new Error('Database not ready')

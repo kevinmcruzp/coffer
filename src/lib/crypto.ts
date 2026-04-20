@@ -1,6 +1,11 @@
 import { base64ToUint8Array, uint8ArrayToBase64 } from './encoding'
 
+// 200k iterations per OWASP recommendation for PBKDF2-SHA256 (as of 2023).
 const PBKDF2_ITERATIONS = 200_000
+
+// Fixed canary string encrypted with the derived key and stored in the DB.
+// On login, decrypting this token back to the same string proves the password is correct
+// without exposing any real data.
 const VERIFICATION_PLAINTEXT = 'coffer-v1-ok'
 
 export function generateSalt(): Uint8Array<ArrayBuffer> {
@@ -33,6 +38,8 @@ export async function deriveKey(password: string, salt: Uint8Array<ArrayBuffer>)
   )
 }
 
+// Output format: base64(IV[12 bytes] + AES-GCM ciphertext).
+// The IV is prepended so decrypt() can split it off without out-of-band storage.
 export async function encrypt(plaintext: string, key: CryptoKey): Promise<string> {
   const iv = generateIV()
   const ciphertext = await crypto.subtle.encrypt(

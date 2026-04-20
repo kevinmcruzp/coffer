@@ -33,6 +33,14 @@ async function decompress(bytes: Uint8Array): Promise<string> {
   return new TextDecoder().decode(buffer)
 }
 
+// Backup file format: JSON envelope { version, salt, ciphertext }
+//   - salt: random, stored in the envelope so the backup password can be re-derived on import
+//   - ciphertext: AES-GCM encrypted payload of gzip(JSON({ version, months }))
+//
+// The backup password is independent of the session password. Re-deriving the key from
+// the backup salt + backup password allows restoring to a different account or device.
+// The session key (passed as `key` to importBackup) is only used to write months to the DB.
+
 export async function exportBackup(db: IDBDatabase, key: CryptoKey): Promise<Blob> {
   const saltB64 = await readSetting(db, 'salt')
   if (!saltB64) throw new Error('Session not initialized')
@@ -92,6 +100,7 @@ export async function importBackup(
     throw new Error('Corrupted backup file')
   }
 
+  // Validate each month before writing — all-or-nothing: a single invalid entry aborts the restore.
   let count = 0
   for (const [k, monthData] of Object.entries(payload.months)) {
     const parsed = monthDataSchema.safeParse(monthData)

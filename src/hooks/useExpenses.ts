@@ -79,9 +79,12 @@ export function useExpenses(monthKey: string): UseExpensesResult {
     return () => { cancelled = true }
   }, [monthKey, db, cryptoKey])
 
-  // loading = true until the fetch for the current monthKey completes
+  // loading stays true while any previous fetch is in flight for a different monthKey.
+  // resolvedKey tracks which fetch last settled, so switching months never shows stale data.
   const loading = !db || !cryptoKey || fetchState.resolvedKey !== monthKey
 
+  // Mutations follow a write-then-set-state pattern: the DB is written first; only on
+  // success is the local state updated. If writeMonth throws, the state is left unchanged.
   const add = useCallback(async (input: Omit<Expense, 'id'>) => {
     if (!db || !cryptoKey) throw new Error('Session not active')
     const expense = parseOrThrow(expenseSchema, { ...input, id: crypto.randomUUID() })

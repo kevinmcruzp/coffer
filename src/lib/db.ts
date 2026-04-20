@@ -5,6 +5,10 @@ import type { MonthData } from '../types'
 const DB_NAME = 'coffer'
 const DB_VERSION = 1
 
+// Object stores:
+//   settings — key/value strings: "salt", "verificationToken", "lockTimeoutMinutes"
+//   months   — key = YYYY-MM, value = encrypted MonthData JSON (via writeMonth/readMonth)
+
 export function openDB(idb: IDBFactory = indexedDB): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = idb.open(DB_NAME, DB_VERSION)
