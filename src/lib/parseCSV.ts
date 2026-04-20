@@ -16,6 +16,7 @@
  * - Receitas total is imported as a single income entry with source "Receitas"
  */
 
+import { round2 } from './math'
 import type { Category, Expense, Income, MonthData } from '../types'
 
 export type ParseCSVResult =
@@ -34,7 +35,8 @@ function parseBRLAmount(raw: string): number {
   const negative = cleaned.startsWith('(') && cleaned.endsWith(')')
   const digits = negative ? cleaned.slice(1, -1) : cleaned
   const value = parseFloat(digits)
-  return isNaN(value) ? 0 : negative ? -value : value
+  if (isNaN(value)) return 0
+  return negative ? -round2(value) : round2(value)
 }
 
 function splitCSVRow(line: string): string[] {

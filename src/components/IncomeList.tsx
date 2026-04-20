@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useIncomes } from '../hooks/useIncomes'
 import { useToast } from '../hooks/useToast'
 import { userMessage } from '../lib/errorMessages'
+import { round2, parseMoney } from '../lib/math'
 import { CURRENCIES } from '../types'
 import type { Currency, Income } from '../types'
 import type { IncomeTotals } from '../hooks/useIncomes'
@@ -53,7 +54,7 @@ function IncomeRow({ income, onUpdate, onRemove }: RowProps) {
     } else if (editField === 'amount') {
       const v = parseFloat(draft)
       if (isNaN(v)) { setEditField(null); return }
-      changes.amount = v
+      changes.amount = round2(v)
     }
     try {
       await onUpdate(income.id, changes)
@@ -178,7 +179,7 @@ function AddIncomeForm({ onAdd }: AddFormProps) {
   async function handleAdd() {
     setFormError(null)
     try {
-      await onAdd({ source: source.trim(), currency, amount: parseFloat(amount) || 0 })
+      await onAdd({ source: source.trim(), currency, amount: parseMoney(amount) })
       setSource('')
       setAmount('0')
     } catch (err) {

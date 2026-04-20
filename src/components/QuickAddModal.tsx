@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useExpenses } from '../hooks/useExpenses'
 import { userMessage } from '../lib/errorMessages'
+import { round2, parseMoney } from '../lib/math'
 import { CURRENCIES } from '../types'
 import type { Currency } from '../types'
 
@@ -33,7 +34,7 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
         name: name.trim(),
         category: 'other',
         currency,
-        debit: parseFloat(debit) || 0,
+        debit: parseMoney(debit),
         credit: perParcel,
         fixed: false,
         ...(isParceled ? { installments: parcelsNum } : {}),
@@ -119,7 +120,7 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
             />
             {isParceled && (
               <p data-testid="parcel-hint" className="text-xs text-amber-400/90 pt-1">
-                ↳ {parcelsNum}× de {fmt(perParcel)} = {fmt(creditNum)}
+                ↳ {parcelsNum}× de {fmt(perParcel)} = {fmt(round2(perParcel * parcelsNum))}
               </p>
             )}
           </div>

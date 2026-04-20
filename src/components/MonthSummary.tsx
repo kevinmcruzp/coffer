@@ -4,6 +4,7 @@ import { useIncomes } from '../hooks/useIncomes'
 import { useMonthMeta } from '../hooks/useMonthMeta'
 import { useToast } from '../hooks/useToast'
 import { userMessage } from '../lib/errorMessages'
+import { round2, parseMoney } from '../lib/math'
 import { PieChart } from './PieChart'
 import { CURRENCIES } from '../types'
 import type { Currency } from '../types'
@@ -62,7 +63,7 @@ export function MonthSummary({ monthKey }: Props) {
 
   async function commitSaving() {
     if (savingDraft === null) return
-    const value = Math.max(parseFloat(savingDraft) || 0, 0)
+    const value = Math.max(parseMoney(savingDraft), 0)
     try {
       await setSaving(value)
       toast('Saving updated')
@@ -74,7 +75,7 @@ export function MonthSummary({ monthKey }: Props) {
 
   async function commitBudget() {
     if (budgetDraft === null) return
-    const value = Math.max(parseFloat(budgetDraft) || 0, 0)
+    const value = Math.max(parseMoney(budgetDraft), 0)
     try {
       await setBudget(value)
       toast('Budget updated')
@@ -86,7 +87,7 @@ export function MonthSummary({ monthKey }: Props) {
 
   async function commitAdjustment() {
     if (adjustmentDraft === null) return
-    const value = parseFloat(adjustmentDraft) || 0
+    const value = parseMoney(adjustmentDraft)
     try {
       await setAdjustment(value)
       toast('Adjustment updated')
@@ -104,7 +105,7 @@ export function MonthSummary({ monthKey }: Props) {
         const credit = expenseTotals[c].credit
         const savingBRL = c === 'BRL' ? saving : 0
         const adjBRL = c === 'BRL' ? adjustment : 0
-        const balance = income - debit - credit - savingBRL + adjBRL
+        const balance = round2(income - debit - credit - savingBRL + adjBRL)
         const balanceHighlight = balance > 0 ? 'positive' : balance < 0 ? 'negative' : 'neutral'
 
         return (
@@ -144,7 +145,7 @@ export function MonthSummary({ monthKey }: Props) {
               <span>Budget</span>
               <span className={over ? 'text-red-400 font-semibold' : ''}>
                 {fmt(spent, 'BRL')} / {fmt(budget, 'BRL')}
-                {over && <span className="ml-2 text-red-400">+{fmt(spent - budget, 'BRL')} over</span>}
+                {over && <span className="ml-2 text-red-400">+{fmt(round2(spent - budget), 'BRL')} over</span>}
               </span>
             </div>
             <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
@@ -160,10 +161,10 @@ export function MonthSummary({ monthKey }: Props) {
       {/* Pie charts — BRL expenses breakdown */}
       {expenses.some(e => e.currency === 'BRL') && (() => {
         const brl = expenses.filter(e => e.currency === 'BRL')
-        const fixedTotal = brl.filter(e => e.category === 'fixed').reduce((s, e) => s + e.debit + e.credit, 0)
-        const otherTotal = brl.filter(e => e.category === 'other').reduce((s, e) => s + e.debit + e.credit, 0)
-        const debitTotal = brl.reduce((s, e) => s + e.debit, 0)
-        const creditTotal = brl.reduce((s, e) => s + e.credit, 0)
+        const fixedTotal = round2(brl.filter(e => e.category === 'fixed').reduce((s, e) => s + e.debit + e.credit, 0))
+        const otherTotal = round2(brl.filter(e => e.category === 'other').reduce((s, e) => s + e.debit + e.credit, 0))
+        const debitTotal = round2(brl.reduce((s, e) => s + e.debit, 0))
+        const creditTotal = round2(brl.reduce((s, e) => s + e.credit, 0))
         return (
           <div className="flex justify-around flex-wrap gap-4 pt-2">
             <PieChart

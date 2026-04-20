@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { listMonths, readMonth } from '../lib/db'
 import { userMessage } from '../lib/errorMessages'
+import { round2 } from '../lib/math'
 import { useSession } from './useSession'
 import { CURRENCIES } from '../types'
 import type { Currency } from '../types'
@@ -51,10 +52,9 @@ function computeBalance(
 ): Record<Currency, number> {
   const result = zeroCurrencyMap()
   for (const c of CURRENCIES) {
-    result[c] = income[c] - debit[c] - credit[c]
+    result[c] = round2(income[c] - debit[c] - credit[c])
   }
-  result.BRL -= saving
-  result.BRL += adjustment
+  result.BRL = round2(result.BRL - saving + adjustment)
   return result
 }
 
@@ -107,6 +107,12 @@ export function useYearSummary(year: number): UseYearSummaryResult {
           for (const e of data.expenses) {
             debit[e.currency] += e.debit
             credit[e.currency] += e.credit
+          }
+
+          for (const c of CURRENCIES) {
+            income[c] = round2(income[c])
+            debit[c] = round2(debit[c])
+            credit[c] = round2(credit[c])
           }
 
           const suffix = monthKey.split('-')[1]
@@ -167,6 +173,13 @@ export function useYearSummary(year: number): UseYearSummaryResult {
     },
   )
 
+  for (const c of CURRENCIES) {
+    totals.income[c] = round2(totals.income[c])
+    totals.debit[c] = round2(totals.debit[c])
+    totals.credit[c] = round2(totals.credit[c])
+  }
+  totals.saving = round2(totals.saving)
+  totals.adjustment = round2(totals.adjustment)
   totals.balance = computeBalance(totals.income, totals.debit, totals.credit, totals.saving, totals.adjustment)
 
   return { rows, totals, loading, error, warning }
