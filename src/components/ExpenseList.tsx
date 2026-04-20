@@ -5,6 +5,7 @@ import { readMonth } from '../lib/db'
 import { syncFixed } from '../lib/syncFixed'
 import { useToast } from '../hooks/useToast'
 import { userMessage } from '../lib/errorMessages'
+import { round2, parseMoney } from '../lib/math'
 import { CURRENCIES } from '../types'
 import type { Category, Currency, Expense } from '../types'
 import type { Totals } from '../hooks/useExpenses'
@@ -134,11 +135,11 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
     } else if (editField === 'debit') {
       const v = parseFloat(draft)
       if (isNaN(v)) { setEditField(null); return }
-      changes.debit = v
+      changes.debit = round2(v)
     } else if (editField === 'credit') {
       const v = parseFloat(draft)
       if (isNaN(v)) { setEditField(null); return }
-      changes.credit = v
+      changes.credit = round2(v)
     }
     try {
       await onUpdate(expense.id, changes)
@@ -311,7 +312,7 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
         name: name.trim(),
         category,
         currency,
-        debit: parseFloat(debit) || 0,
+        debit: parseMoney(debit),
         credit: perParcel,
         fixed,
         ...(isParceled ? { installments: parcelsNum } : {}),
@@ -404,7 +405,7 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
       {isParceled && (
         <tr data-testid="parcel-hint">
           <td colSpan={7} className="px-2 pb-2 text-xs text-amber-400/90">
-            ↳ {parcelsNum}× de {fmtCurrency(perParcel, currency)} = {fmtCurrency(creditNum, currency)}
+            ↳ {parcelsNum}× de {fmtCurrency(perParcel, currency)} = {fmtCurrency(round2(perParcel * parcelsNum), currency)}
           </td>
         </tr>
       )}

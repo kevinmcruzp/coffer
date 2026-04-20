@@ -1,3 +1,4 @@
+import { round2 } from './math'
 import type { Expense, MonthData } from '../types'
 
 /**
@@ -28,8 +29,8 @@ export function syncFixed(prev: MonthData, current: MonthData): Omit<Expense, 'i
         name: e.name,
         category: e.category,
         currency: e.currency,
-        debit: e.debit,
-        credit: e.credit,
+        debit: round2(e.debit),
+        credit: round2(e.credit),
         fixed: false,
       }
       if (e.installments !== undefined && e.installments > 1) {

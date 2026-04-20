@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { readMonth, writeMonth } from '../lib/db'
 import { expenseSchema, parseOrThrow } from '../lib/schemas'
 import { userMessage } from '../lib/errorMessages'
+import { round2 } from '../lib/math'
 import { useSession } from './useSession'
 import { CURRENCIES } from '../types'
 import type { Currency, Expense, MonthData } from '../types'
@@ -37,6 +38,11 @@ function computeTotals(expenses: Expense[]): Totals {
     result[e.currency].debit += e.debit
     result[e.currency].credit += e.credit
     result[e.currency].total += e.debit + e.credit
+  }
+  for (const c of CURRENCIES) {
+    result[c].debit = round2(result[c].debit)
+    result[c].credit = round2(result[c].credit)
+    result[c].total = round2(result[c].total)
   }
   return result
 }

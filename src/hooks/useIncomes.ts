@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { readMonth, writeMonth } from '../lib/db'
 import { incomeSchema, parseOrThrow } from '../lib/schemas'
 import { userMessage } from '../lib/errorMessages'
+import { round2 } from '../lib/math'
 import { useSession } from './useSession'
 import { CURRENCIES } from '../types'
 import type { Currency, Income, MonthData } from '../types'
@@ -34,6 +35,9 @@ function computeTotals(incomes: Income[]): IncomeTotals {
   const result = zeroCurrencyMap()
   for (const i of incomes) {
     result[i.currency] += i.amount
+  }
+  for (const c of CURRENCIES) {
+    result[c] = round2(result[c])
   }
   return result
 }
