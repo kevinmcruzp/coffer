@@ -6,9 +6,11 @@ import type { Expense, MonthData } from '../types'
  *   - it's marked `fixed: true` and has no installments (recurring), or
  *   - it has `installments > 1` (mid-installment, parcels left to pay).
  *
- * Comparison is by name + category (case-insensitive name).
- * Returned expenses have `fixed: false` — propagation is driven by the rules above,
- * not by the flag itself. For installment items, `installments` is decremented by 1.
+ * Comparison is by name + category (case-insensitive name). Two expenses with the same
+ * name but different currencies are treated as distinct (currency is copied, not matched).
+ * Returned expenses have `fixed: false` — the output represents "expenses to add now",
+ * not a template; the recipient month decides recurrence on the next forward navigation.
+ * For installment items, `installments` is decremented by 1.
  */
 export function syncFixed(prev: MonthData, current: MonthData): Omit<Expense, 'id'>[] {
   const existingKeys = new Set(

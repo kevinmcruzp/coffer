@@ -11,6 +11,8 @@ export function useAutoLock({ enabled, timeoutMs, onLock }: Options) {
   const timerRef = useRef<number | null>(null)
   const lastActivityRef = useRef<number>(0)
 
+  // Keep the ref in sync so activity listeners (attached once) always call the latest onLock,
+  // without needing to re-attach them when the parent re-renders with a new callback.
   useEffect(() => {
     onLockRef.current = onLock
   }, [onLock])
@@ -29,6 +31,8 @@ export function useAutoLock({ enabled, timeoutMs, onLock }: Options) {
 
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
+        // If the tab was hidden long enough that the timeout would have fired,
+        // lock immediately instead of waiting for the next activity event.
         const elapsed = Date.now() - lastActivityRef.current
         if (elapsed >= timeoutMs) onLockRef.current()
         else schedule()

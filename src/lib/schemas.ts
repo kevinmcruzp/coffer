@@ -19,6 +19,7 @@ export const expenseSchema = z.object({
   debit: z.number().min(0, 'Debit value cannot be negative'),
   credit: z.number().min(0, 'Credit value cannot be negative'),
   fixed: z.boolean(),
+  // min(1): 1 means the expense is in its last month and won't propagate further (syncFixed skips installments === 1).
   installments: z.number().int('Number of installments must be a whole number').min(1, 'Installments must be at least 1').optional(),
 }).refine(
   (data) => data.debit > 0 || data.credit > 0,

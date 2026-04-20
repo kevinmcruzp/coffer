@@ -37,12 +37,15 @@ export function useMonthMeta(monthKey: string): UseMonthMetaResult {
 
   useEffect(() => {
     if (!db || !cryptoKey) return
+    let cancelled = false
 
     readMonth(db, monthKey, cryptoKey)
       .then((data) => {
+        if (cancelled) return
         setFetchState({ resolvedKey: monthKey, monthData: data, error: null })
       })
       .catch((err: unknown) => {
+        if (cancelled) return
         const msg = err instanceof Error ? err.message : String(err)
         if (msg.includes('not found')) {
           setFetchState({ resolvedKey: monthKey, monthData: emptyMonth(monthKey), error: null })
@@ -50,6 +53,8 @@ export function useMonthMeta(monthKey: string): UseMonthMetaResult {
           setFetchState({ resolvedKey: monthKey, monthData: null, error: msg })
         }
       })
+
+    return () => { cancelled = true }
   }, [monthKey, db, cryptoKey])
 
   const loading = !db || !cryptoKey || fetchState.resolvedKey !== monthKey

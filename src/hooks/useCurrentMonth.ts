@@ -35,6 +35,12 @@ export function useCurrentMonth(initial: string): UseCurrentMonthResult {
     setMonthKey(prev)
   }, [monthKey])
 
+  // goForward is async because it propagates data before navigating:
+  //   1. Reads the current month to find fixed expenses and recurring incomes.
+  //   2. Reads (or creates) the next month.
+  //   3. Merges missing fixed expenses (via syncFixed) and recurring incomes.
+  //   4. Writes the merged month, then updates monthKey.
+  // The write is skipped if the next month already exists and needs no additions.
   const goForward = useCallback(async () => {
     if (!db || !cryptoKey) return
     const next = addMonths(monthKey, 1)

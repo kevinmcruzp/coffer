@@ -39,6 +39,9 @@ function zeroCurrencyMap(): Record<Currency, number> {
   return result
 }
 
+// balance[c] = income[c] - debit[c] - credit[c], then BRL is further adjusted
+// by saving (subtracted) and adjustment (added). Saving and adjustment are BRL-only
+// because they are entered as plain numbers without a currency selector.
 function computeBalance(
   income: Record<Currency, number>,
   debit: Record<Currency, number>,
@@ -50,7 +53,6 @@ function computeBalance(
   for (const c of CURRENCIES) {
     result[c] = income[c] - debit[c] - credit[c]
   }
-  // saving and adjustment apply only to BRL
   result.BRL -= saving
   result.BRL += adjustment
   return result
@@ -116,7 +118,8 @@ export function useYearSummary(year: number): UseYearSummaryResult {
             saving: data.saving,
             adjustment: data.adjustment,
             balance: computeBalance(income, debit, credit, data.saving, data.adjustment),
-            prevBalance: prevBalances[suffix] ?? null,
+            // prevBalance = balance of the same calendar month in the prior year (year-over-year comparison).
+          prevBalance: prevBalances[suffix] ?? null,
           })
         } catch {
           failed.push(monthKey)
