@@ -10,15 +10,16 @@ function formatMonthKey(key: string): string {
   return `${MONTH_NAMES[m - 1]} ${y}`
 }
 
-type Props = Pick<UseCurrentMonthResult, 'monthKey' | 'goBack' | 'goForward'>
+type Props = Pick<UseCurrentMonthResult, 'monthKey' | 'canGoBack' | 'goBack' | 'goForward'>
 
-export function MonthNavigator({ monthKey, goBack, goForward }: Props) {
+export function MonthNavigator({ monthKey, canGoBack, goBack, goForward }: Props) {
   return (
     <div className="flex items-center gap-4">
       <button
         onClick={goBack}
+        disabled={!canGoBack}
         aria-label="Previous month"
-        className="text-gray-400 hover:text-white px-2 py-1"
+        className="text-gray-400 hover:text-white px-2 py-1 disabled:opacity-30 disabled:cursor-not-allowed"
       >
         ←
       </button>

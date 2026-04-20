@@ -54,7 +54,7 @@ function BudgetBadge({ monthKey }: { monthKey: string }) {
 
 function MainApp() {
   const { state, db, logout } = useSession()
-  const { monthKey, goBack, goForward, goTo } = useCurrentMonth(currentMonthKey())
+  const { monthKey, canGoBack, goBack, goForward, goTo } = useCurrentMonth(currentMonthKey())
   const [tab, setTab] = useState<Tab>('expenses')
   const [importing, setImporting] = useState(false)
   const [quickAdd, setQuickAdd] = useState(false)
@@ -211,7 +211,7 @@ function MainApp() {
       {/* Month navigator — hidden on Annual tab */}
       {tab !== 'annual' && (
         <div className="px-4 py-4 flex justify-center border-b border-gray-800">
-          <MonthNavigator monthKey={monthKey} goBack={goBack} goForward={goForward} />
+          <MonthNavigator monthKey={monthKey} canGoBack={canGoBack} goBack={goBack} goForward={goForward} />
         </div>
       )}
 

@@ -185,7 +185,13 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
         <select
           className="bg-gray-800 text-white rounded px-1 text-sm"
           value={expense.currency}
-          onChange={e => onUpdate(expense.id, { currency: e.target.value as Currency })}
+          onChange={async e => {
+            try {
+              await onUpdate(expense.id, { currency: e.target.value as Currency })
+            } catch (err) {
+              toast(userMessage(err, 'Failed to update currency'), 'error')
+            }
+          }}
         >
           {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
