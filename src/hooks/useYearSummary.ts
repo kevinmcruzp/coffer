@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { listMonths, readMonth } from '../lib/db'
+import { userMessage } from '../lib/errorMessages'
 import { useSession } from './useSession'
 import { CURRENCIES } from '../types'
 import type { Currency } from '../types'
@@ -135,7 +136,7 @@ export function useYearSummary(year: number): UseYearSummaryResult {
       })
       .catch(err => {
         if (cancelled) return
-        setError(err instanceof Error ? err.message : String(err))
+        setError(userMessage(err, 'Failed to load annual data'))
         setLoading(false)
       })
 

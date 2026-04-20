@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useExpenses } from '../hooks/useExpenses'
+import { userMessage } from '../lib/errorMessages'
 import { CURRENCIES } from '../types'
 import type { Currency } from '../types'
 
@@ -39,7 +40,7 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
       })
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add')
+      setError(userMessage(err, 'Failed to add expense'))
       setSaving(false)
     }
   }

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useSession } from '../hooks/useSession'
+import { userMessage } from '../lib/errorMessages'
 import { LOCK_TIMEOUT_OPTIONS, type LockTimeout } from '../contexts/session'
 
 type Props = {
@@ -28,7 +29,7 @@ export function SettingsModal({ onClose }: Props) {
       await setLockTimeout(value)
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save')
+      setError(userMessage(err, 'Failed to save settings'))
       setSaving(false)
     }
   }

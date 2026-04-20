@@ -4,6 +4,7 @@ import { useSession } from '../hooks/useSession'
 import { readMonth } from '../lib/db'
 import { syncFixed } from '../lib/syncFixed'
 import { useToast } from '../hooks/useToast'
+import { userMessage } from '../lib/errorMessages'
 import { CURRENCIES } from '../types'
 import type { Category, Currency, Expense } from '../types'
 import type { Totals } from '../hooks/useExpenses'
@@ -118,6 +119,7 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
   const [editField, setEditField] = useState<'name' | 'debit' | 'credit' | null>(null)
   const [draft, setDraft] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const { toast } = useToast()
 
   function startEdit(field: 'name' | 'debit' | 'credit') {
     setEditField(field)
@@ -140,8 +142,8 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
     }
     try {
       await onUpdate(expense.id, changes)
-    } catch {
-      // revert: field re-renders with original value
+    } catch (err) {
+      toast(userMessage(err, 'Failed to update expense'), 'error')
     }
     setEditField(null)
   }
@@ -314,7 +316,7 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
       setParcels('')
       setFixed(false)
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Failed to add')
+      setFormError(userMessage(err, 'Failed to add expense'))
     }
   }
 
@@ -543,11 +545,11 @@ export function ExpenseList({ monthKey }: Props) {
         toast(`${toAdd.length} expense${toAdd.length !== 1 ? 's' : ''} added`)
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Sync failed'
+      const msg = err instanceof Error ? err.message : ''
       if (msg.includes('not found')) {
         toast('No previous month data found', 'error')
       } else {
-        toast(msg, 'error')
+        toast(userMessage(err, 'Sync failed. Please try again.'), 'error')
       }
     }
     setSyncing(false)
