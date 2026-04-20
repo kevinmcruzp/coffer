@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { readMonth, writeMonth } from '../lib/db'
 import { incomeSchema, parseOrThrow } from '../lib/schemas'
+import { userMessage } from '../lib/errorMessages'
 import { useSession } from './useSession'
 import { CURRENCIES } from '../types'
 import type { Currency, Income, MonthData } from '../types'
@@ -65,7 +66,7 @@ export function useIncomes(monthKey: string): UseIncomesResult {
             error: null,
           })
         } else {
-          setFetchState({ resolvedKey: monthKey, monthData: null, error: msg })
+          setFetchState({ resolvedKey: monthKey, monthData: null, error: userMessage(err, 'Failed to load incomes') })
         }
       })
   }, [monthKey, db, cryptoKey])

@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { parseCSV } from '../lib/parseCSV'
 import { writeMonth, listMonths } from '../lib/db'
 import { monthKeySchema } from '../lib/schemas'
+import { userMessage } from '../lib/errorMessages'
 import { useSession } from '../hooks/useSession'
 import type { MonthData } from '../types'
 
@@ -73,7 +74,7 @@ export function ImportScreen({ onDone }: Props) {
       await writeMonth(db, preview.monthKey, monthData, cryptoKey)
       onDone()
     } catch (err) {
-      setParseError(err instanceof Error ? err.message : 'Failed to save data')
+      setParseError(userMessage(err, 'Failed to save data. Please try again.'))
       setSaving(false)
     }
   }

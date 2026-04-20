@@ -3,6 +3,7 @@ import { useExpenses } from '../hooks/useExpenses'
 import { useIncomes } from '../hooks/useIncomes'
 import { useMonthMeta } from '../hooks/useMonthMeta'
 import { useToast } from '../hooks/useToast'
+import { userMessage } from '../lib/errorMessages'
 import { PieChart } from './PieChart'
 import { CURRENCIES } from '../types'
 import type { Currency } from '../types'
@@ -66,7 +67,7 @@ export function MonthSummary({ monthKey }: Props) {
       await setSaving(value)
       toast('Saving updated')
     } catch (err) {
-      toast(err instanceof Error ? err.message : 'Failed to save', 'error')
+      toast(userMessage(err, 'Failed to save'), 'error')
     }
     setSavingDraft(null)
   }
@@ -78,7 +79,7 @@ export function MonthSummary({ monthKey }: Props) {
       await setBudget(value)
       toast('Budget updated')
     } catch (err) {
-      toast(err instanceof Error ? err.message : 'Failed to save', 'error')
+      toast(userMessage(err, 'Failed to save'), 'error')
     }
     setBudgetDraft(null)
   }
@@ -90,7 +91,7 @@ export function MonthSummary({ monthKey }: Props) {
       await setAdjustment(value)
       toast('Adjustment updated')
     } catch (err) {
-      toast(err instanceof Error ? err.message : 'Failed to save', 'error')
+      toast(userMessage(err, 'Failed to save'), 'error')
     }
     setAdjustmentDraft(null)
   }

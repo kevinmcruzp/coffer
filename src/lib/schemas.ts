@@ -13,21 +13,21 @@ export function parseOrThrow<T>(schema: z.ZodType<T>, value: unknown): T {
 
 export const expenseSchema = z.object({
   id: z.string().min(1),
-  name: z.string().min(1, 'Name is required').max(100),
+  name: z.string().min(1, 'Name cannot be empty').max(100),
   category: z.enum(['fixed', 'other']),
   currency: z.enum(['BRL', 'USD', 'CLP']),
-  debit: z.number().min(0, 'Debit cannot be negative'),
-  credit: z.number().min(0, 'Credit cannot be negative'),
+  debit: z.number().min(0, 'Debit value cannot be negative'),
+  credit: z.number().min(0, 'Credit value cannot be negative'),
   fixed: z.boolean(),
-  installments: z.number().int('Installments must be an integer').min(1, 'Installments must be at least 1').optional(),
+  installments: z.number().int('Number of installments must be a whole number').min(1, 'Installments must be at least 1').optional(),
 }).refine(
   (data) => data.debit > 0 || data.credit > 0,
-  { message: 'At least one value (debit or credit) must be greater than zero' },
+  { message: 'Enter a debit or credit amount greater than zero' },
 )
 
 export const incomeSchema = z.object({
   id: z.string().min(1),
-  source: z.string().min(1, 'Source is required').max(100),
+  source: z.string().min(1, 'Source cannot be empty').max(100),
   currency: z.enum(['BRL', 'USD', 'CLP']),
   amount: z.number().positive('Amount must be greater than zero'),
   recurring: z.boolean().optional(),

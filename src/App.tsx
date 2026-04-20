@@ -19,6 +19,7 @@ import { useToast } from './hooks/useToast'
 import { downloadCSV } from './lib/exportCSV'
 import { readMonth } from './lib/db'
 import { exportBackup, importBackup } from './lib/backup'
+import { userMessage } from './lib/errorMessages'
 import { useExpenses } from './hooks/useExpenses'
 import { useMonthMeta } from './hooks/useMonthMeta'
 
@@ -69,7 +70,7 @@ function MainApp() {
       downloadCSV(data, monthKey)
       toast('Exported successfully')
     } catch {
-      toast('Nothing to export for this month', 'error')
+      toast('No data found for this month', 'error')
     }
   }
 
@@ -85,7 +86,7 @@ function MainApp() {
       URL.revokeObjectURL(url)
       toast('Backup downloaded')
     } catch {
-      toast('Backup failed', 'error')
+      toast('Failed to create backup. Please try again.', 'error')
     }
   }
 
@@ -103,7 +104,7 @@ function MainApp() {
       const count = await importBackup(restoreFile, db, restorePassword, state.key)
       toast(`${count} month${count !== 1 ? 's' : ''} restored`)
     } catch (err) {
-      toast(err instanceof Error ? err.message : 'Restore failed', 'error')
+      toast(userMessage(err, 'Failed to restore backup. Please try again.'), 'error')
     }
     setRestoreFile(null)
     setRestorePassword('')

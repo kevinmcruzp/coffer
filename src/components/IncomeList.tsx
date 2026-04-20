@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useIncomes } from '../hooks/useIncomes'
+import { useToast } from '../hooks/useToast'
+import { userMessage } from '../lib/errorMessages'
 import { CURRENCIES } from '../types'
 import type { Currency, Income } from '../types'
 import type { IncomeTotals } from '../hooks/useIncomes'
@@ -36,6 +38,7 @@ function IncomeRow({ income, onUpdate, onRemove }: RowProps) {
   const [editField, setEditField] = useState<'source' | 'amount' | null>(null)
   const [draft, setDraft] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const { toast } = useToast()
 
   function startEdit(field: 'source' | 'amount') {
     setEditField(field)
@@ -54,8 +57,8 @@ function IncomeRow({ income, onUpdate, onRemove }: RowProps) {
     }
     try {
       await onUpdate(income.id, changes)
-    } catch {
-      // revert: field re-renders with original value
+    } catch (err) {
+      toast(userMessage(err, 'Failed to update income'), 'error')
     }
     setEditField(null)
   }
@@ -173,7 +176,7 @@ function AddIncomeForm({ onAdd }: AddFormProps) {
       setSource('')
       setAmount('0')
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Failed to add')
+      setFormError(userMessage(err, 'Failed to add income'))
     }
   }
 
