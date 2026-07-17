@@ -15,6 +15,7 @@ const baseMonth: MonthData = {
   incomes: [{ id: 'i1', source: 'Salary', currency: 'BRL', amount: 3000 }],
   saving: 400,
   adjustment: 50,
+  budget: 0,
 }
 
 describe('exportCSV — structure', () => {
@@ -74,6 +75,7 @@ describe('exportCSV — values', () => {
       incomes: [],
       saving: 0,
       adjustment: 0,
+      budget: 0,
     }
     expect(() => exportCSV(empty)).not.toThrow()
   })

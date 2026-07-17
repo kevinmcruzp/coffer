@@ -75,6 +75,7 @@ function DataRow({ row, extraCurrencies, showPrev, onSelect }: RowProps) {
       onClick={() => onSelect(row.monthKey)}
     >
       <td className="px-3 py-2 font-medium text-gray-200">{monthLabel(row.monthKey)}</td>
+      <td className="px-3 py-2 text-right text-gray-500">{row.items}</td>
       <td className="px-3 py-2 text-right text-gray-300">{fmt(row.income.BRL)}</td>
       <td className="px-3 py-2 text-right text-gray-300">{fmt(row.debit.BRL)}</td>
       <td className="px-3 py-2 text-right text-gray-300">{fmt(row.credit.BRL)}</td>
@@ -103,6 +104,7 @@ function TotalsRow({ totals, extraCurrencies, showPrev }: { totals: YearTotals; 
   return (
     <tr className="border-t-2 border-gray-700 bg-gray-900">
       <td className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</td>
+      <td className="px-3 py-2 text-right font-semibold text-gray-400">{totals.items}</td>
       <td className="px-3 py-2 text-right font-semibold text-gray-200">{fmt(totals.income.BRL)}</td>
       <td className="px-3 py-2 text-right font-semibold text-gray-200">{fmt(totals.debit.BRL)}</td>
       <td className="px-3 py-2 text-right font-semibold text-gray-200">{fmt(totals.credit.BRL)}</td>
@@ -194,6 +196,7 @@ export function AnnualView({ currentYear, onSelectMonth }: Props) {
                 >
                   Month <SortIndicator active={sortCol === 'monthKey'} dir={sortDir} />
                 </th>
+                <th className="px-3 py-2 text-right font-normal">Items</th>
                 <th
                   className="px-3 py-2 text-right font-normal cursor-pointer hover:text-gray-300"
                   onClick={() => toggleSort('income')}

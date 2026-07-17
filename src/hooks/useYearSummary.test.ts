@@ -19,9 +19,11 @@ function mockSession(db: IDBDatabase, key: CryptoKey) {
   vi.mocked(useSession).mockReturnValue({
     state: { status: 'unlocked', key },
     db,
+    lockTimeout: 15,
     setup: vi.fn(),
     login: vi.fn(),
     logout: vi.fn(),
+    setLockTimeout: vi.fn(),
   })
 }
 
@@ -34,6 +36,7 @@ const jan: MonthData = {
   incomes: [{ id: 'i1', source: 'Salary', currency: 'BRL', amount: 3000 }],
   saving: 400,
   adjustment: 50,
+  budget: 0,
 }
 
 const feb: MonthData = {
@@ -44,6 +47,7 @@ const feb: MonthData = {
   incomes: [{ id: 'i2', source: 'Salary', currency: 'BRL', amount: 3000 }],
   saving: 500,
   adjustment: 0,
+  budget: 0,
 }
 
 describe('useYearSummary — basic', () => {
@@ -120,6 +124,34 @@ describe('useYearSummary — row calculations', () => {
     const row = result.current.rows[0]
     // 3000 - 600 - 200 - 400 + 50 = 1850
     expect(row.balance.BRL).toBe(1850)
+  })
+})
+
+describe('useYearSummary — item counts', () => {
+  it('counts expenses + incomes per row', async () => {
+    const { db, key } = await makeContext()
+    await writeMonth(db, '2025-01', jan, key)
+    await writeMonth(db, '2025-02', feb, key)
+    mockSession(db, key)
+
+    const { result } = renderHook(() => useYearSummary(2025))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    // jan: 2 expenses + 1 income; feb: 1 expense + 1 income
+    expect(result.current.rows[0].items).toBe(3)
+    expect(result.current.rows[1].items).toBe(2)
+  })
+
+  it('sums item counts in annual totals', async () => {
+    const { db, key } = await makeContext()
+    await writeMonth(db, '2025-01', jan, key)
+    await writeMonth(db, '2025-02', feb, key)
+    mockSession(db, key)
+
+    const { result } = renderHook(() => useYearSummary(2025))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    expect(result.current.totals.items).toBe(5)
   })
 })
 

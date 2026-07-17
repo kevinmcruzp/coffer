@@ -19,9 +19,11 @@ function mockSession(db: IDBDatabase, key: CryptoKey) {
   vi.mocked(useSession).mockReturnValue({
     state: { status: 'unlocked', key },
     db,
+    lockTimeout: 15,
     setup: vi.fn(),
     login: vi.fn(),
     logout: vi.fn(),
+    setLockTimeout: vi.fn(),
   })
 }
 
@@ -67,9 +69,11 @@ describe('useCurrentMonth — navigation', () => {
     vi.mocked(useSession).mockReturnValue({
       state: { status: 'unlocked', key },
       db,
+      lockTimeout: 15,
       setup: vi.fn(),
       login: vi.fn(),
       logout: vi.fn(),
+      setLockTimeout: vi.fn(),
     })
 
     const { result } = renderHook(() => useCurrentMonth('2025-06'))
@@ -130,6 +134,7 @@ describe('useCurrentMonth — cloning fixed expenses', () => {
       incomes: [{ id: 'i1', source: 'Salary', currency: 'BRL', amount: 5000 }],
       saving: 200,
       adjustment: 50,
+      budget: 0,
     }, key)
     mockSession(db, key)
 
@@ -153,6 +158,7 @@ describe('useCurrentMonth — cloning fixed expenses', () => {
       incomes: [],
       saving: 0,
       adjustment: 0,
+      budget: 0,
     }, key)
     mockSession(db, key)
 
@@ -172,6 +178,7 @@ describe('useCurrentMonth — cloning fixed expenses', () => {
       incomes: [{ id: 'i1', source: 'Salary', currency: 'BRL', amount: 5000 }],
       saving: 300,
       adjustment: -100,
+      budget: 0,
     }, key)
     mockSession(db, key)
 
@@ -193,6 +200,7 @@ describe('useCurrentMonth — cloning fixed expenses', () => {
       incomes: [],
       saving: 0,
       adjustment: 0,
+      budget: 0,
     }, key)
     mockSession(db, key)
 
@@ -285,6 +293,7 @@ describe('useCurrentMonth — merge into existing month', () => {
       incomes: [],
       saving: 0,
       adjustment: 0,
+      budget: 0,
     }, key)
     await writeMonth(db, '2025-07', {
       key: '2025-07',
@@ -292,6 +301,7 @@ describe('useCurrentMonth — merge into existing month', () => {
       incomes: [],
       saving: 0,
       adjustment: 0,
+      budget: 0,
     }, key)
     mockSession(db, key)
 
@@ -315,6 +325,7 @@ describe('useCurrentMonth — merge into existing month', () => {
       incomes: [],
       saving: 0,
       adjustment: 0,
+      budget: 0,
     }, key)
     // July already has Rent (same name + category)
     await writeMonth(db, '2025-07', {
@@ -323,6 +334,7 @@ describe('useCurrentMonth — merge into existing month', () => {
       incomes: [],
       saving: 0,
       adjustment: 0,
+      budget: 0,
     }, key)
     mockSession(db, key)
 
@@ -344,6 +356,7 @@ describe('useCurrentMonth — merge into existing month', () => {
       incomes: [],
       saving: 0,
       adjustment: 0,
+      budget: 0,
     }, key)
     await writeMonth(db, '2025-07', {
       key: '2025-07',
@@ -351,6 +364,7 @@ describe('useCurrentMonth — merge into existing month', () => {
       incomes: [{ id: 'i1', source: 'Salary', currency: 'BRL', amount: 5000 }],
       saving: 500,
       adjustment: 100,
+      budget: 0,
     }, key)
     mockSession(db, key)
 

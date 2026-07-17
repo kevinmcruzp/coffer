@@ -342,7 +342,7 @@ describe('ExpenseList — sorting', () => {
   })
 
   function rowOrder(section: HTMLElement): string[] {
-    return within(section).getAllByRole('row')
+    return within(section).getAllByRole<HTMLTableRowElement>('row')
       .slice(1) // skip header
       .map(row => row.cells[0].textContent ?? '')
       .filter(t => t !== '') // skip add-form row (empty name cell initially)

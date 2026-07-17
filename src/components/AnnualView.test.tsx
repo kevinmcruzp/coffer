@@ -16,6 +16,7 @@ function makeHook(overrides: Partial<UseYearSummaryResult> = {}): UseYearSummary
       saving: 0,
       adjustment: 0,
       balance: { BRL: 0, USD: 0, CLP: 0 },
+      items: 0,
     },
     loading: false,
     error: null,
@@ -32,6 +33,7 @@ const sampleRow = {
   saving: 300,
   adjustment: 0,
   balance: { BRL: 3200, USD: 0, CLP: 0 },
+  items: 7,
   prevBalance: null,
 }
 
@@ -59,6 +61,28 @@ describe('AnnualView — onSelect', () => {
     render(<AnnualView currentYear={2025} onSelectMonth={onSelectMonth} />)
 
     expect(onSelectMonth).not.toHaveBeenCalled()
+  })
+})
+
+describe('AnnualView — item count column', () => {
+  it('shows the item count per month and the annual total', () => {
+    vi.mocked(useYearSummary).mockReturnValue(makeHook({
+      rows: [sampleRow],
+      totals: {
+        income: { BRL: 5000, USD: 0, CLP: 0 },
+        debit: { BRL: 1000, USD: 0, CLP: 0 },
+        credit: { BRL: 500, USD: 0, CLP: 0 },
+        saving: 300,
+        adjustment: 0,
+        balance: { BRL: 3200, USD: 0, CLP: 0 },
+        items: 7,
+      },
+    }))
+    render(<AnnualView currentYear={2025} onSelectMonth={vi.fn()} />)
+
+    expect(screen.getByText('Items')).toBeInTheDocument()
+    // row count and totals count (same value here: single month)
+    expect(screen.getAllByText('7')).toHaveLength(2)
   })
 })
 

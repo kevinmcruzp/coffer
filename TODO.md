@@ -505,4 +505,4 @@ Objetivo: ampliar o alcance da aplicação sem perder o local-first.
 - [x] Estados de carregamento em operações assíncronas
 - [x] Mensagens de erro amigáveis (sem stack trace exposto ao usuário)
 - [x] `ErrorBoundary` global para capturar erros inesperados
-- [ ] Contagem de itens por mês visível no AnnualView ou header
+- [x] Contagem de itens por mês visível no AnnualView (coluna "Items" + total anual)

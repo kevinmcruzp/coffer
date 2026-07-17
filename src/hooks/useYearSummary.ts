@@ -14,6 +14,7 @@ export type MonthRow = {
   saving: number
   adjustment: number
   balance: Record<Currency, number>
+  items: number
   prevBalance: Record<Currency, number> | null
 }
 
@@ -24,6 +25,7 @@ export type YearTotals = {
   saving: number
   adjustment: number
   balance: Record<Currency, number>
+  items: number
 }
 
 export type UseYearSummaryResult = {
@@ -124,6 +126,7 @@ export function useYearSummary(year: number): UseYearSummaryResult {
             saving: data.saving,
             adjustment: data.adjustment,
             balance: computeBalance(income, debit, credit, data.saving, data.adjustment),
+            items: data.expenses.length + data.incomes.length,
             // prevBalance = balance of the same calendar month in the prior year (year-over-year comparison).
           prevBalance: prevBalances[suffix] ?? null,
           })
@@ -161,6 +164,7 @@ export function useYearSummary(year: number): UseYearSummaryResult {
       }
       acc.saving += row.saving
       acc.adjustment += row.adjustment
+      acc.items += row.items
       return acc
     },
     {
@@ -170,6 +174,7 @@ export function useYearSummary(year: number): UseYearSummaryResult {
       saving: 0,
       adjustment: 0,
       balance: zeroCurrencyMap(),
+      items: 0,
     },
   )
 

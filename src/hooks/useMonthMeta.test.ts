@@ -20,9 +20,11 @@ function mockSession(db: IDBDatabase, key: CryptoKey) {
   vi.mocked(useSession).mockReturnValue({
     state: { status: 'unlocked', key },
     db,
+    lockTimeout: 15,
     setup: vi.fn(),
     login: vi.fn(),
     logout: vi.fn(),
+    setLockTimeout: vi.fn(),
   })
 }
 
@@ -49,6 +51,7 @@ describe('useMonthMeta — loading existing month', () => {
       incomes: [],
       saving: 500,
       adjustment: -100,
+      budget: 0,
     }, key)
     mockSession(db, key)
 
@@ -133,6 +136,7 @@ describe('useMonthMeta — setAdjustment', () => {
       incomes: [{ id: 'i1', source: 'Salary', currency: 'BRL', amount: 5000 }],
       saving: 300,
       adjustment: 0,
+      budget: 0,
     }, key)
     mockSession(db, key)
 
