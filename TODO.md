@@ -467,7 +467,7 @@ Objetivo: deixar o projeto apresentável para contribuidores e usuários. Hoje o
 
 ---
 
-## Iteração 31 — Recorrência intuitiva (remover "Repeat" quebrado)
+## Iteração 31 — Recorrência intuitiva (remover "Repeat" quebrado) ✅
 
 Objetivo: o "Repeat" atual não repete — copia escondido ao navegar, morre após um mês
 (syncFixed zera o flag) e se comporta diferente entre despesa e receita. Princípio: **antes
@@ -484,12 +484,12 @@ não ter do que ter quebrado**. Remover tudo e substituir por uma ação explíc
 - [x] Cortar a aba/painel "Fixed" (5 abas → 4)
 - [x] Suíte verde (typecheck + lint + 197 testes)
 
-**Parte 2 — Modal "Copiar do mês anterior" (Opção B)**
-- [ ] `CopyFromPreviousModal`: lista receitas + despesas do mês anterior com checkboxes
-- [ ] Dedupe automático (item já presente no mês aparece desmarcado/cinza)
-- [ ] Parcelas: ao copiar item com `installments > 1`, decrementa; `installments === 1` não propaga
-- [ ] Botão de acesso na aba Expenses
-- [ ] Testes do fluxo (seleção, dedupe, decremento de parcela)
+**Parte 2 — Modal "Copiar do mês anterior" (Opção B) ✅**
+- [x] `CopyFromPreviousModal`: lista receitas + despesas do mês anterior com checkboxes
+- [x] Dedupe automático (item já presente no mês aparece desmarcado/cinza "already here")
+- [x] Parcelas: ao copiar item com `installments > 1`, decrementa; `installments === 1` não é oferecido
+- [x] Botão "Copy from previous month" na aba Expenses; lista remonta após copiar
+- [x] Testes do fluxo (seleção, dedupe, decremento de parcela, empty state)
 
 ---
 

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useExpenses } from '../hooks/useExpenses'
 import { useToast } from '../hooks/useToast'
+import { CopyFromPreviousModal } from './CopyFromPreviousModal'
 import { userMessage } from '../lib/errorMessages'
 import { round2, parseMoney } from '../lib/math'
 import { CURRENCIES } from '../types'
@@ -496,7 +497,7 @@ type Props = {
   monthKey: string
 }
 
-export function ExpenseList({ monthKey }: Props) {
+function ExpenseListBody({ monthKey }: Props) {
   const { expenses, loading, error, totals, add, update, remove } = useExpenses(monthKey)
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
@@ -579,6 +580,33 @@ export function ExpenseList({ monthKey }: Props) {
         <p className="text-gray-500 text-sm text-center py-8">No expenses match the current filters.</p>
       )}
       <TotalsFooter totals={totals} />
+    </div>
+  )
+}
+
+export function ExpenseList({ monthKey }: Props) {
+  const [copyOpen, setCopyOpen] = useState(false)
+  // Bumped after a copy so the body remounts and re-reads the month.
+  const [version, setVersion] = useState(0)
+
+  return (
+    <div>
+      <div className="flex justify-end mb-3">
+        <button
+          onClick={() => setCopyOpen(true)}
+          className="text-xs text-gray-400 hover:text-white px-3 py-1.5 rounded-lg border border-gray-700 hover:border-gray-500 transition-colors"
+        >
+          Copy from previous month
+        </button>
+      </div>
+      <ExpenseListBody key={version} monthKey={monthKey} />
+      {copyOpen && (
+        <CopyFromPreviousModal
+          monthKey={monthKey}
+          onClose={() => setCopyOpen(false)}
+          onCopied={() => setVersion(v => v + 1)}
+        />
+      )}
     </div>
   )
 }
