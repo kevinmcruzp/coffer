@@ -6,6 +6,7 @@ import { useToast } from '../hooks/useToast'
 import { userMessage } from '../lib/errorMessages'
 import { round2, parseMoney } from '../lib/math'
 import { PieChart } from './PieChart'
+import { NumberInput } from './NumberInput'
 import { CURRENCIES } from '../types'
 import type { Currency } from '../types'
 
@@ -190,8 +191,7 @@ export function MonthSummary({ monthKey }: Props) {
       <div className="border-t border-line pt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1">
           <label className="text-xs text-faint uppercase tracking-wider">Saving (BRL)</label>
-          <input
-            type="number"
+          <NumberInput
             min="0"
             step="0.01"
             className="w-full bg-panel border border-line rounded-lg px-3 py-2 text-fg text-sm focus:outline-none focus:border-brass"
@@ -206,8 +206,7 @@ export function MonthSummary({ monthKey }: Props) {
         </div>
         <div className="space-y-1">
           <label className="text-xs text-faint uppercase tracking-wider">Adjustment (BRL)</label>
-          <input
-            type="number"
+          <NumberInput
             step="0.01"
             className="w-full bg-panel border border-line rounded-lg px-3 py-2 text-fg text-sm focus:outline-none focus:border-brass"
             value={adjustmentDraft ?? adjustment}
@@ -221,8 +220,7 @@ export function MonthSummary({ monthKey }: Props) {
         </div>
         <div className="space-y-1">
           <label className="text-xs text-faint uppercase tracking-wider">Budget (BRL) <span className="normal-case text-faint">— 0 = no limit</span></label>
-          <input
-            type="number"
+          <NumberInput
             min="0"
             step="0.01"
             className="w-full bg-panel border border-line rounded-lg px-3 py-2 text-fg text-sm focus:outline-none focus:border-brass"

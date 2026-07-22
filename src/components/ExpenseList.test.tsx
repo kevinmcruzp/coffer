@@ -111,6 +111,14 @@ describe('ExpenseList', () => {
     )
   })
 
+  it('starts the add form with empty amount fields', () => {
+    render(<ExpenseList monthKey="2025-03" />)
+
+    const fixoSection = screen.getByTestId('group-fixed')
+    expect(within(fixoSection).getByLabelText(/debit/i)).toHaveValue(null)
+    expect(within(fixoSection).getByLabelText(/credit/i)).toHaveValue(null)
+  })
+
   it('shows delete confirmation when delete button is clicked', async () => {
     vi.mocked(useExpenses).mockReturnValue(makeHookResult({ expenses: [fixedExpense] }))
     render(<ExpenseList monthKey="2025-03" />)

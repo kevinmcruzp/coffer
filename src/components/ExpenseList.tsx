@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useExpenses } from '../hooks/useExpenses'
 import { useToast } from '../hooks/useToast'
 import { CopyFromPreviousModal } from './CopyFromPreviousModal'
+import { NumberInput } from './NumberInput'
 import { userMessage } from '../lib/errorMessages'
 import { round2, parseMoney } from '../lib/math'
 import { CURRENCIES } from '../types'
@@ -200,9 +201,8 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
         onClick={() => { if (editField !== 'debit') startEdit('debit') }}
       >
         {editField === 'debit' ? (
-          <input
+          <NumberInput
             autoFocus
-            type="number"
             min="0"
             step="0.01"
             className="w-24 bg-panel-2 text-fg rounded px-1 text-right"
@@ -225,9 +225,8 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
         onClick={() => { if (editField !== 'credit') startEdit('credit') }}
       >
         {editField === 'credit' ? (
-          <input
+          <NumberInput
             autoFocus
-            type="number"
             min="0"
             step="0.01"
             className="w-24 bg-panel-2 text-fg rounded px-1 text-right"
@@ -288,8 +287,8 @@ type AddFormProps = {
 function AddExpenseForm({ category, onAdd }: AddFormProps) {
   const [name, setName] = useState('')
   const [currency, setCurrency] = useState<Currency>('BRL')
-  const [debit, setDebit] = useState('0')
-  const [credit, setCredit] = useState('0')
+  const [debit, setDebit] = useState('')
+  const [credit, setCredit] = useState('')
   const [parcels, setParcels] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
 
@@ -310,8 +309,8 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
         ...(isParceled ? { installments: parcelsNum } : {}),
       })
       setName('')
-      setDebit('0')
-      setCredit('0')
+      setDebit('')
+      setCredit('')
       setParcels('')
     } catch (err) {
       setFormError(userMessage(err, 'Failed to add expense'))
@@ -340,23 +339,23 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
           </select>
         </td>
         <td className="px-2 py-1">
-          <input
-            type="number"
+          <NumberInput
             min="0"
             step="0.01"
             aria-label="Debit"
-            className="w-24 bg-panel-2 text-fg rounded px-1 text-right"
+            placeholder="0.00"
+            className="w-24 bg-panel-2 text-fg rounded px-1 text-right placeholder-faint"
             value={debit}
             onChange={e => setDebit(e.target.value)}
           />
         </td>
         <td className="px-2 py-1">
-          <input
-            type="number"
+          <NumberInput
             min="0"
             step="0.01"
             aria-label="Credit"
-            className="w-24 bg-panel-2 text-fg rounded px-1 text-right border border-line focus:outline-none focus:border-brass"
+            placeholder="0.00"
+            className="w-24 bg-panel-2 text-fg rounded px-1 text-right placeholder-faint border border-line focus:outline-none focus:border-brass"
             value={credit}
             onChange={e => setCredit(e.target.value)}
           />
@@ -364,8 +363,7 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
         <td className="px-2 py-1">
           <div className="flex items-center gap-1 justify-end">
             <span className="text-faint text-xs">×</span>
-            <input
-              type="number"
+            <NumberInput
               min="1"
               step="1"
               placeholder="1"

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useExpenses } from '../hooks/useExpenses'
+import { NumberInput } from './NumberInput'
 import { userMessage } from '../lib/errorMessages'
 import { round2, parseMoney } from '../lib/math'
 import { CURRENCIES } from '../types'
@@ -81,8 +82,7 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
             >
               {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
-            <input
-              type="number"
+            <NumberInput
               min="0"
               step="0.01"
               placeholder="Debit"
@@ -91,8 +91,7 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
               value={debit}
               onChange={e => setDebit(e.target.value)}
             />
-            <input
-              type="number"
+            <NumberInput
               min="0"
               step="0.01"
               placeholder="Credit"
@@ -107,8 +106,7 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
             <label className="block text-xs text-dim uppercase tracking-wider">
               Parcels (optional)
             </label>
-            <input
-              type="number"
+            <NumberInput
               min="1"
               step="1"
               placeholder="1"

@@ -84,6 +84,11 @@ describe('IncomeList — add form', () => {
     })
   })
 
+  it('starts the add form with an empty amount field', () => {
+    renderWithProviders(<IncomeList monthKey={MONTH_KEY} />)
+    expect(screen.getByLabelText('Amount')).toHaveValue(null)
+  })
+
   it('shows error when add fails', async () => {
     const add = vi.fn().mockRejectedValue(new Error('Amount must be greater than zero'))
     vi.mocked(useIncomes).mockReturnValue(makeHook({ add }))

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useIncomes } from '../hooks/useIncomes'
 import { useToast } from '../hooks/useToast'
+import { NumberInput } from './NumberInput'
 import { userMessage } from '../lib/errorMessages'
 import { round2, parseMoney } from '../lib/math'
 import { CURRENCIES } from '../types'
@@ -107,9 +108,8 @@ function IncomeRow({ income, onUpdate, onRemove }: RowProps) {
         onClick={() => { if (editField !== 'amount') startEdit('amount') }}
       >
         {editField === 'amount' ? (
-          <input
+          <NumberInput
             autoFocus
-            type="number"
             min="0.01"
             step="0.01"
             className="w-28 bg-panel-2 text-fg rounded px-1 text-right"
@@ -164,7 +164,7 @@ type AddFormProps = {
 function AddIncomeForm({ onAdd }: AddFormProps) {
   const [source, setSource] = useState('')
   const [currency, setCurrency] = useState<Currency>('BRL')
-  const [amount, setAmount] = useState('0')
+  const [amount, setAmount] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
 
   async function handleAdd() {
@@ -172,7 +172,7 @@ function AddIncomeForm({ onAdd }: AddFormProps) {
     try {
       await onAdd({ source: source.trim(), currency, amount: parseMoney(amount) })
       setSource('')
-      setAmount('0')
+      setAmount('')
     } catch (err) {
       setFormError(userMessage(err, 'Failed to add income'))
     }
@@ -200,12 +200,12 @@ function AddIncomeForm({ onAdd }: AddFormProps) {
           </select>
         </td>
         <td className="px-2 py-1">
-          <input
-            type="number"
+          <NumberInput
             min="0.01"
             step="0.01"
             aria-label="Amount"
-            className="w-28 bg-panel-2 text-fg rounded px-1 text-right"
+            placeholder="0.00"
+            className="w-28 bg-panel-2 text-fg rounded px-1 text-right placeholder-faint"
             value={amount}
             onChange={e => setAmount(e.target.value)}
           />
