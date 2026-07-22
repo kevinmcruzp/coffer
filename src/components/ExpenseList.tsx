@@ -214,8 +214,10 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
               if (e.key === 'Escape') setEditField(null)
             }}
           />
-        ) : (
+        ) : expense.debit > 0 ? (
           <span className="font-mono tabular-nums border-b border-dashed border-transparent group-hover:border-faint">{expense.debit.toFixed(2)}</span>
+        ) : (
+          <span className="text-faint">—</span>
         )}
       </td>
       <td
@@ -237,8 +239,10 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
               if (e.key === 'Escape') setEditField(null)
             }}
           />
-        ) : (
+        ) : expense.credit > 0 ? (
           <span className="font-mono tabular-nums border-b border-dashed border-transparent group-hover:border-faint">{expense.credit.toFixed(2)}</span>
+        ) : (
+          <span className="text-faint">—</span>
         )}
       </td>
       <td className="px-2 py-1 text-right text-dim font-mono tabular-nums">

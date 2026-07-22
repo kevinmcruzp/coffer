@@ -21,7 +21,7 @@ function sortIncomes(arr: Income[], col: IncomeSortCol, dir: SortDir): Income[] 
 
 function SortIndicator({ active, dir }: { active: boolean; dir: SortDir }) {
   return (
-    <span className={active ? 'ml-1' : 'ml-1 text-gray-700'}>
+    <span className={active ? 'ml-1' : 'ml-1 text-faint'}>
       {active ? (dir === 'asc' ? '↑' : '↓') : '↕'}
     </span>
   )
@@ -65,7 +65,7 @@ function IncomeRow({ income, onUpdate, onRemove }: RowProps) {
   }
 
   return (
-    <tr>
+    <tr className="group hover:bg-panel/50 transition-colors">
       <td
         data-testid={`source-${income.id}`}
         className="px-2 py-1 cursor-pointer"
@@ -74,7 +74,7 @@ function IncomeRow({ income, onUpdate, onRemove }: RowProps) {
         {editField === 'source' ? (
           <input
             autoFocus
-            className="w-full bg-gray-800 text-white rounded px-1"
+            className="w-full bg-panel-2 text-fg rounded px-1"
             value={draft}
             onChange={e => setDraft(e.target.value)}
             onBlur={commitEdit}
@@ -84,12 +84,12 @@ function IncomeRow({ income, onUpdate, onRemove }: RowProps) {
             }}
           />
         ) : (
-          income.source
+          <span className="border-b border-dashed border-transparent group-hover:border-faint">{income.source}</span>
         )}
       </td>
       <td className="px-2 py-1">
         <select
-          className="bg-gray-800 text-white rounded px-1 text-sm"
+          className="bg-panel-2 text-fg rounded px-1 text-sm"
           value={income.currency}
           onChange={async e => {
             try {
@@ -112,7 +112,7 @@ function IncomeRow({ income, onUpdate, onRemove }: RowProps) {
             type="number"
             min="0.01"
             step="0.01"
-            className="w-28 bg-gray-800 text-white rounded px-1 text-right"
+            className="w-28 bg-panel-2 text-fg rounded px-1 text-right"
             value={draft}
             onChange={e => setDraft(e.target.value)}
             onBlur={commitEdit}
@@ -122,20 +122,20 @@ function IncomeRow({ income, onUpdate, onRemove }: RowProps) {
             }}
           />
         ) : (
-          income.amount.toFixed(2)
+          <span className="font-mono tabular-nums text-pos border-b border-dashed border-transparent group-hover:border-faint">{income.amount.toFixed(2)}</span>
         )}
       </td>
       <td className="px-2 py-1">
         {confirmDelete ? (
           <span className="flex gap-1">
             <button
-              className="text-xs text-red-400 underline"
+              className="text-xs text-neg underline"
               onClick={() => onRemove(income.id)}
             >
               Confirm
             </button>
             <button
-              className="text-xs text-gray-400 underline"
+              className="text-xs text-dim underline"
               onClick={() => setConfirmDelete(false)}
             >
               Cancel
@@ -143,7 +143,7 @@ function IncomeRow({ income, onUpdate, onRemove }: RowProps) {
           </span>
         ) : (
           <button
-            className="text-xs text-gray-500 hover:text-red-400"
+            className="text-xs text-faint hover:text-neg"
             aria-label={`Delete ${income.source}`}
             onClick={() => setConfirmDelete(true)}
           >
@@ -180,10 +180,10 @@ function AddIncomeForm({ onAdd }: AddFormProps) {
 
   return (
     <>
-      <tr className="text-gray-400 text-sm">
+      <tr className="text-dim text-sm">
         <td className="px-2 py-1">
           <input
-            className="w-full bg-gray-800 text-white rounded px-1 placeholder-gray-500"
+            className="w-full bg-panel-2 text-fg rounded px-1 placeholder-faint"
             placeholder="Source"
             value={source}
             onChange={e => setSource(e.target.value)}
@@ -191,7 +191,7 @@ function AddIncomeForm({ onAdd }: AddFormProps) {
         </td>
         <td className="px-2 py-1">
           <select
-            className="bg-gray-800 text-white rounded px-1 text-sm"
+            className="bg-panel-2 text-fg rounded px-1 text-sm"
             value={currency}
             onChange={e => setCurrency(e.target.value as Currency)}
           >
@@ -205,14 +205,14 @@ function AddIncomeForm({ onAdd }: AddFormProps) {
             min="0.01"
             step="0.01"
             aria-label="Amount"
-            className="w-28 bg-gray-800 text-white rounded px-1 text-right"
+            className="w-28 bg-panel-2 text-fg rounded px-1 text-right"
             value={amount}
             onChange={e => setAmount(e.target.value)}
           />
         </td>
         <td className="px-2 py-1">
           <button
-            className="text-xs text-emerald-400 hover:text-emerald-300"
+            className="text-xs text-pos hover:text-pos"
             onClick={handleAdd}
           >
             Add
@@ -221,7 +221,7 @@ function AddIncomeForm({ onAdd }: AddFormProps) {
       </tr>
       {formError && (
         <tr>
-          <td colSpan={3} className="px-2 py-1 text-red-400 text-xs">
+          <td colSpan={3} className="px-2 py-1 text-neg text-xs">
             {formError}
           </td>
         </tr>
@@ -243,14 +243,14 @@ function TotalsFooter({ totals }: { totals: IncomeTotals }) {
   if (active.length === 0) return null
 
   return (
-    <div className="border-t border-gray-800 pt-4 mt-4 space-y-2">
+    <div className="border-t border-line pt-4 mt-4 space-y-2">
       {active.map(c => (
         <div
           key={c}
           data-testid={`income-totals-${c}`}
-          className="flex gap-6 text-sm text-gray-300"
+          className="flex gap-6 text-sm text-dim [&_strong]:font-mono [&_strong]:tabular-nums [&_strong]:text-pos"
         >
-          <span className="font-semibold text-gray-500 w-10">{c}</span>
+          <span className="font-semibold text-faint w-10">{c}</span>
           <span>Total: <strong>{fmtCurrency(totals[c], c)}</strong></span>
         </div>
       ))}
@@ -277,27 +277,27 @@ export function IncomeList({ monthKey }: Props) {
   const sorted = useMemo(() => sortIncomes(incomes, sortCol, sortDir), [incomes, sortCol, sortDir])
 
   if (loading) {
-    return <div className="text-gray-400 text-sm text-center py-8">Loading…</div>
+    return <div className="text-dim text-sm text-center py-8">Loading…</div>
   }
 
   if (error) {
-    return <div className="text-red-400 text-sm text-center py-8">{error}</div>
+    return <div className="text-neg text-sm text-center py-8">{error}</div>
   }
 
   return (
     <div>
-      <table className="w-full text-sm text-white">
+      <table className="w-full text-sm text-fg">
         <thead>
-          <tr className="text-gray-500 text-xs border-b border-gray-800 select-none">
+          <tr className="text-faint text-[11px] uppercase tracking-[0.06em] border-b border-line select-none">
             <th
-              className="px-2 py-1 text-left font-normal cursor-pointer hover:text-gray-300"
+              className="px-2 py-1 text-left font-normal cursor-pointer hover:text-dim"
               onClick={() => toggleSort('source')}
             >
               Source <SortIndicator active={sortCol === 'source'} dir={sortDir} />
             </th>
             <th className="px-2 py-1 text-left font-normal">Currency</th>
             <th
-              className="px-2 py-1 text-right font-normal cursor-pointer hover:text-gray-300"
+              className="px-2 py-1 text-right font-normal cursor-pointer hover:text-dim"
               onClick={() => toggleSort('amount')}
             >
               Amount <SortIndicator active={sortCol === 'amount'} dir={sortDir} />
