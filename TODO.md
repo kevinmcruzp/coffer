@@ -493,6 +493,38 @@ não ter do que ter quebrado**. Remover tudo e substituir por uma ação explíc
 
 ---
 
+## Iteração 32 — UI/UX overhaul: "vault ledger" + sidebar
+
+Objetivo: a app era pouco intuitiva. Redesign com identidade própria (cofre/livro-razão):
+sidebar-espinha, acento latão sobre tinta fria, serif no wordmark, números mono tabulares,
+affordance de edição inline. Mockup aprovado. Implementação incremental (shell → tela a tela).
+
+**P2.1 — Shell + tokens ✅**
+- [x] Tokens de tema no `@theme` (ink/panel/line/fg/dim/faint/brass/pos/neg + font serif)
+- [x] `Icons.tsx` (line icons inline, sem dependência)
+- [x] `App.tsx`: header+tabs → sidebar (marca, nav Ledger, nav Data, selo "Encrypted · Local", Settings/Lock)
+- [x] Topbar: month nav (serif + chevrons latão) + budget + Add (latão)
+- [x] `MonthNavigator` reestilizado; responsivo (sidebar vira barra horizontal no mobile)
+
+**P2.2 — Tela Expenses (ledger)**
+- [ ] Migrar `ExpenseList` para tokens; grupos Fixed/Others com label latão
+- [ ] Affordance de edição inline (sublinhado tracejado no hover); chip de parcela
+- [ ] Filtros como segmented control; totais mono tabulares
+
+**P2.3 — Income + Summary**
+- [ ] `IncomeList` para tokens
+- [ ] `MonthSummary`: cards de saldo (leitura instantânea, semântica +/−), budget bar, gráficos
+
+**P2.4 — Annual + modais**
+- [ ] `AnnualView` para tokens
+- [ ] `QuickAddModal`, `SettingsModal`, `CopyFromPreviousModal`, `ImportScreen` para tokens
+
+**P2.5 — Tema claro + toggle**
+- [ ] Definir valores light nos tokens (media query + `[data-theme]`)
+- [ ] Toggle na sidebar, persistido em localStorage (não sensível)
+
+---
+
 ## Fase 2 — Depois que a Fase 1 estiver estável
 
 Objetivo: ampliar o alcance da aplicação sem perder o local-first.

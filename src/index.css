@@ -1,5 +1,27 @@
 @import "tailwindcss";
 
+/*
+ * Coffer design tokens — "vault ledger": cool ink grounds, brass accent,
+ * semantic pos/neg for balances. Dark values live now; the light theme and
+ * toggle land once every screen reads from these tokens.
+ */
+@theme {
+  --color-ink: #0F1417;        /* page ground        */
+  --color-panel: #161C20;      /* cards / sidebar    */
+  --color-panel-2: #1D252A;    /* raised / hover     */
+  --color-line: #273037;       /* borders            */
+  --color-line-soft: #1E262B;  /* inner row dividers */
+  --color-fg: #E7ECEA;         /* primary text       */
+  --color-dim: #93A19C;        /* secondary text     */
+  --color-faint: #6A7772;      /* labels / hints     */
+  --color-brass: #C9A45C;      /* accent             */
+  --color-brass-soft: rgba(201, 164, 92, 0.14);
+  --color-pos: #5FB98A;        /* positive balance   */
+  --color-neg: #D97A6C;        /* negative balance   */
+
+  --font-serif: ui-serif, "Iowan Old Style", Georgia, "Times New Roman", serif;
+}
+
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
