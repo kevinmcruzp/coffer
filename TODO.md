@@ -516,9 +516,9 @@ affordance de edição inline. Mockup aprovado. Implementação incremental (she
 - [x] `MonthSummary`: cards com hairline latão + número mono, Balance semântico +/−, budget bar latão/neg
 - [x] `PieChart` recolorido on-brand (latão/steel/sage/clay) + textos em tokens
 
-**P2.4 — Annual + modais**
-- [ ] `AnnualView` para tokens
-- [ ] `QuickAddModal`, `SettingsModal`, `CopyFromPreviousModal`, `ImportScreen` para tokens
+**P2.4 — Annual + modais ✅**
+- [x] `AnnualView` para tokens (+ tabular-nums na tabela)
+- [x] `QuickAddModal`, `SettingsModal`, `CopyFromPreviousModal`, `ImportScreen` para tokens (botões primários em latão)
 
 **P2.5 — Tema claro + toggle**
 - [ ] Definir valores light nos tokens (media query + `[data-theme]`)

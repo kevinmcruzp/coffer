@@ -90,30 +90,30 @@ export function ImportScreen({ onDone }: Props) {
   }
 
   return (
-    <main className="min-h-screen bg-gray-950 text-white p-6">
+    <main className="min-h-screen bg-ink text-fg p-6">
       <div className="max-w-2xl mx-auto space-y-6">
         <div>
           <h1 className="text-xl font-semibold">Import CSV</h1>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-faint mt-1">
             Expected format: exported from the Coffer Google Sheets template —
             summary on row 2, expenses from row 4 with Fixo / Outros categories.
           </p>
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm text-gray-400">Month (YYYY-MM)</label>
+          <label className="text-sm text-dim">Month (YYYY-MM)</label>
           <input
             type="text"
             placeholder="2025-01"
             value={monthKey}
             onChange={handleMonthKeyChange}
-            className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
+            className="w-full bg-panel-2 border border-line rounded px-3 py-2 text-sm focus:outline-none focus:border-brass"
           />
         </div>
 
         <button
           onClick={handleFileClick}
-          className="bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded px-4 py-2 text-sm"
+          className="bg-panel-2 hover:bg-panel-2 border border-line rounded px-4 py-2 text-sm"
         >
           Select CSV file
         </button>
@@ -126,17 +126,17 @@ export function ImportScreen({ onDone }: Props) {
         />
 
         {parseError && (
-          <p className="text-red-400 text-sm">{parseError}</p>
+          <p className="text-neg text-sm">{parseError}</p>
         )}
 
         {preview && (
           <div className="space-y-4">
-            <h2 className="text-sm font-medium text-gray-300">Preview — {preview.monthKey}</h2>
+            <h2 className="text-sm font-medium text-dim">Preview — {preview.monthKey}</h2>
 
             <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead>
-                  <tr className="text-gray-400 text-left border-b border-gray-800">
+                  <tr className="text-dim text-left border-b border-line">
                     <th className="py-2 pr-4">Name</th>
                     <th className="py-2 pr-4">Category</th>
                     <th className="py-2 pr-4 text-right">Debit</th>
@@ -145,9 +145,9 @@ export function ImportScreen({ onDone }: Props) {
                 </thead>
                 <tbody>
                   {preview.data.expenses.map((e) => (
-                    <tr key={e.id} className="border-b border-gray-900">
+                    <tr key={e.id} className="border-b border-line-soft">
                       <td className="py-1 pr-4">{e.name}</td>
-                      <td className="py-1 pr-4 text-gray-400">{e.category}</td>
+                      <td className="py-1 pr-4 text-dim">{e.category}</td>
                       <td className="py-1 pr-4 text-right">{e.debit > 0 ? e.debit.toFixed(2) : '—'}</td>
                       <td className="py-1 text-right">{e.credit > 0 ? e.credit.toFixed(2) : '—'}</td>
                     </tr>
@@ -156,7 +156,7 @@ export function ImportScreen({ onDone }: Props) {
               </table>
             </div>
 
-            <div className="text-sm text-gray-400 space-y-1">
+            <div className="text-sm text-dim space-y-1">
               {preview.data.incomes[0] && (
                 <p>Income: BRL {preview.data.incomes[0].amount.toFixed(2)}</p>
               )}
@@ -165,7 +165,7 @@ export function ImportScreen({ onDone }: Props) {
             </div>
 
             {overwriteWarning && (
-              <p className="text-yellow-400 text-sm">
+              <p className="text-brass text-sm">
                 Month {preview.monthKey} already exists. Confirm again to overwrite.
               </p>
             )}
@@ -174,13 +174,13 @@ export function ImportScreen({ onDone }: Props) {
               <button
                 onClick={handleConfirm}
                 disabled={saving}
-                className="bg-white text-gray-950 rounded px-4 py-2 text-sm font-medium hover:bg-gray-200 disabled:opacity-50"
+                className="bg-brass text-ink rounded px-4 py-2 text-sm font-medium hover:brightness-110 disabled:opacity-50"
               >
                 {saving ? 'Saving…' : overwriteWarning ? 'Overwrite' : 'Save'}
               </button>
               <button
                 onClick={onDone}
-                className="text-gray-400 hover:text-white text-sm px-4 py-2"
+                className="text-dim hover:text-fg text-sm px-4 py-2"
               >
                 Cancel
               </button>

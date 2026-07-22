@@ -138,12 +138,12 @@ export function CopyFromPreviousModal({ monthKey, onClose, onCopied }: Props) {
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="w-full sm:max-w-sm bg-gray-900 border border-gray-700 rounded-t-2xl sm:rounded-2xl p-5 space-y-4 max-h-[85vh] flex flex-col">
+      <div className="w-full sm:max-w-sm bg-panel border border-line rounded-t-2xl sm:rounded-2xl p-5 space-y-4 max-h-[85vh] flex flex-col">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-white">Copy from {prevKey}</h2>
+          <h2 className="text-sm font-semibold text-fg">Copy from {prevKey}</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-white text-lg leading-none"
+            className="text-faint hover:text-fg text-lg leading-none"
             aria-label="Close"
           >
             ×
@@ -151,9 +151,9 @@ export function CopyFromPreviousModal({ monthKey, onClose, onCopied }: Props) {
         </div>
 
         {loading ? (
-          <p className="text-gray-400 text-sm text-center py-8">Loading…</p>
+          <p className="text-dim text-sm text-center py-8">Loading…</p>
         ) : isEmpty ? (
-          <p className="text-gray-500 text-sm text-center py-8">Nothing to copy from {prevKey}.</p>
+          <p className="text-faint text-sm text-center py-8">Nothing to copy from {prevKey}.</p>
         ) : (
           <div className="overflow-y-auto space-y-4">
             {incomeItems.length > 0 && (
@@ -188,13 +188,13 @@ export function CopyFromPreviousModal({ monthKey, onClose, onCopied }: Props) {
           </div>
         )}
 
-        {error && <p className="text-red-400 text-xs">{error}</p>}
+        {error && <p className="text-neg text-xs">{error}</p>}
 
         {!loading && !isEmpty && (
           <button
             onClick={handleCopy}
             disabled={saving || selectedCount === 0}
-            className="w-full bg-white text-gray-950 font-semibold rounded-lg py-2 text-sm hover:bg-gray-100 disabled:opacity-50 transition-colors"
+            className="w-full bg-brass text-ink font-semibold rounded-lg py-2 text-sm hover:brightness-110 disabled:opacity-50 transition-colors"
           >
             {saving ? 'Copying…' : `Copy selected (${selectedCount})`}
           </button>
@@ -207,7 +207,7 @@ export function CopyFromPreviousModal({ monthKey, onClose, onCopied }: Props) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
-      <h3 className="text-xs text-gray-500 uppercase tracking-wider">{title}</h3>
+      <h3 className="text-xs text-faint uppercase tracking-wider">{title}</h3>
       {children}
     </div>
   )
@@ -231,14 +231,14 @@ function ItemRow({ label, detail, badge, duplicate, checked, onToggle }: ItemRow
         disabled={duplicate}
         checked={checked}
         onChange={onToggle}
-        className="accent-emerald-500"
+        className="accent-brass"
       />
-      <span className="flex-1 text-white">
+      <span className="flex-1 text-fg">
         {label}
-        {badge && <span className="ml-2 text-xs text-amber-400">({badge})</span>}
-        {duplicate && <span className="ml-2 text-xs text-gray-500">already here</span>}
+        {badge && <span className="ml-2 text-xs text-brass">({badge})</span>}
+        {duplicate && <span className="ml-2 text-xs text-faint">already here</span>}
       </span>
-      <span className="text-gray-400">{detail}</span>
+      <span className="text-dim">{detail}</span>
     </label>
   )
 }

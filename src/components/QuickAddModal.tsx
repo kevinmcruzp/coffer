@@ -52,12 +52,12 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="w-full sm:max-w-sm bg-gray-900 border border-gray-700 rounded-t-2xl sm:rounded-2xl p-5 space-y-4">
+      <div className="w-full sm:max-w-sm bg-panel border border-line rounded-t-2xl sm:rounded-2xl p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-white">Quick add — {monthKey}</h2>
+          <h2 className="text-sm font-semibold text-fg">Quick add — {monthKey}</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-white text-lg leading-none"
+            className="text-faint hover:text-fg text-lg leading-none"
             aria-label="Close"
           >
             ×
@@ -67,7 +67,7 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
         <form onSubmit={handleSubmit} className="space-y-3">
           <input
             autoFocus
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-gray-500"
+            className="w-full bg-panel-2 border border-line rounded-lg px-3 py-2 text-fg text-sm placeholder-faint focus:outline-none focus:border-brass"
             placeholder="Name"
             value={name}
             onChange={e => setName(e.target.value)}
@@ -75,7 +75,7 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
 
           <div className="flex gap-2">
             <select
-              className="bg-gray-800 border border-gray-700 rounded-lg px-2 py-2 text-white text-sm focus:outline-none"
+              className="bg-panel-2 border border-line rounded-lg px-2 py-2 text-fg text-sm focus:outline-none"
               value={currency}
               onChange={e => setCurrency(e.target.value as Currency)}
             >
@@ -87,7 +87,7 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
               step="0.01"
               placeholder="Debit"
               aria-label="Debit"
-              className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-gray-500"
+              className="flex-1 bg-panel-2 border border-line rounded-lg px-3 py-2 text-fg text-sm placeholder-faint focus:outline-none focus:border-brass"
               value={debit}
               onChange={e => setDebit(e.target.value)}
             />
@@ -97,14 +97,14 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
               step="0.01"
               placeholder="Credit"
               aria-label="Credit"
-              className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-gray-500"
+              className="flex-1 bg-panel-2 border border-line rounded-lg px-3 py-2 text-fg text-sm placeholder-faint focus:outline-none focus:border-brass"
               value={credit}
               onChange={e => setCredit(e.target.value)}
             />
           </div>
 
           <div className="space-y-1">
-            <label className="block text-xs text-gray-400 uppercase tracking-wider">
+            <label className="block text-xs text-dim uppercase tracking-wider">
               Parcels (optional)
             </label>
             <input
@@ -113,23 +113,23 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
               step="1"
               placeholder="1"
               aria-label="Parcels"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-amber-500"
+              className="w-full bg-panel-2 border border-line rounded-lg px-3 py-2 text-fg text-sm placeholder-faint focus:outline-none focus:border-brass"
               value={parcels}
               onChange={e => setParcels(e.target.value)}
             />
             {isParceled && (
-              <p data-testid="parcel-hint" className="text-xs text-amber-400/90 pt-1">
+              <p data-testid="parcel-hint" className="text-xs text-brass/90 pt-1">
                 ↳ {parcelsNum}× de {fmt(perParcel)} = {fmt(round2(perParcel * parcelsNum))}
               </p>
             )}
           </div>
 
-          {error && <p className="text-red-400 text-xs">{error}</p>}
+          {error && <p className="text-neg text-xs">{error}</p>}
 
           <button
             type="submit"
             disabled={saving}
-            className="w-full bg-white text-gray-950 font-semibold rounded-lg py-2 text-sm hover:bg-gray-100 disabled:opacity-50 transition-colors"
+            className="w-full bg-brass text-ink font-semibold rounded-lg py-2 text-sm hover:brightness-110 disabled:opacity-50 transition-colors"
           >
             {saving ? 'Adding…' : 'Add expense'}
           </button>

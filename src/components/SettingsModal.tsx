@@ -41,12 +41,12 @@ export function SettingsModal({ onClose }: Props) {
         if (e.target === e.currentTarget) onClose()
       }}
     >
-      <div className="w-full sm:max-w-sm bg-gray-900 border border-gray-700 rounded-t-2xl sm:rounded-2xl p-5 space-y-4">
+      <div className="w-full sm:max-w-sm bg-panel border border-line rounded-t-2xl sm:rounded-2xl p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-white">Settings</h2>
+          <h2 className="text-sm font-semibold text-fg">Settings</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-white text-lg leading-none"
+            className="text-faint hover:text-fg text-lg leading-none"
             aria-label="Close"
           >
             ×
@@ -55,7 +55,7 @@ export function SettingsModal({ onClose }: Props) {
 
         <form onSubmit={handleSave} className="space-y-4">
           <div className="space-y-1">
-            <label className="block text-xs text-gray-400 uppercase tracking-wider" htmlFor="lock-timeout">
+            <label className="block text-xs text-dim uppercase tracking-wider" htmlFor="lock-timeout">
               Auto-lock after inactivity
             </label>
             <select
@@ -65,7 +65,7 @@ export function SettingsModal({ onClose }: Props) {
                 const v = e.target.value
                 setValue(v === 'never' ? 'never' : (Number(v) as LockTimeout))
               }}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-gray-500"
+              className="w-full bg-panel-2 border border-line rounded-lg px-3 py-2 text-fg text-sm focus:outline-none focus:border-brass"
             >
               {LOCK_TIMEOUT_OPTIONS.map((opt) => (
                 <option key={String(opt)} value={String(opt)}>
@@ -73,17 +73,17 @@ export function SettingsModal({ onClose }: Props) {
                 </option>
               ))}
             </select>
-            <p className="text-xs text-gray-500 pt-1">
+            <p className="text-xs text-faint pt-1">
               The vault locks automatically after this much inactivity. You can also lock it manually any time.
             </p>
           </div>
 
-          {error && <p className="text-red-400 text-xs">{error}</p>}
+          {error && <p className="text-neg text-xs">{error}</p>}
 
           <button
             type="submit"
             disabled={saving}
-            className="w-full bg-white text-gray-950 font-semibold rounded-lg py-2 text-sm hover:bg-gray-100 disabled:opacity-50 transition-colors"
+            className="w-full bg-brass text-ink font-semibold rounded-lg py-2 text-sm hover:brightness-110 disabled:opacity-50 transition-colors"
           >
             {saving ? 'Saving…' : 'Save'}
           </button>
