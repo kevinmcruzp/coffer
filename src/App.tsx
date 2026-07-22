@@ -9,7 +9,6 @@ import { ExpenseList } from './components/ExpenseList'
 import { IncomeList } from './components/IncomeList'
 import { MonthSummary } from './components/MonthSummary'
 import { AnnualView } from './components/AnnualView'
-import { FixedPanel } from './components/FixedPanel'
 import { QuickAddModal } from './components/QuickAddModal'
 import { SettingsModal } from './components/SettingsModal'
 import { ImportScreen } from './components/ImportScreen'
@@ -23,13 +22,12 @@ import { userMessage } from './lib/errorMessages'
 import { useExpenses } from './hooks/useExpenses'
 import { useMonthMeta } from './hooks/useMonthMeta'
 
-type Tab = 'expenses' | 'income' | 'summary' | 'fixed' | 'annual'
+type Tab = 'expenses' | 'income' | 'summary' | 'annual'
 
 const TAB_LABELS: Record<Tab, string> = {
   expenses: 'Expenses',
   income: 'Income',
   summary: 'Summary',
-  fixed: 'Fixed',
   annual: 'Annual',
 }
 
@@ -237,7 +235,6 @@ function MainApp() {
         {tab === 'expenses' && <ExpenseList key={monthKey} monthKey={monthKey} />}
         {tab === 'income' && <IncomeList key={monthKey} monthKey={monthKey} />}
         {tab === 'summary' && <MonthSummary key={monthKey} monthKey={monthKey} />}
-        {tab === 'fixed' && <FixedPanel key={monthKey} monthKey={monthKey} />}
         {tab === 'annual' && (
           <AnnualView
             currentYear={parseInt(monthKey.split('-')[0], 10)}

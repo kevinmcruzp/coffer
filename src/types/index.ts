@@ -15,12 +15,8 @@ export type Expense = {
   // Schema enforces at least one > 0.
   debit: number   // paid via debit/cash
   credit: number  // paid via credit card
-  // Drives automatic propagation to the next month via syncFixed.
-  // True = recurring every month; false = one-time (but installments can still propagate).
-  fixed: boolean
-  // Remaining installments to pay. Absent on non-installment expenses.
-  // syncFixed propagates when installments > 1 and decrements by 1 each month.
-  // When installments reaches 1, the expense is in its last month and won't propagate further.
+  // Remaining installments of a parceled purchase. Absent on single-payment expenses.
+  // Shown as a badge; the "Copy from previous month" flow decrements it when copying forward.
   installments?: number
 }
 
@@ -29,8 +25,6 @@ export type Income = {
   source: string
   currency: Currency
   amount: number
-  // When true, the income is cloned into the next month on goForward (matched by source + currency).
-  recurring?: boolean
 }
 
 export type MonthData = {

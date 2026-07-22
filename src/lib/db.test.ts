@@ -14,7 +14,6 @@ const sampleMonth: MonthData = {
       currency: 'BRL',
       debit: 1500,
       credit: 0,
-      fixed: true,
     },
   ],
   incomes: [

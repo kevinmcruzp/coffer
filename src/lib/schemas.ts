@@ -18,8 +18,7 @@ export const expenseSchema = z.object({
   currency: z.enum(['BRL', 'USD', 'CLP']),
   debit: z.number().min(0, 'Debit value cannot be negative'),
   credit: z.number().min(0, 'Credit value cannot be negative'),
-  fixed: z.boolean(),
-  // min(1): 1 means the expense is in its last month and won't propagate further (syncFixed skips installments === 1).
+  // min(1): 1 means the last parcel of a parceled purchase.
   installments: z.number().int('Number of installments must be a whole number').min(1, 'Installments must be at least 1').optional(),
 }).refine(
   (data) => data.debit > 0 || data.credit > 0,
@@ -31,7 +30,6 @@ export const incomeSchema = z.object({
   source: z.string().min(1, 'Source cannot be empty').max(100),
   currency: z.enum(['BRL', 'USD', 'CLP']),
   amount: z.number().positive('Amount must be greater than zero'),
-  recurring: z.boolean().optional(),
 })
 
 export const monthKeySchema = z

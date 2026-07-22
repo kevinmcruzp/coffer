@@ -30,8 +30,8 @@ function mockSession(db: IDBDatabase, key: CryptoKey) {
 const jan: MonthData = {
   key: '2025-01',
   expenses: [
-    { id: 'e1', name: 'Rent', category: 'fixed', currency: 'BRL', debit: 600, credit: 0, fixed: true },
-    { id: 'e2', name: 'Card', category: 'other', currency: 'BRL', debit: 0, credit: 200, fixed: false },
+    { id: 'e1', name: 'Rent', category: 'fixed', currency: 'BRL', debit: 600, credit: 0 },
+    { id: 'e2', name: 'Card', category: 'other', currency: 'BRL', debit: 0, credit: 200 },
   ],
   incomes: [{ id: 'i1', source: 'Salary', currency: 'BRL', amount: 3000 }],
   saving: 400,
@@ -42,7 +42,7 @@ const jan: MonthData = {
 const feb: MonthData = {
   key: '2025-02',
   expenses: [
-    { id: 'e3', name: 'Rent', category: 'fixed', currency: 'BRL', debit: 600, credit: 0, fixed: true },
+    { id: 'e3', name: 'Rent', category: 'fixed', currency: 'BRL', debit: 600, credit: 0 },
   ],
   incomes: [{ id: 'i2', source: 'Salary', currency: 'BRL', amount: 3000 }],
   saving: 500,

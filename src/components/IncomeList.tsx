@@ -125,15 +125,6 @@ function IncomeRow({ income, onUpdate, onRemove }: RowProps) {
           income.amount.toFixed(2)
         )}
       </td>
-      <td className="px-2 py-1 text-center">
-        <input
-          type="checkbox"
-          aria-label="Repeat"
-          checked={income.recurring ?? false}
-          onChange={e => onUpdate(income.id, { recurring: e.target.checked })}
-          className="accent-emerald-500"
-        />
-      </td>
       <td className="px-2 py-1">
         {confirmDelete ? (
           <span className="flex gap-1">
@@ -219,7 +210,6 @@ function AddIncomeForm({ onAdd }: AddFormProps) {
             onChange={e => setAmount(e.target.value)}
           />
         </td>
-        <td className="px-2 py-1" />
         <td className="px-2 py-1">
           <button
             className="text-xs text-emerald-400 hover:text-emerald-300"
@@ -231,7 +221,7 @@ function AddIncomeForm({ onAdd }: AddFormProps) {
       </tr>
       {formError && (
         <tr>
-          <td colSpan={4} className="px-2 py-1 text-red-400 text-xs">
+          <td colSpan={3} className="px-2 py-1 text-red-400 text-xs">
             {formError}
           </td>
         </tr>
@@ -312,7 +302,6 @@ export function IncomeList({ monthKey }: Props) {
             >
               Amount <SortIndicator active={sortCol === 'amount'} dir={sortDir} />
             </th>
-            <th className="px-2 py-1 text-center font-normal">Repeat</th>
             <th className="px-2 py-1 font-normal" />
           </tr>
         </thead>

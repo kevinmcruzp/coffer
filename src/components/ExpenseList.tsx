@@ -1,8 +1,5 @@
 import { useMemo, useState } from 'react'
 import { useExpenses } from '../hooks/useExpenses'
-import { useSession } from '../hooks/useSession'
-import { readMonth } from '../lib/db'
-import { syncFixed } from '../lib/syncFixed'
 import { useToast } from '../hooks/useToast'
 import { userMessage } from '../lib/errorMessages'
 import { round2, parseMoney } from '../lib/math'
@@ -246,14 +243,6 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
       <td className="px-2 py-1 text-right text-gray-400">
         {(expense.debit + expense.credit).toFixed(2)}
       </td>
-      <td className="px-2 py-1 text-center">
-        <input
-          type="checkbox"
-          checked={expense.fixed}
-          aria-label={`Repeat ${expense.name}`}
-          onChange={e => onUpdate(expense.id, { fixed: e.target.checked })}
-        />
-      </td>
       <td className="px-2 py-1">
         {confirmDelete ? (
           <span className="flex gap-1">
@@ -297,7 +286,6 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
   const [debit, setDebit] = useState('0')
   const [credit, setCredit] = useState('0')
   const [parcels, setParcels] = useState('')
-  const [fixed, setFixed] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
   const parcelsNum = parseInt(parcels, 10)
@@ -314,14 +302,12 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
         currency,
         debit: parseMoney(debit),
         credit: perParcel,
-        fixed,
         ...(isParceled ? { installments: parcelsNum } : {}),
       })
       setName('')
       setDebit('0')
       setCredit('0')
       setParcels('')
-      setFixed(false)
     } catch (err) {
       setFormError(userMessage(err, 'Failed to add expense'))
     }
@@ -385,14 +371,6 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
             />
           </div>
         </td>
-        <td className="px-2 py-1 text-center">
-          <input
-            type="checkbox"
-            checked={fixed}
-            aria-label="Repeat next month"
-            onChange={e => setFixed(e.target.checked)}
-          />
-        </td>
         <td className="px-2 py-1">
           <button
             className="text-xs text-emerald-400 hover:text-emerald-300"
@@ -404,14 +382,14 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
       </tr>
       {isParceled && (
         <tr data-testid="parcel-hint">
-          <td colSpan={7} className="px-2 pb-2 text-xs text-amber-400/90">
+          <td colSpan={6} className="px-2 pb-2 text-xs text-amber-400/90">
             ↳ {parcelsNum}× de {fmtCurrency(perParcel, currency)} = {fmtCurrency(round2(perParcel * parcelsNum), currency)}
           </td>
         </tr>
       )}
       {formError && (
         <tr>
-          <td colSpan={7} className="px-2 py-1 text-red-400 text-xs">
+          <td colSpan={6} className="px-2 py-1 text-red-400 text-xs">
             {formError}
           </td>
         </tr>
@@ -468,7 +446,6 @@ function ExpenseGroup({ label, category, expenses, onUpdate, onRemove, onAdd, so
             >
               Total <SortIndicator active={sortCol === 'total'} dir={sortDir} />
             </th>
-            <th className="px-2 py-1 text-center font-normal">Repeat</th>
             <th className="px-2 py-1 font-normal" />
           </tr>
         </thead>
@@ -519,48 +496,13 @@ type Props = {
   monthKey: string
 }
 
-function prevMonthKey(key: string): string {
-  const [y, m] = key.split('-').map(Number)
-  const date = new Date(y, m - 2, 1)
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-}
-
 export function ExpenseList({ monthKey }: Props) {
   const { expenses, loading, error, totals, add, update, remove } = useExpenses(monthKey)
-  const { state, db } = useSession()
-  const { toast } = useToast()
-  const [syncing, setSyncing] = useState(false)
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>('all')
   const [sortCol, setSortCol] = useState<ExpenseSortCol>('name')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
-
-  async function handleSync() {
-    if (!db || state.status !== 'unlocked') return
-    setSyncing(true)
-    try {
-      const prev = await readMonth(db, prevMonthKey(monthKey), state.key)
-      const currentData = { key: monthKey, expenses, incomes: [], saving: 0, adjustment: 0, budget: 0 }
-      const toAdd = syncFixed(prev, currentData)
-      if (toAdd.length === 0) {
-        toast('Already up to date')
-      } else {
-        for (const expense of toAdd) {
-          await add(expense)
-        }
-        toast(`${toAdd.length} expense${toAdd.length !== 1 ? 's' : ''} added`)
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : ''
-      if (msg.includes('not found')) {
-        toast('No previous month data found', 'error')
-      } else {
-        toast(userMessage(err, 'Sync failed. Please try again.'), 'error')
-      }
-    }
-    setSyncing(false)
-  }
 
   function toggleSort(col: ExpenseSortCol) {
     if (col === sortCol) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -597,7 +539,7 @@ export function ExpenseList({ monthKey }: Props) {
 
   return (
     <div>
-      <div className="flex flex-wrap gap-3 mb-3 items-center justify-between">
+      <div className="flex flex-wrap gap-3 mb-3 items-center">
         <FilterBar
           search={search}
           onSearch={setSearch}
@@ -606,13 +548,6 @@ export function ExpenseList({ monthKey }: Props) {
           payment={paymentFilter}
           onPayment={setPaymentFilter}
         />
-        <button
-          onClick={handleSync}
-          disabled={syncing}
-          className="text-xs text-gray-500 hover:text-white px-2 py-1 rounded border border-gray-700 hover:border-gray-500 transition-colors disabled:opacity-50"
-        >
-          {syncing ? 'Syncing…' : '↻ Sync fixed'}
-        </button>
       </div>
       {categoryFilter !== 'other' && (
         <ExpenseGroup

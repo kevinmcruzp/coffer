@@ -8,7 +8,6 @@ const validExpense = {
   currency: 'BRL' as const,
   debit: 1500,
   credit: 0,
-  fixed: true,
 }
 
 const validIncome = {

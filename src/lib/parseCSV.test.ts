@@ -77,22 +77,6 @@ describe('parseCSV — valid input', () => {
     expect(condominio).toBeUndefined()
   })
 
-  it('marks Fixo expenses as fixed: true', () => {
-    const result = parseCSV(SAMPLE_CSV)
-    if (!result.ok) throw new Error(result.error)
-
-    const fixedExpenses = result.data.expenses.filter(e => e.category === 'fixed')
-    expect(fixedExpenses.every(e => e.fixed === true)).toBe(true)
-  })
-
-  it('marks Outros expenses as fixed: false', () => {
-    const result = parseCSV(SAMPLE_CSV)
-    if (!result.ok) throw new Error(result.error)
-
-    const otherExpenses = result.data.expenses.filter(e => e.category === 'other')
-    expect(otherExpenses.every(e => e.fixed === false)).toBe(true)
-  })
-
   it('stops parsing at UTILIDADES row', () => {
     const result = parseCSV(SAMPLE_CSV)
     if (!result.ok) throw new Error(result.error)

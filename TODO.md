@@ -467,6 +467,32 @@ Objetivo: deixar o projeto apresentável para contribuidores e usuários. Hoje o
 
 ---
 
+## Iteração 31 — Recorrência intuitiva (remover "Repeat" quebrado)
+
+Objetivo: o "Repeat" atual não repete — copia escondido ao navegar, morre após um mês
+(syncFixed zera o flag) e se comporta diferente entre despesa e receita. Princípio: **antes
+não ter do que ter quebrado**. Remover tudo e substituir por uma ação explícita (modal
+"Copiar do mês anterior").
+
+**Parte 1 — Remoção do mecanismo quebrado ✅**
+- [x] Deletar `lib/syncFixed.ts` + `syncFixed.test.ts`
+- [x] Remover campo `fixed` do `Expense` (schema, tipos, forms, parseCSV) — `category` continua o agrupamento
+- [x] Remover campo `recurring` do `Income`
+- [x] Remover checkbox "Repeat" da despesa e da receita
+- [x] Remover botão "↻ Sync fixed"
+- [x] `useCurrentMonth.goForward` volta a ser navegação pura (sem leitura/escrita escondida)
+- [x] Cortar a aba/painel "Fixed" (5 abas → 4)
+- [x] Suíte verde (typecheck + lint + 197 testes)
+
+**Parte 2 — Modal "Copiar do mês anterior" (Opção B)**
+- [ ] `CopyFromPreviousModal`: lista receitas + despesas do mês anterior com checkboxes
+- [ ] Dedupe automático (item já presente no mês aparece desmarcado/cinza)
+- [ ] Parcelas: ao copiar item com `installments > 1`, decrementa; `installments === 1` não propaga
+- [ ] Botão de acesso na aba Expenses
+- [ ] Testes do fluxo (seleção, dedupe, decremento de parcela)
+
+---
+
 ## Fase 2 — Depois que a Fase 1 estiver estável
 
 Objetivo: ampliar o alcance da aplicação sem perder o local-first.

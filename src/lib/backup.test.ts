@@ -8,7 +8,7 @@ import type { MonthData } from '../types'
 
 const month1: MonthData = {
   key: '2025-01',
-  expenses: [{ id: 'e1', name: 'Rent', category: 'fixed', currency: 'BRL', debit: 1500, credit: 0, fixed: true }],
+  expenses: [{ id: 'e1', name: 'Rent', category: 'fixed', currency: 'BRL', debit: 1500, credit: 0 }],
   incomes: [{ id: 'i1', source: 'Salary', currency: 'USD', amount: 5000 }],
   saving: 300,
   adjustment: 0,
@@ -17,7 +17,7 @@ const month1: MonthData = {
 
 const month2: MonthData = {
   key: '2025-02',
-  expenses: [{ id: 'e2', name: 'Groceries', category: 'other', currency: 'BRL', debit: 800, credit: 0, fixed: false }],
+  expenses: [{ id: 'e2', name: 'Groceries', category: 'other', currency: 'BRL', debit: 800, credit: 0 }],
   incomes: [],
   saving: 0,
   adjustment: 50,

@@ -7,9 +7,6 @@ import type { Expense } from '../types'
 import type { UseExpensesResult } from '../hooks/useExpenses'
 
 vi.mock('../hooks/useExpenses')
-vi.mock('../hooks/useSession', () => ({
-  useSession: () => ({ state: { status: 'unlocked', key: {} }, db: {} }),
-}))
 vi.mock('../hooks/useToast', () => ({
   useToast: () => ({ toast: vi.fn() }),
 }))
@@ -21,7 +18,6 @@ const fixedExpense: Expense = {
   currency: 'BRL',
   debit: 1500,
   credit: 0,
-  fixed: true,
 }
 
 const otherExpense: Expense = {
@@ -31,12 +27,11 @@ const otherExpense: Expense = {
   currency: 'BRL',
   debit: 0,
   credit: 25,
-  fixed: false,
 }
 
-const expenseA: Expense = { id: 'a', name: 'Alpha', category: 'fixed', currency: 'BRL', debit: 300, credit: 0, fixed: true }
-const expenseB: Expense = { id: 'b', name: 'Beta',  category: 'fixed', currency: 'BRL', debit: 100, credit: 0, fixed: true }
-const expenseC: Expense = { id: 'c', name: 'Gamma', category: 'fixed', currency: 'BRL', debit: 200, credit: 0, fixed: true }
+const expenseA: Expense = { id: 'a', name: 'Alpha', category: 'fixed', currency: 'BRL', debit: 300, credit: 0 }
+const expenseB: Expense = { id: 'b', name: 'Beta',  category: 'fixed', currency: 'BRL', debit: 100, credit: 0 }
+const expenseC: Expense = { id: 'c', name: 'Gamma', category: 'fixed', currency: 'BRL', debit: 200, credit: 0 }
 
 function makeHookResult(overrides: Partial<UseExpensesResult> = {}): UseExpensesResult {
   return {
@@ -200,20 +195,6 @@ describe('ExpenseList', () => {
     expect(screen.queryByTestId('totals-USD')).not.toBeInTheDocument()
   })
 
-  it('calls update when fixed checkbox is toggled', async () => {
-    const update = vi.fn().mockResolvedValue(undefined)
-    vi.mocked(useExpenses).mockReturnValue(makeHookResult({
-      expenses: [fixedExpense],
-      update,
-    }))
-    render(<ExpenseList monthKey="2025-03" />)
-
-    const checkbox = screen.getByLabelText(/repeat.*rent/i)
-    await userEvent.click(checkbox)
-
-    expect(update).toHaveBeenCalledWith('e1', { fixed: false })
-  })
-
   it('clears add form after successful submission', async () => {
     const add = vi.fn().mockResolvedValue(undefined)
     vi.mocked(useExpenses).mockReturnValue(makeHookResult({ add }))
@@ -243,7 +224,7 @@ describe('ExpenseList — installments', () => {
   it('renders (Nx) badge when installments > 1', () => {
     const expense: Expense = {
       id: 'tv', name: 'TV', category: 'other', currency: 'BRL',
-      debit: 0, credit: 200, fixed: false, installments: 6,
+      debit: 0, credit: 200, installments: 6,
     }
     vi.mocked(useExpenses).mockReturnValue(makeHookResult({ expenses: [expense] }))
 
@@ -253,8 +234,8 @@ describe('ExpenseList — installments', () => {
   })
 
   it('does not render badge when installments is 1 or undefined', () => {
-    const e1: Expense = { id: 'a', name: 'A', category: 'other', currency: 'BRL', debit: 10, credit: 0, fixed: false }
-    const e2: Expense = { id: 'b', name: 'B', category: 'other', currency: 'BRL', debit: 10, credit: 0, fixed: false, installments: 1 }
+    const e1: Expense = { id: 'a', name: 'A', category: 'other', currency: 'BRL', debit: 10, credit: 0 }
+    const e2: Expense = { id: 'b', name: 'B', category: 'other', currency: 'BRL', debit: 10, credit: 0, installments: 1 }
     vi.mocked(useExpenses).mockReturnValue(makeHookResult({ expenses: [e1, e2] }))
 
     render(<ExpenseList monthKey="2025-03" />)

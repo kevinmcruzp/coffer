@@ -18,7 +18,6 @@ const baseExpense: Expense = {
   currency: 'BRL',
   debit: 1500,
   credit: 0,
-  fixed: true,
 }
 
 async function makeContext() {
@@ -97,7 +96,6 @@ describe('useExpenses — add', () => {
       currency: 'BRL',
       debit: 0,
       credit: 25,
-      fixed: false,
     }
 
     await act(async () => {
@@ -123,9 +121,7 @@ describe('useExpenses — add', () => {
           category: 'other',
           currency: 'BRL',
           debit: 0,
-          credit: 0,
-          fixed: false,
-        })
+          credit: 0,        })
       }),
     ).rejects.toThrow()
   })
@@ -144,9 +140,7 @@ describe('useExpenses — add', () => {
           category: 'other',
           currency: 'BRL',
           debit: -10,
-          credit: 0,
-          fixed: false,
-        })
+          credit: 0,        })
       }),
     ).rejects.toThrow()
   })
@@ -223,8 +217,8 @@ describe('useExpenses — totals', () => {
       key: MONTH_KEY,
       expenses: [
         baseExpense, // BRL debit 1500
-        { id: 'e2', name: 'Bill', category: 'other', currency: 'BRL', debit: 0, credit: 200, fixed: false },
-        { id: 'e3', name: 'Sub', category: 'other', currency: 'USD', debit: 0, credit: 15, fixed: false },
+        { id: 'e2', name: 'Bill', category: 'other', currency: 'BRL', debit: 0, credit: 200 },
+        { id: 'e3', name: 'Sub', category: 'other', currency: 'USD', debit: 0, credit: 15 },
       ],
       incomes: [],
       saving: 0,

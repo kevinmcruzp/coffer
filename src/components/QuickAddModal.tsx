@@ -36,7 +36,6 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
         currency,
         debit: parseMoney(debit),
         credit: perParcel,
-        fixed: false,
         ...(isParceled ? { installments: parcelsNum } : {}),
       })
       onClose()

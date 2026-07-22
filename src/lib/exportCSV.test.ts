@@ -6,11 +6,11 @@ import type { MonthData } from '../types'
 const baseMonth: MonthData = {
   key: '2025-01',
   expenses: [
-    { id: 'e1', name: 'Rent', category: 'fixed', currency: 'BRL', debit: 600, credit: 0, fixed: true },
-    { id: 'e2', name: 'Internet', category: 'fixed', currency: 'BRL', debit: 100, credit: 0, fixed: true },
-    { id: 'e3', name: 'Gym', category: 'fixed', currency: 'BRL', debit: 0, credit: 120, fixed: true },
-    { id: 'e4', name: 'Cinema', category: 'other', currency: 'BRL', debit: 40, credit: 0, fixed: false },
-    { id: 'e5', name: 'Shopee', category: 'other', currency: 'BRL', debit: 0, credit: 80, fixed: false },
+    { id: 'e1', name: 'Rent', category: 'fixed', currency: 'BRL', debit: 600, credit: 0 },
+    { id: 'e2', name: 'Internet', category: 'fixed', currency: 'BRL', debit: 100, credit: 0 },
+    { id: 'e3', name: 'Gym', category: 'fixed', currency: 'BRL', debit: 0, credit: 120 },
+    { id: 'e4', name: 'Cinema', category: 'other', currency: 'BRL', debit: 40, credit: 0 },
+    { id: 'e5', name: 'Shopee', category: 'other', currency: 'BRL', debit: 0, credit: 80 },
   ],
   incomes: [{ id: 'i1', source: 'Salary', currency: 'BRL', amount: 3000 }],
   saving: 400,

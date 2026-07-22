@@ -100,7 +100,6 @@ export function parseCSV(text: string): ParseCSVResult {
       currency: 'BRL',
       debit,
       credit,
-      fixed: currentCategory === 'fixed',
     })
   }
 
