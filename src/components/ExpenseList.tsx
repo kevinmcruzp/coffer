@@ -26,7 +26,7 @@ function sortExpenses(arr: Expense[], col: ExpenseSortCol, dir: SortDir): Expens
 
 function SortIndicator({ active, dir }: { active: boolean; dir: SortDir }) {
   return (
-    <span className={active ? 'ml-1' : 'ml-1 text-gray-700'}>
+    <span className={active ? 'ml-1' : 'ml-1 text-faint'}>
       {active ? (dir === 'asc' ? '↑' : '↓') : '↕'}
     </span>
   )
@@ -56,15 +56,15 @@ function ToggleGroup<T extends string>({
   onChange: (v: T) => void
 }) {
   return (
-    <div className="flex rounded-lg overflow-hidden border border-gray-700">
+    <div className="flex rounded-lg overflow-hidden border border-line">
       {options.map(o => (
         <button
           key={o.value}
           onClick={() => onChange(o.value)}
           className={`px-3 py-1 text-xs transition-colors ${
             value === o.value
-              ? 'bg-gray-700 text-white'
-              : 'bg-gray-900 text-gray-500 hover:text-gray-300'
+              ? 'bg-panel-2 text-fg'
+              : 'bg-panel text-faint hover:text-dim'
           }`}
         >
           {o.label}
@@ -82,7 +82,7 @@ function FilterBar({ search, onSearch, category, onCategory, payment, onPayment 
         placeholder="Search…"
         value={search}
         onChange={e => onSearch(e.target.value)}
-        className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-1 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-gray-500 w-40"
+        className="bg-panel border border-line rounded-lg px-3 py-1 text-sm text-fg placeholder-faint focus:outline-none focus:border-brass w-40"
       />
       <ToggleGroup
         options={[
@@ -148,7 +148,7 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
   }
 
   return (
-    <tr>
+    <tr className="group hover:bg-panel/50 transition-colors">
       <td
         data-testid={`name-${expense.id}`}
         className="px-2 py-1 cursor-pointer"
@@ -157,7 +157,7 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
         {editField === 'name' ? (
           <input
             autoFocus
-            className="w-full bg-gray-800 text-white rounded px-1"
+            className="w-full bg-panel-2 text-fg rounded px-1"
             value={draft}
             onChange={e => setDraft(e.target.value)}
             onBlur={commitEdit}
@@ -168,11 +168,11 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
           />
         ) : (
           <>
-            {expense.name}
+            <span className="border-b border-dashed border-transparent group-hover:border-faint">{expense.name}</span>
             {expense.installments !== undefined && expense.installments > 1 && (
               <span
                 data-testid={`installments-${expense.id}`}
-                className="ml-2 text-xs text-amber-400"
+                className="ml-2 text-xs text-brass"
               >
                 ({expense.installments}x)
               </span>
@@ -182,7 +182,7 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
       </td>
       <td className="px-2 py-1">
         <select
-          className="bg-gray-800 text-white rounded px-1 text-sm"
+          className="bg-panel-2 text-fg rounded px-1 text-sm"
           value={expense.currency}
           onChange={async e => {
             try {
@@ -205,7 +205,7 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
             type="number"
             min="0"
             step="0.01"
-            className="w-24 bg-gray-800 text-white rounded px-1 text-right"
+            className="w-24 bg-panel-2 text-fg rounded px-1 text-right"
             value={draft}
             onChange={e => setDraft(e.target.value)}
             onBlur={commitEdit}
@@ -215,7 +215,7 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
             }}
           />
         ) : (
-          expense.debit.toFixed(2)
+          <span className="font-mono tabular-nums border-b border-dashed border-transparent group-hover:border-faint">{expense.debit.toFixed(2)}</span>
         )}
       </td>
       <td
@@ -228,7 +228,7 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
             type="number"
             min="0"
             step="0.01"
-            className="w-24 bg-gray-800 text-white rounded px-1 text-right"
+            className="w-24 bg-panel-2 text-fg rounded px-1 text-right"
             value={draft}
             onChange={e => setDraft(e.target.value)}
             onBlur={commitEdit}
@@ -238,23 +238,23 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
             }}
           />
         ) : (
-          expense.credit.toFixed(2)
+          <span className="font-mono tabular-nums border-b border-dashed border-transparent group-hover:border-faint">{expense.credit.toFixed(2)}</span>
         )}
       </td>
-      <td className="px-2 py-1 text-right text-gray-400">
+      <td className="px-2 py-1 text-right text-dim font-mono tabular-nums">
         {(expense.debit + expense.credit).toFixed(2)}
       </td>
       <td className="px-2 py-1">
         {confirmDelete ? (
           <span className="flex gap-1">
             <button
-              className="text-xs text-red-400 underline"
+              className="text-xs text-neg underline"
               onClick={() => onRemove(expense.id)}
             >
               Confirm
             </button>
             <button
-              className="text-xs text-gray-400 underline"
+              className="text-xs text-dim underline"
               onClick={() => setConfirmDelete(false)}
             >
               Cancel
@@ -262,7 +262,7 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
           </span>
         ) : (
           <button
-            className="text-xs text-gray-500 hover:text-red-400"
+            className="text-xs text-faint hover:text-neg"
             aria-label={`Delete ${expense.name}`}
             onClick={() => setConfirmDelete(true)}
           >
@@ -316,10 +316,10 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
 
   return (
     <>
-      <tr className="text-gray-400 text-sm">
+      <tr className="text-dim text-sm">
         <td className="px-2 py-1">
           <input
-            className="w-full bg-gray-800 text-white rounded px-1 placeholder-gray-500"
+            className="w-full bg-panel-2 text-fg rounded px-1 placeholder-faint"
             placeholder="Name"
             value={name}
             onChange={e => setName(e.target.value)}
@@ -327,7 +327,7 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
         </td>
         <td className="px-2 py-1">
           <select
-            className="bg-gray-800 text-white rounded px-1 text-sm"
+            className="bg-panel-2 text-fg rounded px-1 text-sm"
             value={currency}
             onChange={e => setCurrency(e.target.value as Currency)}
           >
@@ -341,7 +341,7 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
             min="0"
             step="0.01"
             aria-label="Debit"
-            className="w-24 bg-gray-800 text-white rounded px-1 text-right"
+            className="w-24 bg-panel-2 text-fg rounded px-1 text-right"
             value={debit}
             onChange={e => setDebit(e.target.value)}
           />
@@ -352,21 +352,21 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
             min="0"
             step="0.01"
             aria-label="Credit"
-            className="w-24 bg-gray-800 text-white rounded px-1 text-right border border-gray-700 focus:outline-none focus:border-gray-500"
+            className="w-24 bg-panel-2 text-fg rounded px-1 text-right border border-line focus:outline-none focus:border-brass"
             value={credit}
             onChange={e => setCredit(e.target.value)}
           />
         </td>
         <td className="px-2 py-1">
           <div className="flex items-center gap-1 justify-end">
-            <span className="text-gray-500 text-xs">×</span>
+            <span className="text-faint text-xs">×</span>
             <input
               type="number"
               min="1"
               step="1"
               placeholder="1"
               aria-label="Parcels"
-              className="w-12 bg-gray-700 text-white rounded px-1 text-center text-sm border border-gray-600 focus:outline-none focus:border-amber-500 placeholder-gray-500"
+              className="w-12 bg-panel-2 text-fg rounded px-1 text-center text-sm border border-line focus:outline-none focus:border-brass placeholder-faint"
               value={parcels}
               onChange={e => setParcels(e.target.value)}
             />
@@ -374,7 +374,7 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
         </td>
         <td className="px-2 py-1">
           <button
-            className="text-xs text-emerald-400 hover:text-emerald-300"
+            className="text-xs text-pos hover:text-pos"
             onClick={handleAdd}
           >
             Add
@@ -383,14 +383,14 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
       </tr>
       {isParceled && (
         <tr data-testid="parcel-hint">
-          <td colSpan={6} className="px-2 pb-2 text-xs text-amber-400/90">
+          <td colSpan={6} className="px-2 pb-2 text-xs text-brass/90">
             ↳ {parcelsNum}× de {fmtCurrency(perParcel, currency)} = {fmtCurrency(round2(perParcel * parcelsNum), currency)}
           </td>
         </tr>
       )}
       {formError && (
         <tr>
-          <td colSpan={6} className="px-2 py-1 text-red-400 text-xs">
+          <td colSpan={6} className="px-2 py-1 text-neg text-xs">
             {formError}
           </td>
         </tr>
@@ -416,33 +416,33 @@ type GroupProps = {
 function ExpenseGroup({ label, category, expenses, onUpdate, onRemove, onAdd, sortCol, sortDir, onSort }: GroupProps) {
   return (
     <section data-testid={`group-${category}`} className="mb-6">
-      <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">
+      <h2 className="text-[11px] font-semibold text-brass uppercase tracking-[0.11em] mb-2">
         {label}
       </h2>
-      <table className="w-full text-sm text-white">
+      <table className="w-full text-sm text-fg">
         <thead>
-          <tr className="text-gray-500 text-xs border-b border-gray-800 select-none">
+          <tr className="text-faint text-[11px] uppercase tracking-[0.06em] border-b border-line select-none">
             <th
-              className="px-2 py-1 text-left font-normal cursor-pointer hover:text-gray-300"
+              className="px-2 py-1 text-left font-normal cursor-pointer hover:text-dim"
               onClick={() => onSort('name')}
             >
               Name <SortIndicator active={sortCol === 'name'} dir={sortDir} />
             </th>
             <th className="px-2 py-1 text-left font-normal">Currency</th>
             <th
-              className="px-2 py-1 text-right font-normal cursor-pointer hover:text-gray-300"
+              className="px-2 py-1 text-right font-normal cursor-pointer hover:text-dim"
               onClick={() => onSort('debit')}
             >
               Debit <SortIndicator active={sortCol === 'debit'} dir={sortDir} />
             </th>
             <th
-              className="px-2 py-1 text-right font-normal cursor-pointer hover:text-gray-300"
+              className="px-2 py-1 text-right font-normal cursor-pointer hover:text-dim"
               onClick={() => onSort('credit')}
             >
               Credit <SortIndicator active={sortCol === 'credit'} dir={sortDir} />
             </th>
             <th
-              className="px-2 py-1 text-right font-normal cursor-pointer hover:text-gray-300"
+              className="px-2 py-1 text-right font-normal cursor-pointer hover:text-dim"
               onClick={() => onSort('total')}
             >
               Total <SortIndicator active={sortCol === 'total'} dir={sortDir} />
@@ -474,14 +474,14 @@ function TotalsFooter({ totals }: { totals: Totals }) {
   if (active.length === 0) return null
 
   return (
-    <div className="border-t border-gray-800 pt-4 mt-4 space-y-2">
+    <div className="border-t border-line pt-4 mt-4 space-y-2">
       {active.map(c => (
         <div
           key={c}
           data-testid={`totals-${c}`}
-          className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-gray-300"
+          className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-dim [&_strong]:font-mono [&_strong]:tabular-nums [&_strong]:text-fg"
         >
-          <span className="font-semibold text-gray-500 w-10">{c}</span>
+          <span className="font-semibold text-faint w-10">{c}</span>
           <span>Debit: <strong>{fmtCurrency(totals[c].debit, c)}</strong></span>
           <span>Credit: <strong>{fmtCurrency(totals[c].credit, c)}</strong></span>
           <span>Total: <strong>{fmtCurrency(totals[c].total, c)}</strong></span>
@@ -527,11 +527,11 @@ function ExpenseListBody({ monthKey }: Props) {
   )
 
   if (loading) {
-    return <div className="text-gray-400 text-sm text-center py-8">Loading…</div>
+    return <div className="text-dim text-sm text-center py-8">Loading…</div>
   }
 
   if (error) {
-    return <div className="text-red-400 text-sm text-center py-8">{error}</div>
+    return <div className="text-neg text-sm text-center py-8">{error}</div>
   }
 
   const isFiltering = search !== '' || categoryFilter !== 'all' || paymentFilter !== 'all'
@@ -577,9 +577,14 @@ function ExpenseListBody({ monthKey }: Props) {
         />
       )}
       {isFiltering && filtered.length === 0 && (
-        <p className="text-gray-500 text-sm text-center py-8">No expenses match the current filters.</p>
+        <p className="text-faint text-sm text-center py-8">No expenses match the current filters.</p>
       )}
       <TotalsFooter totals={totals} />
+      {expenses.length > 0 && (
+        <p className="text-xs text-faint mt-3">
+          Tap any name or amount to edit inline · <span className="font-mono">Enter</span> saves
+        </p>
+      )}
     </div>
   )
 }
@@ -594,7 +599,7 @@ export function ExpenseList({ monthKey }: Props) {
       <div className="flex justify-end mb-3">
         <button
           onClick={() => setCopyOpen(true)}
-          className="text-xs text-gray-400 hover:text-white px-3 py-1.5 rounded-lg border border-gray-700 hover:border-gray-500 transition-colors"
+          className="text-xs text-dim hover:text-fg px-3 py-1.5 rounded-lg border border-line hover:border-brass transition-colors"
         >
           Copy from previous month
         </button>

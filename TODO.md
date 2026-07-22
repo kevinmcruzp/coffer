@@ -506,10 +506,10 @@ affordance de edição inline. Mockup aprovado. Implementação incremental (she
 - [x] Topbar: month nav (serif + chevrons latão) + budget + Add (latão)
 - [x] `MonthNavigator` reestilizado; responsivo (sidebar vira barra horizontal no mobile)
 
-**P2.2 — Tela Expenses (ledger)**
-- [ ] Migrar `ExpenseList` para tokens; grupos Fixed/Others com label latão
-- [ ] Affordance de edição inline (sublinhado tracejado no hover); chip de parcela
-- [ ] Filtros como segmented control; totais mono tabulares
+**P2.2 — Tela Expenses (ledger) ✅**
+- [x] Migrar `ExpenseList` para tokens; grupos Fixed/Others com label latão
+- [x] Affordance de edição inline (sublinhado tracejado no hover) + dica "Tap … Enter saves"
+- [x] Cabeçalhos uppercase; números mono tabulares; totais mono; botão Copy em ghost
 
 **P2.3 — Income + Summary**
 - [ ] `IncomeList` para tokens
