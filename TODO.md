@@ -511,9 +511,10 @@ affordance de edição inline. Mockup aprovado. Implementação incremental (she
 - [x] Affordance de edição inline (sublinhado tracejado no hover) + dica "Tap … Enter saves"
 - [x] Cabeçalhos uppercase; números mono tabulares; totais mono; botão Copy em ghost
 
-**P2.3 — Income + Summary**
-- [ ] `IncomeList` para tokens
-- [ ] `MonthSummary`: cards de saldo (leitura instantânea, semântica +/−), budget bar, gráficos
+**P2.3 — Income + Summary ✅**
+- [x] `IncomeList` para tokens
+- [x] `MonthSummary`: cards com hairline latão + número mono, Balance semântico +/−, budget bar latão/neg
+- [x] `PieChart` recolorido on-brand (latão/steel/sage/clay) + textos em tokens
 
 **P2.4 — Annual + modais**
 - [ ] `AnnualView` para tokens

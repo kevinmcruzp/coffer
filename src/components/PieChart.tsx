@@ -25,10 +25,10 @@ export function PieChart({ slices, title }: Props) {
   if (total === 0) {
     return (
       <div className="flex flex-col items-center gap-1">
-        {title && <p className="text-xs text-gray-500">{title}</p>}
+        {title && <p className="text-xs text-faint">{title}</p>}
         <svg viewBox="0 0 100 100" className="w-24 h-24">
-          <circle cx={CX} cy={CY} r={R} fill="#1f2937" />
-          <text x={CX} y={CY + 4} textAnchor="middle" fontSize={8} fill="#6b7280">No data</text>
+          <circle cx={CX} cy={CY} r={R} fill="#1D252A" />
+          <text x={CX} y={CY + 4} textAnchor="middle" fontSize={8} fill="#6A7772">No data</text>
         </svg>
       </div>
     )
@@ -48,7 +48,7 @@ export function PieChart({ slices, title }: Props) {
 
   return (
     <div className="flex flex-col items-center gap-1">
-      {title && <p className="text-xs text-gray-500">{title}</p>}
+      {title && <p className="text-xs text-faint">{title}</p>}
       <svg viewBox="0 0 100 100" className="w-24 h-24">
         {paths.map(p =>
           p.sweep >= 359.9 ? (
@@ -64,7 +64,7 @@ export function PieChart({ slices, title }: Props) {
       </svg>
       <div className="flex flex-wrap justify-center gap-x-3 gap-y-1">
         {active.map(s => (
-          <span key={s.label} className="flex items-center gap-1 text-xs text-gray-400">
+          <span key={s.label} className="flex items-center gap-1 text-xs text-dim">
             <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
             {s.label}
           </span>
