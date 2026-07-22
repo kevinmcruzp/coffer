@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { SessionProvider } from './contexts/SessionContext'
 import { useSession } from './hooks/useSession'
 import { useCurrentMonth } from './hooks/useCurrentMonth'
@@ -17,7 +17,24 @@ import { ToastProvider } from './components/Toast'
 import {
   ExpensesIcon, IncomeIcon, SummaryIcon, AnnualIcon,
   ImportExportIcon, BackupIcon, SettingsIcon, LockIcon, PlusIcon,
+  SunIcon, MoonIcon,
 } from './components/Icons'
+
+type Theme = 'light' | 'dark'
+
+function useTheme(): [Theme, () => void] {
+  const [theme, setTheme] = useState<Theme>(() => {
+    const saved = localStorage.getItem('coffer-theme')
+    if (saved === 'light' || saved === 'dark') return saved
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  })
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('coffer-theme', theme)
+  }, [theme])
+  const toggle = () => setTheme(t => (t === 'dark' ? 'light' : 'dark'))
+  return [theme, toggle]
+}
 import { useToast } from './hooks/useToast'
 import { downloadCSV } from './lib/exportCSV'
 import { readMonth } from './lib/db'
@@ -82,6 +99,7 @@ function BudgetBadge({ monthKey }: { monthKey: string }) {
 
 function MainApp() {
   const { state, db, logout } = useSession()
+  const [theme, toggleTheme] = useTheme()
   const { monthKey, canGoBack, goBack, goForward, goTo } = useCurrentMonth(currentMonthKey())
   const [tab, setTab] = useState<Tab>('expenses')
   const [importing, setImporting] = useState(false)
@@ -182,6 +200,13 @@ function MainApp() {
         </div>
 
         <div className="flex gap-1.5 shrink-0">
+          <button
+            onClick={toggleTheme}
+            aria-label="Toggle theme"
+            className="shrink-0 flex items-center justify-center px-2.5 py-2 rounded-lg border border-line text-dim hover:text-brass hover:border-brass transition-colors"
+          >
+            {theme === 'dark' ? <SunIcon className="w-4 h-4" /> : <MoonIcon className="w-4 h-4" />}
+          </button>
           <button
             onClick={() => setSettingsOpen(true)}
             className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg border border-line text-dim hover:text-fg hover:border-brass transition-colors text-xs"

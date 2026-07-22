@@ -493,7 +493,7 @@ não ter do que ter quebrado**. Remover tudo e substituir por uma ação explíc
 
 ---
 
-## Iteração 32 — UI/UX overhaul: "vault ledger" + sidebar
+## Iteração 32 — UI/UX overhaul: "vault ledger" + sidebar ✅
 
 Objetivo: a app era pouco intuitiva. Redesign com identidade própria (cofre/livro-razão):
 sidebar-espinha, acento latão sobre tinta fria, serif no wordmark, números mono tabulares,
@@ -520,9 +520,10 @@ affordance de edição inline. Mockup aprovado. Implementação incremental (she
 - [x] `AnnualView` para tokens (+ tabular-nums na tabela)
 - [x] `QuickAddModal`, `SettingsModal`, `CopyFromPreviousModal`, `ImportScreen` para tokens (botões primários em latão)
 
-**P2.5 — Tema claro + toggle**
-- [ ] Definir valores light nos tokens (media query + `[data-theme]`)
-- [ ] Toggle na sidebar, persistido em localStorage (não sensível)
+**P2.5 — Tema claro + toggle ✅**
+- [x] Valores light nos tokens (media query + `[data-theme]` nas duas direções)
+- [x] Telas de auth (Setup/Login) migradas para tokens (indigo→latão, warning→neg)
+- [x] Toggle sol/lua na sidebar, persistido em localStorage; aplicado antes do 1º paint no `main.tsx`
 
 ---
 

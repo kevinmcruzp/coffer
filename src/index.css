@@ -22,6 +22,56 @@
   --font-serif: ui-serif, "Iowan Old Style", Georgia, "Times New Roman", serif;
 }
 
+/* Light theme — aged ledger paper. Applied when the OS prefers light and the
+ * user hasn't forced a theme. The [data-theme] rules below let the in-app
+ * toggle win in either direction. */
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-ink: #ECEAE3;
+    --color-panel: #F5F3EC;
+    --color-panel-2: #EEEBE1;
+    --color-line: #D6D1C4;
+    --color-line-soft: #E1DDD1;
+    --color-fg: #1B211E;
+    --color-dim: #5E6864;
+    --color-faint: #8C948F;
+    --color-brass: #9A7530;
+    --color-brass-soft: rgba(154, 117, 48, 0.13);
+    --color-pos: #2F8F63;
+    --color-neg: #B4503F;
+  }
+}
+
+:root[data-theme="light"] {
+  --color-ink: #ECEAE3;
+  --color-panel: #F5F3EC;
+  --color-panel-2: #EEEBE1;
+  --color-line: #D6D1C4;
+  --color-line-soft: #E1DDD1;
+  --color-fg: #1B211E;
+  --color-dim: #5E6864;
+  --color-faint: #8C948F;
+  --color-brass: #9A7530;
+  --color-brass-soft: rgba(154, 117, 48, 0.13);
+  --color-pos: #2F8F63;
+  --color-neg: #B4503F;
+}
+
+:root[data-theme="dark"] {
+  --color-ink: #0F1417;
+  --color-panel: #161C20;
+  --color-panel-2: #1D252A;
+  --color-line: #273037;
+  --color-line-soft: #1E262B;
+  --color-fg: #E7ECEA;
+  --color-dim: #93A19C;
+  --color-faint: #6A7772;
+  --color-brass: #C9A45C;
+  --color-brass-soft: rgba(201, 164, 92, 0.14);
+  --color-pos: #5FB98A;
+  --color-neg: #D97A6C;
+}
+
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
