@@ -226,7 +226,7 @@ function MainApp() {
       <div className="flex-1 flex flex-col min-w-0">
         <header className="flex items-center gap-3 md:gap-4 px-4 md:px-7 py-3.5 border-b border-line">
           {tab !== 'annual'
-            ? <MonthNavigator monthKey={monthKey} canGoBack={canGoBack} goBack={goBack} goForward={goForward} />
+            ? <MonthNavigator monthKey={monthKey} canGoBack={canGoBack} goBack={goBack} goForward={goForward} goTo={goTo} />
             : <span className="font-serif text-lg font-semibold">Annual overview</span>}
           <div className="flex-1" />
           <BudgetBadge monthKey={monthKey} />
