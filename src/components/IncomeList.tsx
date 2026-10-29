@@ -8,6 +8,8 @@ import { CURRENCIES } from '../types'
 import type { Currency, Income } from '../types'
 import type { IncomeTotals } from '../hooks/useIncomes'
 
+const FIELD = 'bg-panel-2 text-fg rounded px-1 border border-line focus:outline-none focus:border-brass'
+
 // ── Sort ──────────────────────────────────────────────────────────────────────
 
 type IncomeSortCol = 'source' | 'amount'
@@ -75,7 +77,7 @@ function IncomeRow({ income, onUpdate, onRemove }: RowProps) {
         {editField === 'source' ? (
           <input
             autoFocus
-            className="w-full bg-panel-2 text-fg rounded px-1"
+            className={`${FIELD} w-full`}
             value={draft}
             onChange={e => setDraft(e.target.value)}
             onBlur={commitEdit}
@@ -90,7 +92,7 @@ function IncomeRow({ income, onUpdate, onRemove }: RowProps) {
       </td>
       <td className="px-2 py-1">
         <select
-          className="bg-panel-2 text-fg rounded px-1 text-sm"
+          className={`${FIELD} text-sm`}
           value={income.currency}
           onChange={async e => {
             try {
@@ -112,7 +114,7 @@ function IncomeRow({ income, onUpdate, onRemove }: RowProps) {
             autoFocus
             min="0.01"
             step="0.01"
-            className="w-28 bg-panel-2 text-fg rounded px-1 text-right"
+            className={`${FIELD} w-28 text-right`}
             value={draft}
             onChange={e => setDraft(e.target.value)}
             onBlur={commitEdit}
@@ -183,7 +185,7 @@ function AddIncomeForm({ onAdd }: AddFormProps) {
       <tr className="text-dim text-sm">
         <td className="px-2 py-1">
           <input
-            className="w-full bg-panel-2 text-fg rounded px-1 placeholder-faint"
+            className={`${FIELD} w-full placeholder-faint`}
             placeholder="Source"
             value={source}
             onChange={e => setSource(e.target.value)}
@@ -191,7 +193,7 @@ function AddIncomeForm({ onAdd }: AddFormProps) {
         </td>
         <td className="px-2 py-1">
           <select
-            className="bg-panel-2 text-fg rounded px-1 text-sm"
+            className={`${FIELD} text-sm`}
             value={currency}
             onChange={e => setCurrency(e.target.value as Currency)}
           >
@@ -205,7 +207,7 @@ function AddIncomeForm({ onAdd }: AddFormProps) {
             step="0.01"
             aria-label="Amount"
             placeholder="0.00"
-            className="w-28 bg-panel-2 text-fg rounded px-1 text-right placeholder-faint"
+            className={`${FIELD} w-28 text-right placeholder-faint`}
             value={amount}
             onChange={e => setAmount(e.target.value)}
           />

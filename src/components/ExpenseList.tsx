@@ -10,6 +10,8 @@ import { CURRENCIES } from '../types'
 import type { Category, Currency, Expense } from '../types'
 import type { Totals } from '../hooks/useExpenses'
 
+const FIELD = 'bg-panel-2 text-fg rounded px-1 border border-line focus:outline-none focus:border-brass'
+
 // ── Sort ──────────────────────────────────────────────────────────────────────
 
 type ExpenseSortCol = 'name' | 'debit' | 'credit' | 'total'
@@ -159,7 +161,7 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
         {editField === 'name' ? (
           <input
             autoFocus
-            className="w-full bg-panel-2 text-fg rounded px-1"
+            className={`${FIELD} w-full`}
             value={draft}
             onChange={e => setDraft(e.target.value)}
             onBlur={commitEdit}
@@ -184,7 +186,7 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
       </td>
       <td className="px-2 py-1">
         <select
-          className="bg-panel-2 text-fg rounded px-1 text-sm"
+          className={`${FIELD} text-sm`}
           value={expense.currency}
           onChange={async e => {
             try {
@@ -206,7 +208,7 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
             autoFocus
             min="0"
             step="0.01"
-            className="w-24 bg-panel-2 text-fg rounded px-1 text-right"
+            className={`${FIELD} w-24 text-right`}
             value={draft}
             onChange={e => setDraft(e.target.value)}
             onBlur={commitEdit}
@@ -230,7 +232,7 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
             autoFocus
             min="0"
             step="0.01"
-            className="w-24 bg-panel-2 text-fg rounded px-1 text-right"
+            className={`${FIELD} w-24 text-right`}
             value={draft}
             onChange={e => setDraft(e.target.value)}
             onBlur={commitEdit}
@@ -323,7 +325,7 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
       <tr className="text-dim text-sm">
         <td className="px-2 py-1">
           <input
-            className="w-full bg-panel-2 text-fg rounded px-1 placeholder-faint"
+            className={`${FIELD} w-full placeholder-faint`}
             placeholder="Name"
             value={name}
             onChange={e => setName(e.target.value)}
@@ -331,7 +333,7 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
         </td>
         <td className="px-2 py-1">
           <select
-            className="bg-panel-2 text-fg rounded px-1 text-sm"
+            className={`${FIELD} text-sm`}
             value={currency}
             onChange={e => setCurrency(e.target.value as Currency)}
           >
@@ -345,7 +347,7 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
             step="0.01"
             aria-label="Debit"
             placeholder="0.00"
-            className="w-24 bg-panel-2 text-fg rounded px-1 text-right placeholder-faint"
+            className={`${FIELD} w-24 text-right placeholder-faint`}
             value={debit}
             onChange={e => setDebit(e.target.value)}
           />
@@ -356,7 +358,7 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
             step="0.01"
             aria-label="Credit"
             placeholder="0.00"
-            className="w-24 bg-panel-2 text-fg rounded px-1 text-right placeholder-faint border border-line focus:outline-none focus:border-brass"
+            className={`${FIELD} w-24 text-right placeholder-faint`}
             value={credit}
             onChange={e => setCredit(e.target.value)}
           />
@@ -369,7 +371,7 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
               step="1"
               placeholder="1"
               aria-label="Parcels"
-              className="w-12 bg-panel-2 text-fg rounded px-1 text-center text-sm border border-line focus:outline-none focus:border-brass placeholder-faint"
+              className={`${FIELD} w-12 text-center text-sm placeholder-faint`}
               value={parcels}
               onChange={e => setParcels(e.target.value)}
             />

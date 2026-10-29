@@ -72,6 +72,21 @@
   --color-neg: #D97A6C;
 }
 
+/* Number fields: drop the native spinner (it clashes with the theme and the
+ * step is cents, so it's useless anyway) and match the mono figures used
+ * wherever amounts are displayed. */
+@layer base {
+  input[type="number"] {
+    @apply font-mono tabular-nums;
+    appearance: textfield;
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    appearance: none;
+    margin: 0;
+  }
+}
+
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
