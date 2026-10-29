@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { MIN_YEAR, yearOf } from '../lib/months'
 
 function addMonths(key: string, delta: number): string {
   const [y, m] = key.split('-').map(Number)
@@ -25,8 +26,7 @@ export function useCurrentMonth(initial: string): UseCurrentMonthResult {
   const goForward = useCallback(() => setMonthKey(k => addMonths(k, 1)), [])
   const goTo = useCallback((key: string) => setMonthKey(key), [])
 
-  const year = parseInt(monthKey.split('-')[0], 10)
-  const canGoBack = year > 2000
+  const canGoBack = yearOf(monthKey) > MIN_YEAR
 
   return { monthKey, canGoBack, goBack, goForward, goTo }
 }
