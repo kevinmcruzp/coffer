@@ -7,29 +7,9 @@ import { userMessage } from '../lib/errorMessages'
 import { round2, parseMoney } from '../lib/math'
 import { PieChart } from './PieChart'
 import { NumberInput } from './NumberInput'
+import { StatCard } from './StatCard'
 import { CURRENCIES } from '../types'
 import type { Currency } from '../types'
-
-type CardProps = {
-  label: string
-  value: string
-  highlight?: 'positive' | 'negative' | 'neutral'
-}
-
-function Card({ label, value, highlight = 'neutral' }: CardProps) {
-  const colors = {
-    positive: 'text-pos',
-    negative: 'text-neg',
-    neutral: 'text-fg',
-  }
-  return (
-    <div className="relative overflow-hidden bg-panel border border-line rounded-xl p-4 space-y-1">
-      <span className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-brass/70 to-transparent" />
-      <p className="text-[11px] text-faint uppercase tracking-[0.1em]">{label}</p>
-      <p className={`text-xl font-semibold font-mono tabular-nums ${colors[highlight]}`}>{value}</p>
-    </div>
-  )
-}
 
 function fmt(value: number, currency: Currency): string {
   return new Intl.NumberFormat('pt-BR', {
@@ -116,16 +96,16 @@ export function MonthSummary({ monthKey }: Props) {
               <h2 className="text-xs font-semibold text-faint uppercase tracking-widest">{c}</h2>
             )}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <Card label="Income" value={fmt(income, c)} />
-              <Card label="Debit" value={fmt(debit, c)} />
-              <Card label="Credit card" value={fmt(credit, c)} />
+              <StatCard label="Income" value={fmt(income, c)} />
+              <StatCard label="Debit" value={fmt(debit, c)} />
+              <StatCard label="Credit card" value={fmt(credit, c)} />
               {c === 'BRL' && (
                 <>
-                  <Card label="Saving" value={fmt(saving, 'BRL')} />
-                  <Card label="Adjustment" value={fmt(adjustment, 'BRL')} />
+                  <StatCard label="Saving" value={fmt(saving, 'BRL')} />
+                  <StatCard label="Adjustment" value={fmt(adjustment, 'BRL')} />
                 </>
               )}
-              <Card label="Balance" value={fmt(balance, c)} highlight={balanceHighlight} />
+              <StatCard label="Balance" value={fmt(balance, c)} highlight={balanceHighlight} />
             </div>
           </div>
         )
