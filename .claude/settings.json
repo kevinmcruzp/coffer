@@ -20,5 +20,8 @@
       "Bash(cp * /usr*)",
       "Bash(rm -rf /*)"
     ]
+  },
+  "enabledPlugins": {
+    "playwright@claude-plugins-official": true
   }
 }
