@@ -8,6 +8,7 @@ import { round2, parseMoney } from '../lib/math'
 import { PieChart } from './PieChart'
 import { NumberInput } from './NumberInput'
 import { StatCard } from './StatCard'
+import { InfoTip } from './InfoTip'
 import { CURRENCIES } from '../types'
 import type { Currency } from '../types'
 
@@ -17,6 +18,13 @@ function fmt(value: number, currency: Currency): string {
     currency,
     minimumFractionDigits: 2,
   }).format(value)
+}
+
+const INFO = {
+  saving: 'Money set aside this month. It is subtracted from the BRL balance.',
+  adjustment: 'Manual correction to the BRL balance — use a negative value to subtract.',
+  budget: 'Monthly spending ceiling in BRL. Only BRL expenses count against it. It only warns you — it does not change the balance. 0 = no limit.',
+  balance: 'Income − Debit − Credit. In BRL, Saving is also subtracted and Adjustment added.',
 }
 
 type Props = {
@@ -101,11 +109,11 @@ export function MonthSummary({ monthKey }: Props) {
               <StatCard label="Credit card" value={fmt(credit, c)} />
               {c === 'BRL' && (
                 <>
-                  <StatCard label="Saving" value={fmt(saving, 'BRL')} />
-                  <StatCard label="Adjustment" value={fmt(adjustment, 'BRL')} />
+                  <StatCard label="Saving" value={fmt(saving, 'BRL')} info={INFO.saving} />
+                  <StatCard label="Adjustment" value={fmt(adjustment, 'BRL')} info={INFO.adjustment} />
                 </>
               )}
-              <StatCard label="Balance" value={fmt(balance, c)} highlight={balanceHighlight} />
+              <StatCard label="Balance" value={fmt(balance, c)} info={INFO.balance} highlight={balanceHighlight} />
             </div>
           </div>
         )
@@ -124,7 +132,7 @@ export function MonthSummary({ monthKey }: Props) {
         return (
           <div className="space-y-1">
             <div className="flex justify-between text-xs text-dim">
-              <span>Budget</span>
+              <span className="flex items-center gap-1.5">Budget <InfoTip label="Budget">{INFO.budget}</InfoTip></span>
               <span className={over ? 'text-neg font-semibold' : ''}>
                 {fmt(spent, 'BRL')} / {fmt(budget, 'BRL')}
                 {over && <span className="ml-2 text-neg">+{fmt(round2(spent - budget), 'BRL')} over</span>}
@@ -170,7 +178,10 @@ export function MonthSummary({ monthKey }: Props) {
       {/* Saving, Adjustment & Budget inputs */}
       <div className="border-t border-line pt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1">
-          <label className="text-xs text-faint uppercase tracking-wider">Saving (BRL)</label>
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs text-faint uppercase tracking-wider">Saving (BRL)</label>
+            <InfoTip label="Saving">{INFO.saving}</InfoTip>
+          </div>
           <NumberInput
             min="0"
             step="0.01"
@@ -185,7 +196,10 @@ export function MonthSummary({ monthKey }: Props) {
           />
         </div>
         <div className="space-y-1">
-          <label className="text-xs text-faint uppercase tracking-wider">Adjustment (BRL)</label>
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs text-faint uppercase tracking-wider">Adjustment (BRL)</label>
+            <InfoTip label="Adjustment">{INFO.adjustment}</InfoTip>
+          </div>
           <NumberInput
             step="0.01"
             className="w-full bg-panel border border-line rounded-lg px-3 py-2 text-fg text-sm focus:outline-none focus:border-brass"
@@ -199,7 +213,10 @@ export function MonthSummary({ monthKey }: Props) {
           />
         </div>
         <div className="space-y-1">
-          <label className="text-xs text-faint uppercase tracking-wider">Budget (BRL) <span className="normal-case text-faint">— 0 = no limit</span></label>
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs text-faint uppercase tracking-wider">Budget (BRL) <span className="normal-case text-faint">— 0 = no limit</span></label>
+            <InfoTip label="Budget">{INFO.budget}</InfoTip>
+          </div>
           <NumberInput
             min="0"
             step="0.01"

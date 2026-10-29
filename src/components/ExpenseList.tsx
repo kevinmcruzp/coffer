@@ -3,6 +3,7 @@ import { useExpenses } from '../hooks/useExpenses'
 import { useToast } from '../hooks/useToast'
 import { CopyFromPreviousModal } from './CopyFromPreviousModal'
 import { NumberInput } from './NumberInput'
+import { ParcelsInfo } from './ParcelsInfo'
 import { userMessage } from '../lib/errorMessages'
 import { round2, parseMoney } from '../lib/math'
 import { CURRENCIES } from '../types'
@@ -372,6 +373,7 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
               value={parcels}
               onChange={e => setParcels(e.target.value)}
             />
+            <ParcelsInfo />
           </div>
         </td>
         <td className="px-2 py-1">

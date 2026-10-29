@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useExpenses } from '../hooks/useExpenses'
 import { NumberInput } from './NumberInput'
+import { ParcelsInfo } from './ParcelsInfo'
 import { userMessage } from '../lib/errorMessages'
 import { round2, parseMoney } from '../lib/math'
 import { CURRENCIES } from '../types'
@@ -103,9 +104,12 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
           </div>
 
           <div className="space-y-1">
-            <label className="block text-xs text-dim uppercase tracking-wider">
-              Parcels (optional)
-            </label>
+            <div className="flex items-center gap-1.5">
+              <label className="block text-xs text-dim uppercase tracking-wider">
+                Parcels (optional)
+              </label>
+              <ParcelsInfo />
+            </div>
             <NumberInput
               min="1"
               step="1"

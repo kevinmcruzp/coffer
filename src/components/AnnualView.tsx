@@ -7,6 +7,7 @@ import { CURRENCIES } from '../types'
 import type { Currency } from '../types'
 import { AnnualChart } from './AnnualChart'
 import { StatCard } from './StatCard'
+import { InfoTip } from './InfoTip'
 
 // ── Formatting ────────────────────────────────────────────────────────────────
 
@@ -234,12 +235,13 @@ export function AnnualView({ year, onSelectMonth }: Props) {
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Income" value={money(totals.income[currency], currency)} sub={perMonth(totals.income[currency])} />
-        <StatCard label="Spent" value={money(spent, currency)} sub={perMonth(spent)} />
+        <StatCard label="Spent" value={money(spent, currency)} sub={perMonth(spent)} info="Debit + Credit for the year." />
         {showSavings && (
           <StatCard label="Saved" value={money(totals.saving, 'BRL')} sub={perMonth(totals.saving)} />
         )}
         <StatCard
           label="Net"
+          info="The year's total balance: Income − Spent. In BRL, Saving is also subtracted and Adjustment added."
           value={money(net, currency, true)}
           sub={`${filledCount} of 12 months`}
           highlight={net > 0 ? 'positive' : net < 0 ? 'negative' : 'neutral'}
@@ -275,8 +277,11 @@ export function AnnualView({ year, onSelectMonth }: Props) {
               )}
               <th className={TH}>Balance {currency}</th>
               {showPrev && (
-                <th className={`${TH} hidden lg:table-cell`} title="Change against the same month one year earlier">
-                  vs prev yr
+                <th className={`${TH} hidden lg:table-cell`}>
+                  <span className="inline-flex items-center gap-1.5">
+                    vs prev yr
+                    <InfoTip label="vs prev yr" align="end">Change in balance against the same month one year earlier.</InfoTip>
+                  </span>
                 </th>
               )}
             </tr>
