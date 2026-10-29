@@ -1,98 +1,135 @@
 import { useMemo, useState } from 'react'
 import { useYearSummary } from '../hooks/useYearSummary'
+import type { MonthRow, YearTotals } from '../hooks/useYearSummary'
+import { MONTH_ABBR, MONTH_NAMES, monthIndex, monthKeyOf } from '../lib/months'
+import { round2 } from '../lib/math'
 import { CURRENCIES } from '../types'
 import type { Currency } from '../types'
-import type { MonthRow, YearTotals } from '../hooks/useYearSummary'
+import { AnnualChart } from './AnnualChart'
+import { StatCard } from './StatCard'
 
-// ── Sort ──────────────────────────────────────────────────────────────────────
+// ── Formatting ────────────────────────────────────────────────────────────────
 
-type AnnualSortCol = 'monthKey' | 'income' | 'debit' | 'credit' | 'saving' | 'balance'
-type SortDir = 'asc' | 'desc'
-
-function sortRows(arr: MonthRow[], col: AnnualSortCol, dir: SortDir): MonthRow[] {
-  return [...arr].sort((a, b) => {
-    let d: number
-    if (col === 'monthKey') d = a.monthKey.localeCompare(b.monthKey)
-    else if (col === 'income') d = a.income.BRL - b.income.BRL
-    else if (col === 'debit') d = a.debit.BRL - b.debit.BRL
-    else if (col === 'credit') d = a.credit.BRL - b.credit.BRL
-    else if (col === 'saving') d = a.saving - b.saving
-    else d = a.balance.BRL - b.balance.BRL
-    return dir === 'asc' ? d : -d
-  })
+function money(value: number, currency: Currency, signed = false): string {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency,
+    signDisplay: signed ? 'exceptZero' : 'auto',
+  }).format(value)
 }
 
-function SortIndicator({ active, dir }: { active: boolean; dir: SortDir }) {
-  return (
-    <span className={active ? 'ml-1' : 'ml-1 text-faint'}>
-      {active ? (dir === 'asc' ? '↑' : '↓') : '↕'}
-    </span>
-  )
-}
-
-const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-
-function monthLabel(key: string): string {
-  const m = parseInt(key.split('-')[1], 10)
-  return MONTH_NAMES[m - 1] ?? key
-}
-
-function fmt(value: number): string {
+// Table cells: no symbol (the column header carries the currency), dash for zero
+// so the eye lands only on months that actually moved.
+function cell(value: number): string {
+  if (value === 0) return '—'
   return new Intl.NumberFormat('pt-BR', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value)
 }
 
-function BalanceCell({ value }: { value: number }) {
-  const color = value > 0 ? 'text-pos' : value < 0 ? 'text-neg' : 'text-dim'
-  return <span className={color}>{fmt(value)}</span>
+// Chart labels and tooltips: whole units, explicit sign.
+function short(value: number): string {
+  return new Intl.NumberFormat('pt-BR', {
+    maximumFractionDigits: 0,
+    signDisplay: 'exceptZero',
+  }).format(value)
 }
 
-type RowProps = {
-  row: MonthRow
-  extraCurrencies: Currency[]
-  showPrev: boolean
-  onSelect: (key: string) => void
+// ── Data shaping ──────────────────────────────────────────────────────────────
+
+// Saving and adjustment are entered without a currency selector, so they only
+// ever apply to BRL (see computeBalance in useYearSummary).
+function hasData(row: MonthRow, currency: Currency): boolean {
+  if (row.income[currency] !== 0 || row.debit[currency] !== 0 || row.credit[currency] !== 0) return true
+  return currency === 'BRL' && (row.saving !== 0 || row.adjustment !== 0)
+}
+
+type Slot = { index: number; row: MonthRow | null }
+
+// ── Cells ─────────────────────────────────────────────────────────────────────
+
+function BalanceCell({ value }: { value: number }) {
+  const color = value > 0 ? 'text-pos' : value < 0 ? 'text-neg' : 'text-dim'
+  return <span className={color}>{cell(value)}</span>
 }
 
 function TrendCell({ current, prev }: { current: number; prev: number }) {
-  const delta = current - prev
+  const delta = round2(current - prev)
   if (delta === 0) return <span className="text-faint">—</span>
   const up = delta > 0
   return (
     <span className={up ? 'text-pos' : 'text-neg'}>
-      {up ? '↑' : '↓'} {fmt(Math.abs(delta))}
+      {up ? '↑' : '↓'} {cell(Math.abs(delta))}
     </span>
   )
 }
 
-function DataRow({ row, extraCurrencies, showPrev, onSelect }: RowProps) {
+const TH = 'px-3 py-2 text-right font-normal'
+const TD = 'px-3 py-2 text-right'
+
+// ── Rows ──────────────────────────────────────────────────────────────────────
+
+type RowProps = {
+  slot: Slot
+  currency: Currency
+  isCurrent: boolean
+  showSavings: boolean
+  showPrev: boolean
+  onSelect: (index: number) => void
+}
+
+function DataRow({ slot, currency, isCurrent, showSavings, showPrev, onSelect }: RowProps) {
+  const { index, row } = slot
+  const filled = row !== null && hasData(row, currency)
+  // Empty months keep every cell so the responsive column classes stay aligned
+  // with the filled rows — a colSpan would drift as columns drop out.
+  const amount = (value: number) => filled ? cell(value) : '—'
+  const tone = filled ? 'text-dim' : 'text-faint'
+
   return (
     <tr
-      className="border-b border-line hover:bg-panel cursor-pointer transition-colors"
-      onClick={() => onSelect(row.monthKey)}
+      onClick={filled ? () => onSelect(index) : undefined}
+      className={`border-b border-line-soft transition-colors ${
+        filled ? 'cursor-pointer hover:bg-panel' : ''
+      } ${isCurrent ? 'bg-brass-soft' : ''}`}
     >
-      <td className="px-3 py-2 font-medium text-fg">{monthLabel(row.monthKey)}</td>
-      <td className="px-3 py-2 text-right text-faint">{row.items}</td>
-      <td className="px-3 py-2 text-right text-dim">{fmt(row.income.BRL)}</td>
-      <td className="px-3 py-2 text-right text-dim">{fmt(row.debit.BRL)}</td>
-      <td className="px-3 py-2 text-right text-dim">{fmt(row.credit.BRL)}</td>
-      <td className="px-3 py-2 text-right text-dim">{fmt(row.saving)}</td>
-      <td className="px-3 py-2 text-right text-dim">{fmt(row.adjustment)}</td>
-      <td className="px-3 py-2 text-right font-semibold">
-        <BalanceCell value={row.balance.BRL} />
+      <td className="px-3 py-2">
+        {filled ? (
+          <button
+            type="button"
+            onClick={e => { e.stopPropagation(); onSelect(index) }}
+            aria-label={`Open ${MONTH_NAMES[index]}`}
+            // The entry count no longer earns a column, but it still says how
+            // much of the month is actually recorded.
+            title={`${MONTH_NAMES[index]} · ${row.items} ${row.items === 1 ? 'entry' : 'entries'}`}
+            className="font-medium text-fg hover:text-brass transition-colors"
+          >
+            {MONTH_ABBR[index]}
+          </button>
+        ) : (
+          <span className="text-faint">{MONTH_ABBR[index]}</span>
+        )}
       </td>
-      {extraCurrencies.map(c => (
-        <td key={c} className="px-3 py-2 text-right font-semibold text-faint">
-          <BalanceCell value={row.balance[c]} />
-        </td>
-      ))}
+      <td className={`${TD} ${tone}`}>{amount(row?.income[currency] ?? 0)}</td>
+      <td className={`${TD} ${tone} sm:hidden`}>
+        {amount(round2((row?.debit[currency] ?? 0) + (row?.credit[currency] ?? 0)))}
+      </td>
+      <td className={`${TD} ${tone} hidden sm:table-cell`}>{amount(row?.debit[currency] ?? 0)}</td>
+      <td className={`${TD} ${tone} hidden sm:table-cell`}>{amount(row?.credit[currency] ?? 0)}</td>
+      {showSavings && (
+        <>
+          <td className={`${TD} ${tone} hidden md:table-cell`}>{amount(row?.saving ?? 0)}</td>
+          <td className={`${TD} ${tone} hidden md:table-cell`}>{amount(row?.adjustment ?? 0)}</td>
+        </>
+      )}
+      <td className={`${TD} font-semibold`}>
+        {filled ? <BalanceCell value={row.balance[currency]} /> : <span className="text-faint">—</span>}
+      </td>
       {showPrev && (
-        <td className="px-3 py-2 text-right text-sm">
-          {row.prevBalance !== null
-            ? <TrendCell current={row.balance.BRL} prev={row.prevBalance.BRL} />
+        <td className={`${TD} hidden lg:table-cell`}>
+          {filled && row.prevBalance !== null
+            ? <TrendCell current={row.balance[currency]} prev={row.prevBalance[currency]} />
             : <span className="text-faint">—</span>}
         </td>
       )}
@@ -100,152 +137,169 @@ function DataRow({ row, extraCurrencies, showPrev, onSelect }: RowProps) {
   )
 }
 
-function TotalsRow({ totals, extraCurrencies, showPrev }: { totals: YearTotals; extraCurrencies: Currency[]; showPrev: boolean }) {
+function TotalsRow({ totals, currency, showSavings, showPrev }: {
+  totals: YearTotals
+  currency: Currency
+  showSavings: boolean
+  showPrev: boolean
+}) {
+  const debit = totals.debit[currency]
+  const credit = totals.credit[currency]
+
   return (
     <tr className="border-t-2 border-line bg-panel">
       <td className="px-3 py-2 text-xs font-semibold text-faint uppercase tracking-wider">Total</td>
-      <td className="px-3 py-2 text-right font-semibold text-dim">{totals.items}</td>
-      <td className="px-3 py-2 text-right font-semibold text-fg">{fmt(totals.income.BRL)}</td>
-      <td className="px-3 py-2 text-right font-semibold text-fg">{fmt(totals.debit.BRL)}</td>
-      <td className="px-3 py-2 text-right font-semibold text-fg">{fmt(totals.credit.BRL)}</td>
-      <td className="px-3 py-2 text-right font-semibold text-dim">{fmt(totals.saving)}</td>
-      <td className="px-3 py-2 text-right font-semibold text-dim">{fmt(totals.adjustment)}</td>
-      <td className="px-3 py-2 text-right font-semibold">
-        <BalanceCell value={totals.balance.BRL} />
+      <td className={`${TD} font-semibold text-fg`}>{cell(totals.income[currency])}</td>
+      <td className={`${TD} font-semibold text-fg sm:hidden`}>{cell(round2(debit + credit))}</td>
+      <td className={`${TD} font-semibold text-fg hidden sm:table-cell`}>{cell(debit)}</td>
+      <td className={`${TD} font-semibold text-fg hidden sm:table-cell`}>{cell(credit)}</td>
+      {showSavings && (
+        <>
+          <td className={`${TD} font-semibold text-dim hidden md:table-cell`}>{cell(totals.saving)}</td>
+          <td className={`${TD} font-semibold text-dim hidden md:table-cell`}>{cell(totals.adjustment)}</td>
+        </>
+      )}
+      <td className={`${TD} font-semibold`}>
+        <BalanceCell value={totals.balance[currency]} />
       </td>
-      {extraCurrencies.map(c => (
-        <td key={c} className="px-3 py-2 text-right font-semibold">
-          <BalanceCell value={totals.balance[c]} />
-        </td>
-      ))}
-      {showPrev && <td />}
+      {showPrev && <td className="hidden lg:table-cell" />}
     </tr>
   )
 }
 
+// ── View ──────────────────────────────────────────────────────────────────────
+
 type Props = {
-  currentYear: number
+  year: number
   onSelectMonth: (key: string) => void
 }
 
-export function AnnualView({ currentYear, onSelectMonth }: Props) {
-  const [year, setYear] = useState(currentYear)
+export function AnnualView({ year, onSelectMonth }: Props) {
   const { rows, totals, loading, error, warning } = useYearSummary(year)
-  const currentYearValue = new Date().getFullYear()
-  const [sortCol, setSortCol] = useState<AnnualSortCol>('monthKey')
-  const [sortDir, setSortDir] = useState<SortDir>('asc')
+  const [picked, setPicked] = useState<Currency>('BRL')
 
-  function toggleSort(col: AnnualSortCol) {
-    if (col === sortCol) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
-    else { setSortCol(col); setSortDir('asc') }
+  const activeCurrencies = CURRENCIES.filter(c => rows.some(r => hasData(r, c)))
+  // The picked currency can go stale when the year changes; fall back rather
+  // than render a column of zeroes.
+  const currency = activeCurrencies.includes(picked) ? picked : (activeCurrencies[0] ?? 'BRL')
+
+  const slots = useMemo<Slot[]>(() => {
+    const byIndex = new Map(rows.map(r => [monthIndex(r.monthKey), r]))
+    return Array.from({ length: 12 }, (_, i) => ({ index: i, row: byIndex.get(i) ?? null }))
+  }, [rows])
+
+  const filledCount = slots.filter(s => s.row !== null && hasData(s.row, currency)).length
+  const showSavings = currency === 'BRL'
+  // Only worth a column when the prior year actually holds figures in this currency.
+  const showPrev = rows.some(r => r.prevBalance !== null && r.prevBalance[currency] !== 0)
+  // A single column is not a chart — the stat tiles already say it.
+  const showChart = filledCount > 1
+  const now = new Date()
+
+  const spent = round2(totals.debit[currency] + totals.credit[currency])
+  const net = totals.balance[currency]
+  const perMonth = (value: number) => filledCount > 0 ? `avg ${money(round2(value / filledCount), currency)}/mo` : undefined
+
+  function selectMonth(index: number) {
+    onSelectMonth(monthKeyOf(year, index))
   }
 
-  const sortedRows = useMemo(() => sortRows(rows, sortCol, sortDir), [rows, sortCol, sortDir])
-  const extraCurrencies = CURRENCIES.filter(c =>
-    c !== 'BRL' && rows.some(r => r.income[c] > 0 || r.debit[c] > 0 || r.credit[c] > 0)
-  )
-  const showPrev = rows.some(r => r.prevBalance !== null)
+  if (loading) return <div className="text-dim text-sm text-center py-12">Loading…</div>
+  if (error) return <div className="text-neg text-sm text-center py-8">{error}</div>
+
+  if (rows.length === 0) {
+    return <p className="text-faint text-sm text-center py-12">No data for {year}.</p>
+  }
 
   return (
-    <div className="space-y-4">
-      {/* Year selector */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => setYear(y => y - 1)}
-          disabled={year <= 2000}
-          className="text-dim hover:text-fg px-2 py-1 disabled:opacity-30 disabled:cursor-not-allowed"
-          aria-label="Previous year"
-        >
-          ←
-        </button>
-        <span className="text-fg font-semibold w-16 text-center">{year}</span>
-        <button
-          onClick={() => setYear(y => y + 1)}
-          disabled={year >= currentYearValue + 1}
-          className="text-dim hover:text-fg px-2 py-1 disabled:opacity-30 disabled:cursor-not-allowed"
-          aria-label="Next year"
-        >
-          →
-        </button>
-      </div>
+    <div className="space-y-6">
+      {warning && <div className="text-brass text-xs px-1">{warning}</div>}
 
-      {loading && (
-        <div className="text-dim text-sm text-center py-12">Loading…</div>
-      )}
-
-      {error && (
-        <div className="text-neg text-sm text-center py-8">{error}</div>
-      )}
-
-      {warning && (
-        <div className="text-brass text-xs px-1 py-2">{warning}</div>
-      )}
-
-      {!loading && !error && rows.length === 0 && (
-        <p className="text-faint text-sm text-center py-12">No data for {year}.</p>
-      )}
-
-      {!loading && !error && rows.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm tabular-nums">
-            <thead>
-              <tr className="text-faint text-xs uppercase tracking-wider border-b border-line select-none">
-                <th
-                  className="px-3 py-2 text-left font-normal cursor-pointer hover:text-dim"
-                  onClick={() => toggleSort('monthKey')}
-                >
-                  Month <SortIndicator active={sortCol === 'monthKey'} dir={sortDir} />
-                </th>
-                <th className="px-3 py-2 text-right font-normal">Items</th>
-                <th
-                  className="px-3 py-2 text-right font-normal cursor-pointer hover:text-dim"
-                  onClick={() => toggleSort('income')}
-                >
-                  Income <SortIndicator active={sortCol === 'income'} dir={sortDir} />
-                </th>
-                <th
-                  className="px-3 py-2 text-right font-normal cursor-pointer hover:text-dim"
-                  onClick={() => toggleSort('debit')}
-                >
-                  Debit <SortIndicator active={sortCol === 'debit'} dir={sortDir} />
-                </th>
-                <th
-                  className="px-3 py-2 text-right font-normal cursor-pointer hover:text-dim"
-                  onClick={() => toggleSort('credit')}
-                >
-                  Credit <SortIndicator active={sortCol === 'credit'} dir={sortDir} />
-                </th>
-                <th
-                  className="px-3 py-2 text-right font-normal cursor-pointer hover:text-dim"
-                  onClick={() => toggleSort('saving')}
-                >
-                  Saving <SortIndicator active={sortCol === 'saving'} dir={sortDir} />
-                </th>
-                <th className="px-3 py-2 text-right font-normal">Adj.</th>
-                <th
-                  className="px-3 py-2 text-right font-normal cursor-pointer hover:text-dim"
-                  onClick={() => toggleSort('balance')}
-                >
-                  Balance BRL <SortIndicator active={sortCol === 'balance'} dir={sortDir} />
-                </th>
-                {extraCurrencies.map(c => (
-                  <th key={c} className="px-3 py-2 text-right font-normal">Balance {c}</th>
-                ))}
-                {showPrev && <th className="px-3 py-2 text-right font-normal text-faint">vs prev yr</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {sortedRows.map(row => (
-                <DataRow key={row.monthKey} row={row} extraCurrencies={extraCurrencies} showPrev={showPrev} onSelect={onSelectMonth} />
-              ))}
-            </tbody>
-            <tfoot>
-              <TotalsRow totals={totals} extraCurrencies={extraCurrencies} showPrev={showPrev} />
-            </tfoot>
-          </table>
-          <p className="text-xs text-faint mt-2 text-right">click a row to open that month</p>
+      {activeCurrencies.length > 1 && (
+        <div role="group" aria-label="Currency" className="inline-flex gap-1 p-1 rounded-lg border border-line bg-panel">
+          {activeCurrencies.map(c => (
+            <button
+              key={c}
+              onClick={() => setPicked(c)}
+              aria-pressed={c === currency}
+              className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
+                c === currency ? 'bg-brass text-ink' : 'text-dim hover:text-fg hover:bg-panel-2'
+              }`}
+            >
+              {c}
+            </button>
+          ))}
         </div>
       )}
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatCard label="Income" value={money(totals.income[currency], currency)} sub={perMonth(totals.income[currency])} />
+        <StatCard label="Spent" value={money(spent, currency)} sub={perMonth(spent)} />
+        {showSavings && (
+          <StatCard label="Saved" value={money(totals.saving, 'BRL')} sub={perMonth(totals.saving)} />
+        )}
+        <StatCard
+          label="Net"
+          value={money(net, currency, true)}
+          sub={`${filledCount} of 12 months`}
+          highlight={net > 0 ? 'positive' : net < 0 ? 'negative' : 'neutral'}
+        />
+      </div>
+
+      {showChart && (
+        <AnnualChart
+          columns={slots.map(s => ({
+            index: s.index,
+            value: s.row !== null && hasData(s.row, currency) ? s.row.balance[currency] : null,
+          }))}
+          format={short}
+          onSelect={selectMonth}
+        />
+      )}
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm tabular-nums">
+          <caption className="sr-only">Monthly ledger for {year}, amounts in {currency}</caption>
+          <thead>
+            <tr className="text-faint text-xs uppercase tracking-wider border-b border-line">
+              <th className="px-3 py-2 text-left font-normal">Month</th>
+              <th className={TH}>Income</th>
+              <th className={`${TH} sm:hidden`}>Out</th>
+              <th className={`${TH} hidden sm:table-cell`}>Debit</th>
+              <th className={`${TH} hidden sm:table-cell`}>Credit</th>
+              {showSavings && (
+                <>
+                  <th className={`${TH} hidden md:table-cell`}>Saved</th>
+                  <th className={`${TH} hidden md:table-cell`}>Adjustment</th>
+                </>
+              )}
+              <th className={TH}>Balance {currency}</th>
+              {showPrev && (
+                <th className={`${TH} hidden lg:table-cell`} title="Change against the same month one year earlier">
+                  vs prev yr
+                </th>
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {slots.map(slot => (
+              <DataRow
+                key={slot.index}
+                slot={slot}
+                currency={currency}
+                isCurrent={year === now.getFullYear() && slot.index === now.getMonth()}
+                showSavings={showSavings}
+                showPrev={showPrev}
+                onSelect={selectMonth}
+              />
+            ))}
+          </tbody>
+          <tfoot>
+            <TotalsRow totals={totals} currency={currency} showSavings={showSavings} showPrev={showPrev} />
+          </tfoot>
+        </table>
+        <p className="text-xs text-faint mt-2 text-right">click a month to open it</p>
+      </div>
     </div>
   )
 }

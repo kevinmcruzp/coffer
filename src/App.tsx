@@ -5,6 +5,7 @@ import { useCurrentMonth } from './hooks/useCurrentMonth'
 import { SetupScreen } from './components/SetupScreen'
 import { LoginScreen } from './components/LoginScreen'
 import { MonthNavigator } from './components/MonthNavigator'
+import { YearNavigator } from './components/YearNavigator'
 import { ExpenseList } from './components/ExpenseList'
 import { IncomeList } from './components/IncomeList'
 import { MonthSummary } from './components/MonthSummary'
@@ -42,6 +43,7 @@ import { exportBackup, importBackup } from './lib/backup'
 import { userMessage } from './lib/errorMessages'
 import { useExpenses } from './hooks/useExpenses'
 import { useMonthMeta } from './hooks/useMonthMeta'
+import { yearOf } from './lib/months'
 
 type Tab = 'expenses' | 'income' | 'summary' | 'annual'
 
@@ -102,6 +104,7 @@ function MainApp() {
   const [theme, toggleTheme] = useTheme()
   const { monthKey, canGoBack, goBack, goForward, goTo } = useCurrentMonth(currentMonthKey())
   const [tab, setTab] = useState<Tab>('expenses')
+  const [annualYear, setAnnualYear] = useState(() => yearOf(currentMonthKey()))
   const [importing, setImporting] = useState(false)
   const [quickAdd, setQuickAdd] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -174,7 +177,13 @@ function MainApp() {
         <nav className="flex md:flex-col gap-1 md:gap-0.5 shrink-0">
           <p className="hidden md:block text-[10px] uppercase tracking-[0.11em] text-faint px-2 pb-1.5">Ledger</p>
           {TABS.map(({ id, label, Icon }) => (
-            <NavItem key={id} label={label} active={tab === id} onClick={() => setTab(id)}>
+            <NavItem
+              key={id}
+              label={label}
+              active={tab === id}
+              // Opening Annual lands on the year of the month you were browsing.
+              onClick={() => { if (id === 'annual') setAnnualYear(yearOf(monthKey)); setTab(id) }}
+            >
               <Icon />
             </NavItem>
           ))}
@@ -227,7 +236,7 @@ function MainApp() {
         <header className="flex items-center gap-3 md:gap-4 px-4 md:px-7 py-3.5 border-b border-line">
           {tab !== 'annual'
             ? <MonthNavigator monthKey={monthKey} canGoBack={canGoBack} goBack={goBack} goForward={goForward} goTo={goTo} />
-            : <span className="font-serif text-lg font-semibold">Annual overview</span>}
+            : <YearNavigator year={annualYear} onChange={setAnnualYear} />}
           <div className="flex-1" />
           <BudgetBadge monthKey={monthKey} />
           <button
@@ -245,7 +254,7 @@ function MainApp() {
           {tab === 'summary' && <MonthSummary key={monthKey} monthKey={monthKey} />}
           {tab === 'annual' && (
             <AnnualView
-              currentYear={parseInt(monthKey.split('-')[0], 10)}
+              year={annualYear}
               onSelectMonth={(key) => { goTo(key); setTab('expenses') }}
             />
           )}
