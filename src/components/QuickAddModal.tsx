@@ -88,7 +88,7 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
               step="0.01"
               placeholder="Debit"
               aria-label="Debit"
-              className="flex-1 bg-panel-2 border border-line rounded-lg px-3 py-2 text-fg text-sm placeholder-faint focus:outline-none focus:border-brass"
+              className="flex-1 min-w-0 bg-panel-2 border border-line rounded-lg px-3 py-2 text-fg text-sm placeholder-faint focus:outline-none focus:border-brass"
               value={debit}
               onChange={e => setDebit(e.target.value)}
             />
@@ -97,7 +97,7 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
               step="0.01"
               placeholder="Credit"
               aria-label="Credit"
-              className="flex-1 bg-panel-2 border border-line rounded-lg px-3 py-2 text-fg text-sm placeholder-faint focus:outline-none focus:border-brass"
+              className="flex-1 min-w-0 bg-panel-2 border border-line rounded-lg px-3 py-2 text-fg text-sm placeholder-faint focus:outline-none focus:border-brass"
               value={credit}
               onChange={e => setCredit(e.target.value)}
             />
