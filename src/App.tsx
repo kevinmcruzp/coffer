@@ -43,6 +43,7 @@ import { exportBackup, importBackup } from './lib/backup'
 import { userMessage } from './lib/errorMessages'
 import { useExpenses } from './hooks/useExpenses'
 import { useMonthMeta } from './hooks/useMonthMeta'
+import { useMonthClosing } from './hooks/useMonthClosing'
 import { yearOf } from './lib/months'
 
 type Tab = 'expenses' | 'income' | 'summary' | 'annual'
@@ -103,6 +104,7 @@ function MainApp() {
   const { state, db, logout } = useSession()
   const [theme, toggleTheme] = useTheme()
   const { monthKey, canGoBack, goBack, goForward, goTo } = useCurrentMonth(currentMonthKey())
+  const { closing } = useMonthClosing(monthKey)
   const [tab, setTab] = useState<Tab>('expenses')
   const [annualYear, setAnnualYear] = useState(() => yearOf(currentMonthKey()))
   const [importing, setImporting] = useState(false)
@@ -238,10 +240,20 @@ function MainApp() {
             ? <MonthNavigator monthKey={monthKey} canGoBack={canGoBack} goBack={goBack} goForward={goForward} goTo={goTo} />
             : <YearNavigator year={annualYear} onChange={setAnnualYear} />}
           <div className="flex-1" />
+          {tab !== 'annual' && closing && (
+            <span
+              data-testid="closed-badge"
+              className="text-xs text-brass font-medium px-2.5 py-0.5 rounded-full bg-brass-soft border border-brass/40 whitespace-nowrap"
+            >
+              Closed
+            </span>
+          )}
           <BudgetBadge monthKey={monthKey} />
           <button
             onClick={() => setQuickAdd(true)}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-2 rounded-lg bg-brass text-ink hover:brightness-110 transition"
+            disabled={closing !== null}
+            title={closing ? 'This month is closed. Reopen it in Summary to add expenses.' : undefined}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-2 rounded-lg bg-brass text-ink hover:brightness-110 transition disabled:opacity-40 disabled:hover:brightness-100 disabled:cursor-not-allowed"
             aria-label="Quick add expense"
           >
             <PlusIcon className="w-4 h-4" /><span className="hidden sm:inline">Add</span>

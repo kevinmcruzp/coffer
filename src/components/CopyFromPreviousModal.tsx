@@ -67,11 +67,14 @@ export function CopyFromPreviousModal({ monthKey, onClose, onCopied }: Props) {
   )
 
   const incomeItems = useMemo(
-    () => prevIncomes.map(i => ({
-      id: `inc:${i.id}`,
-      income: i,
-      duplicate: curIncomeKeys.has(incomeDedupeKey(i.source, i.currency)),
-    })),
+    () => prevIncomes
+      // A carried balance belongs to the month it was carried into; closing creates the next one.
+      .filter(i => i.carryFrom === undefined)
+      .map(i => ({
+        id: `inc:${i.id}`,
+        income: i,
+        duplicate: curIncomeKeys.has(incomeDedupeKey(i.source, i.currency)),
+      })),
     [prevIncomes, curIncomeKeys],
   )
 

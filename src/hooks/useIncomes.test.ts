@@ -219,3 +219,57 @@ describe('useIncomes — totals', () => {
     expect(result.current.totals.USD).toBe(500)
   })
 })
+
+describe('useIncomes — closed months and carried-over entries', () => {
+  const closing = { balance: 0, closedAt: '2026-11-06T12:00:00.000Z' }
+  const carry: Income = { id: 'c1', source: 'Balance from Feb 2025', currency: 'BRL', amount: 300, carryFrom: '2025-02' }
+
+  async function load(incomes: Income[], closed: boolean) {
+    const { db, key } = await makeContext()
+    await writeMonth(db, MONTH_KEY, {
+      key: MONTH_KEY, expenses: [], incomes, saving: 0, adjustment: 0, budget: 0,
+      ...(closed ? { closing } : {}),
+    }, key)
+    mockSession(db, key)
+    const { result } = renderHook(() => useIncomes(MONTH_KEY))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    return { db, key, result }
+  }
+
+  it('exposes whether the month is closed', async () => {
+    const { result } = await load([], true)
+    expect(result.current.closed).toBe(true)
+  })
+
+  it('rejects add, update and remove on a closed month', async () => {
+    const { result } = await load([baseIncome], true)
+    await expect(result.current.add({ source: 'X', currency: 'BRL', amount: 1 })).rejects.toThrow(/closed/)
+    await expect(result.current.update('i1', { amount: 1 })).rejects.toThrow(/closed/)
+    await expect(result.current.remove('i1')).rejects.toThrow(/closed/)
+  })
+
+  it('rejects editing or removing a carried-over entry', async () => {
+    const { result } = await load([carry], false)
+    await expect(result.current.update('c1', { amount: 1 })).rejects.toThrow(/closing/)
+    await expect(result.current.remove('c1')).rejects.toThrow(/closing/)
+  })
+
+  it('never turns a regular income into a carried-over entry', async () => {
+    const { result } = await load([baseIncome], false)
+    await act(() => result.current.update('i1', { carryFrom: '2025-02' }))
+    expect(result.current.incomes[0].carryFrom).toBeUndefined()
+  })
+
+  it('counts a negative carried-over entry in the totals', async () => {
+    const { result } = await load([baseIncome, { ...carry, amount: -200 }], false)
+    expect(result.current.totals.BRL).toBe(4800)
+  })
+
+  it('refreshes when the month is written elsewhere', async () => {
+    const { db, key, result } = await load([], false)
+    await act(() => writeMonth(db, MONTH_KEY, {
+      key: MONTH_KEY, expenses: [], incomes: [baseIncome], saving: 0, adjustment: 0, budget: 0,
+    }, key))
+    await waitFor(() => expect(result.current.incomes).toHaveLength(1))
+  })
+})

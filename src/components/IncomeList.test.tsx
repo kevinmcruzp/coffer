@@ -5,8 +5,11 @@ import { ToastProvider } from './Toast'
 import { useIncomes } from '../hooks/useIncomes'
 import type { Income } from '../types'
 import type { UseIncomesResult } from '../hooks/useIncomes'
+import { useMonthClosing } from '../hooks/useMonthClosing'
+import type { UseMonthClosingResult } from '../hooks/useMonthClosing'
 
 vi.mock('../hooks/useIncomes')
+vi.mock('../hooks/useMonthClosing')
 
 function renderWithProviders(ui: React.ReactElement) {
   return render(<ToastProvider>{ui}</ToastProvider>)
@@ -24,6 +27,7 @@ const baseIncome: Income = {
 function makeHook(overrides: Partial<UseIncomesResult> = {}): UseIncomesResult {
   return {
     incomes: [],
+    closed: false,
     loading: false,
     error: null,
     totals: { BRL: 0, USD: 0, CLP: 0 },
@@ -34,8 +38,22 @@ function makeHook(overrides: Partial<UseIncomesResult> = {}): UseIncomesResult {
   }
 }
 
+function makeClosing(overrides: Partial<UseMonthClosingResult> = {}): UseMonthClosingResult {
+  return {
+    closing: { balance: 569.19, closedAt: '2026-11-06T12:00:00.000Z' },
+    balance: 569.19,
+    nextKey: '2026-11',
+    loading: false,
+    error: null,
+    close: vi.fn(),
+    reopen: vi.fn(),
+    ...overrides,
+  }
+}
+
 beforeEach(() => {
   vi.mocked(useIncomes).mockReturnValue(makeHook())
+  vi.mocked(useMonthClosing).mockReturnValue(makeClosing())
 })
 
 describe('IncomeList — loading and error states', () => {
@@ -190,5 +208,63 @@ describe('IncomeList — totals', () => {
     renderWithProviders(<IncomeList monthKey={MONTH_KEY} />)
     expect(screen.queryByTestId('income-totals-BRL')).not.toBeInTheDocument()
     expect(screen.queryByTestId('income-totals-USD')).not.toBeInTheDocument()
+  })
+})
+
+describe('IncomeList — carried-over balance', () => {
+  const carry: Income = { id: 'c1', source: 'Balance from Oct 2026', currency: 'BRL', amount: 569.19, carryFrom: '2026-10' }
+
+  it('marks the entry with the month it came from', () => {
+    vi.mocked(useIncomes).mockReturnValue(makeHook({ incomes: [carry] }))
+    renderWithProviders(<IncomeList monthKey="2026-11" />)
+    expect(screen.getByTestId('carry-c1')).toHaveTextContent('Closing of Oct 2026')
+  })
+
+  it('cannot be edited or deleted', () => {
+    vi.mocked(useIncomes).mockReturnValue(makeHook({ incomes: [carry] }))
+    renderWithProviders(<IncomeList monthKey="2026-11" />)
+    fireEvent.click(screen.getByTestId('source-c1'))
+    expect(screen.queryByDisplayValue('Balance from Oct 2026')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Delete Balance from Oct 2026')).not.toBeInTheDocument()
+  })
+
+  it('shows a negative carried balance', () => {
+    vi.mocked(useIncomes).mockReturnValue(makeHook({ incomes: [{ ...carry, amount: -38.88 }] }))
+    renderWithProviders(<IncomeList monthKey="2026-11" />)
+    expect(screen.getByText('-38.88')).toBeInTheDocument()
+  })
+
+  it('warns when the source month was reopened', () => {
+    vi.mocked(useIncomes).mockReturnValue(makeHook({ incomes: [carry] }))
+    vi.mocked(useMonthClosing).mockReturnValue(makeClosing({ closing: null }))
+    renderWithProviders(<IncomeList monthKey="2026-11" />)
+    expect(screen.getByTestId('carry-c1')).toHaveTextContent('Oct 2026 was reopened')
+  })
+
+  it('shows the total when it is negative', () => {
+    vi.mocked(useIncomes).mockReturnValue(makeHook({
+      incomes: [{ ...carry, amount: -38.88 }],
+      totals: { BRL: -38.88, USD: 0, CLP: 0 },
+    }))
+    renderWithProviders(<IncomeList monthKey="2026-11" />)
+    expect(screen.getByTestId('income-totals-BRL')).toBeInTheDocument()
+  })
+})
+
+describe('IncomeList — closed month', () => {
+  beforeEach(() => {
+    vi.mocked(useIncomes).mockReturnValue(makeHook({ incomes: [baseIncome], closed: true }))
+  })
+
+  it('hides the add form and delete buttons', () => {
+    renderWithProviders(<IncomeList monthKey={MONTH_KEY} />)
+    expect(screen.queryByPlaceholderText('Source')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Delete Salary')).not.toBeInTheDocument()
+  })
+
+  it('does not open inline editing', () => {
+    renderWithProviders(<IncomeList monthKey={MONTH_KEY} />)
+    fireEvent.click(screen.getByTestId('source-i1'))
+    expect(screen.queryByDisplayValue('Salary')).not.toBeInTheDocument()
   })
 })

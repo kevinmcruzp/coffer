@@ -10,6 +10,7 @@ vi.mock('../hooks/useExpenses')
 function makeHook(overrides: Partial<UseExpensesResult> = {}): UseExpensesResult {
   return {
     expenses: [],
+    closed: false,
     loading: false,
     error: null,
     totals: { BRL: { debit: 0, credit: 0, total: 0 }, USD: { debit: 0, credit: 0, total: 0 }, CLP: { debit: 0, credit: 0, total: 0 } },

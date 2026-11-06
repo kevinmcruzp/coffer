@@ -114,17 +114,19 @@ function FilterBar({ search, onSearch, category, onCategory, payment, onPayment 
 
 type RowProps = {
   expense: Expense
+  readOnly: boolean
   onUpdate: (id: string, changes: Partial<Omit<Expense, 'id'>>) => Promise<void>
   onRemove: (id: string) => Promise<void>
 }
 
-function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
+function ExpenseRow({ expense, readOnly, onUpdate, onRemove }: RowProps) {
   const [editField, setEditField] = useState<'name' | 'debit' | 'credit' | null>(null)
   const [draft, setDraft] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const { toast } = useToast()
 
   function startEdit(field: 'name' | 'debit' | 'credit') {
+    if (readOnly) return
     setEditField(field)
     setDraft(field === 'name' ? expense.name : String(expense[field]))
   }
@@ -155,7 +157,7 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
     <tr className="group hover:bg-panel/50 transition-colors">
       <td
         data-testid={`name-${expense.id}`}
-        className="px-2 py-1 cursor-pointer"
+        className={`px-2 py-1 ${readOnly ? '' : 'cursor-pointer'}`}
         onClick={() => { if (editField !== 'name') startEdit('name') }}
       >
         {editField === 'name' ? (
@@ -188,6 +190,7 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
         <select
           className={`${FIELD} text-sm`}
           value={expense.currency}
+          disabled={readOnly}
           onChange={async e => {
             try {
               await onUpdate(expense.id, { currency: e.target.value as Currency })
@@ -200,7 +203,7 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
         </select>
       </td>
       <td
-        className="px-2 py-1 text-right cursor-pointer"
+        className={`px-2 py-1 text-right ${readOnly ? '' : 'cursor-pointer'}`}
         onClick={() => { if (editField !== 'debit') startEdit('debit') }}
       >
         {editField === 'debit' ? (
@@ -224,7 +227,7 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
         )}
       </td>
       <td
-        className="px-2 py-1 text-right cursor-pointer"
+        className={`px-2 py-1 text-right ${readOnly ? '' : 'cursor-pointer'}`}
         onClick={() => { if (editField !== 'credit') startEdit('credit') }}
       >
         {editField === 'credit' ? (
@@ -251,7 +254,7 @@ function ExpenseRow({ expense, onUpdate, onRemove }: RowProps) {
         {(expense.debit + expense.credit).toFixed(2)}
       </td>
       <td className="px-2 py-1">
-        {confirmDelete ? (
+        {readOnly ? null : confirmDelete ? (
           <span className="flex gap-1">
             <button
               className="text-xs text-neg underline"
@@ -414,12 +417,13 @@ type GroupProps = {
   onUpdate: (id: string, changes: Partial<Omit<Expense, 'id'>>) => Promise<void>
   onRemove: (id: string) => Promise<void>
   onAdd?: (input: Omit<Expense, 'id'>) => Promise<void>
+  readOnly: boolean
   sortCol: ExpenseSortCol
   sortDir: SortDir
   onSort: (col: ExpenseSortCol) => void
 }
 
-function ExpenseGroup({ label, category, expenses, onUpdate, onRemove, onAdd, sortCol, sortDir, onSort }: GroupProps) {
+function ExpenseGroup({ label, category, expenses, onUpdate, onRemove, onAdd, readOnly, sortCol, sortDir, onSort }: GroupProps) {
   return (
     <section data-testid={`group-${category}`} className="mb-6">
       <h2 className="text-[11px] font-semibold text-brass uppercase tracking-[0.11em] mb-2">
@@ -458,7 +462,7 @@ function ExpenseGroup({ label, category, expenses, onUpdate, onRemove, onAdd, so
         </thead>
         <tbody>
           {expenses.map(e => (
-            <ExpenseRow key={e.id} expense={e} onUpdate={onUpdate} onRemove={onRemove} />
+            <ExpenseRow key={e.id} expense={e} readOnly={readOnly} onUpdate={onUpdate} onRemove={onRemove} />
           ))}
           {onAdd && <AddExpenseForm category={category} onAdd={onAdd} />}
         </tbody>
@@ -503,8 +507,12 @@ type Props = {
   monthKey: string
 }
 
-function ExpenseListBody({ monthKey }: Props) {
-  const { expenses, loading, error, totals, add, update, remove } = useExpenses(monthKey)
+type BodyProps = Props & {
+  onOpenCopy: () => void
+}
+
+function ExpenseListBody({ monthKey, onOpenCopy }: BodyProps) {
+  const { expenses, closed, loading, error, totals, add, update, remove } = useExpenses(monthKey)
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>('all')
@@ -546,6 +554,16 @@ function ExpenseListBody({ monthKey }: Props) {
 
   return (
     <div>
+      {!closed && (
+        <div className="flex justify-end mb-3">
+          <button
+            onClick={onOpenCopy}
+            className="text-xs text-dim hover:text-fg px-3 py-1.5 rounded-lg border border-line hover:border-brass transition-colors"
+          >
+            Copy from previous month
+          </button>
+        </div>
+      )}
       <div className="flex flex-wrap gap-3 mb-3 items-center">
         <FilterBar
           search={search}
@@ -563,7 +581,8 @@ function ExpenseListBody({ monthKey }: Props) {
           expenses={fixed}
           onUpdate={update}
           onRemove={remove}
-          onAdd={isFiltering ? undefined : add}
+          onAdd={isFiltering || closed ? undefined : add}
+          readOnly={closed}
           sortCol={sortCol}
           sortDir={sortDir}
           onSort={toggleSort}
@@ -576,7 +595,8 @@ function ExpenseListBody({ monthKey }: Props) {
           expenses={others}
           onUpdate={update}
           onRemove={remove}
-          onAdd={isFiltering ? undefined : add}
+          onAdd={isFiltering || closed ? undefined : add}
+          readOnly={closed}
           sortCol={sortCol}
           sortDir={sortDir}
           onSort={toggleSort}
@@ -586,7 +606,7 @@ function ExpenseListBody({ monthKey }: Props) {
         <p className="text-faint text-sm text-center py-8">No expenses match the current filters.</p>
       )}
       <TotalsFooter totals={totals} />
-      {expenses.length > 0 && (
+      {expenses.length > 0 && !closed && (
         <p className="text-xs text-faint mt-3">
           Tap any name or amount to edit inline · <span className="font-mono">Enter</span> saves
         </p>
@@ -602,15 +622,7 @@ export function ExpenseList({ monthKey }: Props) {
 
   return (
     <div>
-      <div className="flex justify-end mb-3">
-        <button
-          onClick={() => setCopyOpen(true)}
-          className="text-xs text-dim hover:text-fg px-3 py-1.5 rounded-lg border border-line hover:border-brass transition-colors"
-        >
-          Copy from previous month
-        </button>
-      </div>
-      <ExpenseListBody key={version} monthKey={monthKey} />
+      <ExpenseListBody key={version} monthKey={monthKey} onOpenCopy={() => setCopyOpen(true)} />
       {copyOpen && (
         <CopyFromPreviousModal
           monthKey={monthKey}

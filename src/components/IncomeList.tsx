@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react'
 import { useIncomes } from '../hooks/useIncomes'
+import { useMonthClosing } from '../hooks/useMonthClosing'
 import { useToast } from '../hooks/useToast'
 import { NumberInput } from './NumberInput'
 import { userMessage } from '../lib/errorMessages'
 import { round2, parseMoney } from '../lib/math'
+import { shortMonthLabel } from '../lib/months'
 import { CURRENCIES } from '../types'
 import type { Currency, Income } from '../types'
 import type { IncomeTotals } from '../hooks/useIncomes'
@@ -30,21 +32,43 @@ function SortIndicator({ active, dir }: { active: boolean; dir: SortDir }) {
   )
 }
 
+// ── CarryNote ───────────────────────────────────────────────────────────────
+
+// Audit trail for a carried-over balance: names the source month, and warns if that
+// month was reopened after closing (the carried amount may no longer match it).
+function CarryNote({ incomeId, carryFrom }: { incomeId: string; carryFrom: string }) {
+  const { closing, loading } = useMonthClosing(carryFrom)
+  const source = shortMonthLabel(carryFrom)
+  const stale = !loading && closing === null
+
+  return (
+    <span data-testid={`carry-${incomeId}`} className={`block text-xs ${stale ? 'text-neg' : 'text-brass'}`}>
+      {stale
+        ? `⚠ ${source} was reopened — close it again to update this balance`
+        : `↳ Closing of ${source}`}
+    </span>
+  )
+}
+
 // ── IncomeRow ────────────────────────────────────────────────────────────────
 
 type RowProps = {
   income: Income
+  readOnly: boolean
   onUpdate: (id: string, changes: Partial<Omit<Income, 'id'>>) => Promise<void>
   onRemove: (id: string) => Promise<void>
 }
 
-function IncomeRow({ income, onUpdate, onRemove }: RowProps) {
+function IncomeRow({ income, readOnly, onUpdate, onRemove }: RowProps) {
+  // Carried-over balances are managed by closing the previous month, never by hand.
+  const locked = readOnly || income.carryFrom !== undefined
   const [editField, setEditField] = useState<'source' | 'amount' | null>(null)
   const [draft, setDraft] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const { toast } = useToast()
 
   function startEdit(field: 'source' | 'amount') {
+    if (locked) return
     setEditField(field)
     setDraft(field === 'source' ? income.source : String(income.amount))
   }
@@ -71,7 +95,7 @@ function IncomeRow({ income, onUpdate, onRemove }: RowProps) {
     <tr className="group hover:bg-panel/50 transition-colors">
       <td
         data-testid={`source-${income.id}`}
-        className="px-2 py-1 cursor-pointer"
+        className={`px-2 py-1 ${locked ? '' : 'cursor-pointer'}`}
         onClick={() => { if (editField !== 'source') startEdit('source') }}
       >
         {editField === 'source' ? (
@@ -87,13 +111,17 @@ function IncomeRow({ income, onUpdate, onRemove }: RowProps) {
             }}
           />
         ) : (
-          <span className="border-b border-dashed border-transparent group-hover:border-faint">{income.source}</span>
+          <>
+            <span className={locked ? '' : 'border-b border-dashed border-transparent group-hover:border-faint'}>{income.source}</span>
+            {income.carryFrom && <CarryNote incomeId={income.id} carryFrom={income.carryFrom} />}
+          </>
         )}
       </td>
       <td className="px-2 py-1">
         <select
           className={`${FIELD} text-sm`}
           value={income.currency}
+          disabled={locked}
           onChange={async e => {
             try {
               await onUpdate(income.id, { currency: e.target.value as Currency })
@@ -106,7 +134,7 @@ function IncomeRow({ income, onUpdate, onRemove }: RowProps) {
         </select>
       </td>
       <td
-        className="px-2 py-1 text-right cursor-pointer"
+        className={`px-2 py-1 text-right ${locked ? '' : 'cursor-pointer'}`}
         onClick={() => { if (editField !== 'amount') startEdit('amount') }}
       >
         {editField === 'amount' ? (
@@ -124,11 +152,11 @@ function IncomeRow({ income, onUpdate, onRemove }: RowProps) {
             }}
           />
         ) : (
-          <span className="font-mono tabular-nums text-pos border-b border-dashed border-transparent group-hover:border-faint">{income.amount.toFixed(2)}</span>
+          <span className={`font-mono tabular-nums ${income.amount < 0 ? 'text-neg' : 'text-pos'} ${locked ? '' : 'border-b border-dashed border-transparent group-hover:border-faint'}`}>{income.amount.toFixed(2)}</span>
         )}
       </td>
       <td className="px-2 py-1">
-        {confirmDelete ? (
+        {locked ? null : confirmDelete ? (
           <span className="flex gap-1">
             <button
               className="text-xs text-neg underline"
@@ -240,7 +268,7 @@ function fmtCurrency(value: number, currency: Currency): string {
 
 function TotalsFooter({ totals }: { totals: IncomeTotals }) {
   const currencies = CURRENCIES
-  const active = currencies.filter(c => totals[c] > 0)
+  const active = currencies.filter(c => totals[c] !== 0)
 
   if (active.length === 0) return null
 
@@ -267,7 +295,7 @@ type Props = {
 }
 
 export function IncomeList({ monthKey }: Props) {
-  const { incomes, loading, error, totals, add, update, remove } = useIncomes(monthKey)
+  const { incomes, closed, loading, error, totals, add, update, remove } = useIncomes(monthKey)
   const [sortCol, setSortCol] = useState<IncomeSortCol>('source')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
 
@@ -309,9 +337,9 @@ export function IncomeList({ monthKey }: Props) {
         </thead>
         <tbody>
           {sorted.map(i => (
-            <IncomeRow key={i.id} income={i} onUpdate={update} onRemove={remove} />
+            <IncomeRow key={i.id} income={i} readOnly={closed} onUpdate={update} onRemove={remove} />
           ))}
-          <AddIncomeForm onAdd={add} />
+          {!closed && <AddIncomeForm onAdd={add} />}
         </tbody>
       </table>
       <TotalsFooter totals={totals} />

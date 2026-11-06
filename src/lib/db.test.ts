@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { IDBFactory } from 'fake-indexeddb'
-import { openDB, writeSetting, readSetting, writeMonth, readMonth, listMonths } from './db'
+import { openDB, writeSetting, readSetting, writeMonth, writeMonths, readMonth, listMonths } from './db'
+import { onMonthChanged } from './monthEvents'
 import { deriveKey, generateSalt } from './crypto'
 import type { MonthData } from '../types'
 
@@ -123,5 +124,37 @@ describe('listMonths', () => {
     expect(months).toHaveLength(2)
     expect(months).toContain('2025-01')
     expect(months).toContain('2025-02')
+  })
+})
+
+function blankMonth(key: string, saving = 0): MonthData {
+  return { key, expenses: [], incomes: [], saving, adjustment: 0, budget: 0 }
+}
+
+describe('writeMonths', () => {
+  it('writes several months in one call', async () => {
+    const db = await openDB(new IDBFactory())
+    const key = await deriveKey('pw', generateSalt())
+
+    await writeMonths(db, [blankMonth('2026-10', 1), blankMonth('2026-11', 2)], key)
+
+    expect((await readMonth(db, '2026-10', key)).saving).toBe(1)
+    expect((await readMonth(db, '2026-11', key)).saving).toBe(2)
+  })
+})
+
+describe('month change notifications', () => {
+  it('notifies listeners with the key of each written month until unsubscribed', async () => {
+    const db = await openDB(new IDBFactory())
+    const key = await deriveKey('pw', generateSalt())
+    const seen: string[] = []
+    const unsubscribe = onMonthChanged(k => seen.push(k))
+
+    await writeMonth(db, '2026-09', blankMonth('2026-09'), key)
+    await writeMonths(db, [blankMonth('2026-10'), blankMonth('2026-11')], key)
+    unsubscribe()
+    await writeMonth(db, '2026-12', blankMonth('2026-12'), key)
+
+    expect(seen).toEqual(['2026-09', '2026-10', '2026-11'])
   })
 })

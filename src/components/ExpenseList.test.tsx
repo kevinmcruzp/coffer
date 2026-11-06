@@ -36,6 +36,7 @@ const expenseC: Expense = { id: 'c', name: 'Gamma', category: 'fixed', currency:
 function makeHookResult(overrides: Partial<UseExpensesResult> = {}): UseExpensesResult {
   return {
     expenses: [],
+    closed: false,
     loading: false,
     error: null,
     totals: {
@@ -358,5 +359,29 @@ describe('ExpenseList — sorting', () => {
     fireEvent.click(debitHeader) // asc: 100, 200, 300
     fireEvent.click(debitHeader) // desc: 300, 200, 100
     expect(rowOrder(section)).toEqual(['Alpha', 'Gamma', 'Beta'])
+  })
+})
+
+describe('ExpenseList — closed month', () => {
+  beforeEach(() => {
+    vi.mocked(useExpenses).mockReturnValue(makeHookResult({ expenses: [expenseA], closed: true }))
+  })
+
+  it('hides add rows, delete buttons and the copy action', () => {
+    render(<ExpenseList monthKey="2025-03" />)
+    expect(screen.queryByPlaceholderText('Name')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Delete Alpha')).not.toBeInTheDocument()
+    expect(screen.queryByText('Copy from previous month')).not.toBeInTheDocument()
+  })
+
+  it('does not open inline editing', () => {
+    render(<ExpenseList monthKey="2025-03" />)
+    fireEvent.click(screen.getByTestId('name-a'))
+    expect(screen.queryByDisplayValue('Alpha')).not.toBeInTheDocument()
+  })
+
+  it('disables the currency selector', () => {
+    render(<ExpenseList monthKey="2025-03" />)
+    expect(screen.getByDisplayValue('BRL')).toBeDisabled()
   })
 })

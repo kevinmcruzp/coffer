@@ -4,6 +4,8 @@ import { expenseSchema, parseOrThrow } from '../lib/schemas'
 import { userMessage } from '../lib/errorMessages'
 import { round2 } from '../lib/math'
 import { useSession } from './useSession'
+import { useMonthRevision } from './useMonthRevision'
+import { assertMonthOpen } from '../lib/closing'
 import { CURRENCIES } from '../types'
 import type { Currency, Expense, MonthData } from '../types'
 
@@ -12,6 +14,7 @@ export type Totals = Record<Currency, CurrencyTotals>
 
 export type UseExpensesResult = {
   expenses: Expense[]
+  closed: boolean
   loading: boolean
   error: string | null
   totals: Totals
@@ -52,6 +55,7 @@ const ZERO_TOTALS: Totals = zeroCurrencyTotals()
 export function useExpenses(monthKey: string): UseExpensesResult {
   const { state, db } = useSession()
   const cryptoKey = state.status === 'unlocked' ? state.key : null
+  const revision = useMonthRevision(monthKey)
 
   const [fetchState, setFetchState] = useState<FetchState>({
     resolvedKey: null,
@@ -83,7 +87,7 @@ export function useExpenses(monthKey: string): UseExpensesResult {
       })
 
     return () => { cancelled = true }
-  }, [monthKey, db, cryptoKey])
+  }, [monthKey, db, cryptoKey, revision])
 
   // loading stays true while any previous fetch is in flight for a different monthKey.
   // resolvedKey tracks which fetch last settled, so switching months never shows stale data.
@@ -96,6 +100,7 @@ export function useExpenses(monthKey: string): UseExpensesResult {
     const expense = parseOrThrow(expenseSchema, { ...input, id: crypto.randomUUID() })
     const current = fetchState.monthData
       ?? { key: monthKey, expenses: [], incomes: [], saving: 0, adjustment: 0, budget: 0 }
+    assertMonthOpen(current)
     const updated: MonthData = { ...current, expenses: [...current.expenses, expense] }
     await writeMonth(db, monthKey, updated, cryptoKey)
     setFetchState({ resolvedKey: monthKey, monthData: updated, error: null })
@@ -104,6 +109,7 @@ export function useExpenses(monthKey: string): UseExpensesResult {
   const update = useCallback(async (id: string, changes: Partial<Omit<Expense, 'id'>>) => {
     if (!db || !cryptoKey) throw new Error('Session not active')
     if (!fetchState.monthData) throw new Error('Month not loaded')
+    assertMonthOpen(fetchState.monthData)
     const existing = fetchState.monthData.expenses.find(e => e.id === id)
     if (!existing) throw new Error(`Expense "${id}" not found`)
     const updated = parseOrThrow(expenseSchema, { ...existing, ...changes })
@@ -118,6 +124,7 @@ export function useExpenses(monthKey: string): UseExpensesResult {
   const remove = useCallback(async (id: string) => {
     if (!db || !cryptoKey) throw new Error('Session not active')
     if (!fetchState.monthData) throw new Error('Month not loaded')
+    assertMonthOpen(fetchState.monthData)
     const monthData: MonthData = {
       ...fetchState.monthData,
       expenses: fetchState.monthData.expenses.filter(e => e.id !== id),
@@ -133,6 +140,7 @@ export function useExpenses(monthKey: string): UseExpensesResult {
 
   return {
     expenses: fetchState.monthData?.expenses ?? [],
+    closed: fetchState.monthData?.closing !== undefined,
     loading,
     error: fetchState.error,
     totals,

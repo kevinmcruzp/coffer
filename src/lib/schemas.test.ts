@@ -194,3 +194,37 @@ describe('budget in monthDataSchema', () => {
     expect(() => monthDataSchema.parse({ ...base, budget: -1 })).toThrow()
   })
 })
+
+describe('month closing in schemas', () => {
+  const base = { key: '2026-10', expenses: [], incomes: [], saving: 0, adjustment: 0, budget: 0 }
+  const income = { id: 'i1', source: 'Balance from Sep 2026', currency: 'BRL', amount: 100 }
+
+  it('keeps the closing record of a closed month', () => {
+    const closing = { balance: 569.19, closedAt: '2026-11-06T12:00:00.000Z' }
+    expect(monthDataSchema.parse({ ...base, closing }).closing).toEqual(closing)
+  })
+
+  it('accepts a month without closing (open month, backward compat)', () => {
+    expect(monthDataSchema.parse(base).closing).toBeUndefined()
+  })
+
+  it('keeps carryFrom on an income', () => {
+    expect(incomeSchema.parse({ ...income, carryFrom: '2026-09' }).carryFrom).toBe('2026-09')
+  })
+
+  it('accepts a negative amount on a carried-over income', () => {
+    expect(incomeSchema.safeParse({ ...income, amount: -200, carryFrom: '2026-09' }).success).toBe(true)
+  })
+
+  it('rejects a negative amount on a regular income', () => {
+    expect(incomeSchema.safeParse({ ...income, amount: -200 }).success).toBe(false)
+  })
+
+  it('rejects a zero carried-over amount', () => {
+    expect(incomeSchema.safeParse({ ...income, amount: 0, carryFrom: '2026-09' }).success).toBe(false)
+  })
+
+  it('rejects an invalid carryFrom key', () => {
+    expect(incomeSchema.safeParse({ ...income, carryFrom: 'Sept' }).success).toBe(false)
+  })
+})

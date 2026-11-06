@@ -234,3 +234,30 @@ describe('useExpenses — totals', () => {
     expect(result.current.totals.USD).toEqual({ debit: 0, credit: 15, total: 15 })
   })
 })
+
+describe('useExpenses — closed month', () => {
+  async function loadClosed() {
+    const { db, key } = await makeContext()
+    await writeMonth(db, MONTH_KEY, {
+      key: MONTH_KEY, expenses: [baseExpense], incomes: [], saving: 0, adjustment: 0, budget: 0,
+      closing: { balance: 0, closedAt: '2026-11-06T12:00:00.000Z' },
+    }, key)
+    mockSession(db, key)
+    const { result } = renderHook(() => useExpenses(MONTH_KEY))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    return result
+  }
+
+  it('exposes whether the month is closed', async () => {
+    const result = await loadClosed()
+    expect(result.current.closed).toBe(true)
+  })
+
+  it('rejects add, update and remove', async () => {
+    const result = await loadClosed()
+    const { name, category, currency, debit, credit } = baseExpense
+    await expect(result.current.add({ name, category, currency, debit, credit })).rejects.toThrow(/closed/)
+    await expect(result.current.update(baseExpense.id, { debit: 1 })).rejects.toThrow(/closed/)
+    await expect(result.current.remove(baseExpense.id)).rejects.toThrow(/closed/)
+  })
+})

@@ -153,3 +153,33 @@ describe('useMonthMeta — setAdjustment', () => {
     expect(persisted.adjustment).toBe(50)
   })
 })
+
+describe('useMonthMeta — closed month', () => {
+  it('rejects saving, adjustment and budget changes', async () => {
+    const { db, key } = await makeContext()
+    await writeMonth(db, MONTH_KEY, {
+      key: MONTH_KEY, expenses: [], incomes: [], saving: 0, adjustment: 0, budget: 0,
+      closing: { balance: 0, closedAt: '2026-11-06T12:00:00.000Z' },
+    }, key)
+    mockSession(db, key)
+    const { result } = renderHook(() => useMonthMeta(MONTH_KEY))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await expect(result.current.setSaving(1)).rejects.toThrow(/closed/)
+    await expect(result.current.setAdjustment(1)).rejects.toThrow(/closed/)
+    await expect(result.current.setBudget(1)).rejects.toThrow(/closed/)
+  })
+
+  it('refreshes when the month is written elsewhere', async () => {
+    const { db, key } = await makeContext()
+    mockSession(db, key)
+    const { result } = renderHook(() => useMonthMeta(MONTH_KEY))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await act(() => writeMonth(db, MONTH_KEY, {
+      key: MONTH_KEY, expenses: [], incomes: [], saving: 0, adjustment: 0, budget: 900,
+    }, key))
+
+    await waitFor(() => expect(result.current.budget).toBe(900))
+  })
+})

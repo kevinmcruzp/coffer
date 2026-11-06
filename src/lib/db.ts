@@ -1,5 +1,6 @@
 import { encrypt, decrypt } from './crypto'
 import { monthDataSchema } from './schemas'
+import { notifyMonthChanged } from './monthEvents'
 import type { MonthData } from '../types'
 
 const DB_NAME = 'coffer'
@@ -53,11 +54,32 @@ export async function writeMonth(
   cryptoKey: CryptoKey,
 ): Promise<void> {
   const ciphertext = await encrypt(JSON.stringify(data), cryptoKey)
-  return new Promise((resolve, reject) => {
+  await putMonths(db, [[monthKey, ciphertext]])
+}
+
+// Writes several months in a single transaction: either all are saved or none is.
+// Each month is stored under its own `key`.
+export async function writeMonths(
+  db: IDBDatabase,
+  months: MonthData[],
+  cryptoKey: CryptoKey,
+): Promise<void> {
+  const entries = await Promise.all(
+    months.map(async (m): Promise<[string, string]> => [m.key, await encrypt(JSON.stringify(m), cryptoKey)]),
+  )
+  await putMonths(db, entries)
+}
+
+function putMonths(db: IDBDatabase, entries: [string, string][]): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
     const tx = db.transaction('months', 'readwrite')
-    const request = tx.objectStore('months').put(ciphertext, monthKey)
-    request.onsuccess = () => resolve()
-    request.onerror = () => reject(request.error)
+    const store = tx.objectStore('months')
+    for (const [monthKey, ciphertext] of entries) store.put(ciphertext, monthKey)
+    tx.oncomplete = () => resolve()
+    tx.onerror = () => reject(tx.error)
+    tx.onabort = () => reject(tx.error)
+  }).then(() => {
+    for (const [monthKey] of entries) notifyMonthChanged(monthKey)
   })
 }
 

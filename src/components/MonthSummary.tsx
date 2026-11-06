@@ -9,6 +9,7 @@ import { PieChart } from './PieChart'
 import { NumberInput } from './NumberInput'
 import { StatCard } from './StatCard'
 import { InfoTip } from './InfoTip'
+import { MonthClosingPanel } from './MonthClosingPanel'
 import { CURRENCIES } from '../types'
 import type { Currency } from '../types'
 
@@ -33,7 +34,7 @@ type Props = {
 
 export function MonthSummary({ monthKey }: Props) {
   const { expenses, totals: expenseTotals, loading: loadingExp } = useExpenses(monthKey)
-  const { totals: incomeTotals, loading: loadingInc } = useIncomes(monthKey)
+  const { totals: incomeTotals, closed, loading: loadingInc } = useIncomes(monthKey)
   const { saving, adjustment, budget, loading: loadingMeta, setSaving, setAdjustment, setBudget } = useMonthMeta(monthKey)
 
   const [savingDraft, setSavingDraft] = useState<string | null>(null)
@@ -47,7 +48,7 @@ export function MonthSummary({ monthKey }: Props) {
 
   const currencies = CURRENCIES
   const activeCurrencies = currencies.filter(c =>
-    incomeTotals[c] > 0 ||
+    incomeTotals[c] !== 0 ||
     expenseTotals[c].total > 0
   )
 
@@ -185,9 +186,10 @@ export function MonthSummary({ monthKey }: Props) {
           <NumberInput
             min="0"
             step="0.01"
-            className="w-full bg-panel border border-line rounded-lg px-3 py-2 text-fg text-sm focus:outline-none focus:border-brass"
+            className="w-full bg-panel border border-line rounded-lg px-3 py-2 text-fg text-sm focus:outline-none focus:border-brass disabled:opacity-60"
             value={savingDraft ?? saving}
             onChange={e => setSavingDraft(e.target.value)}
+            disabled={closed}
             onBlur={commitSaving}
             onKeyDown={e => {
               if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
@@ -202,9 +204,10 @@ export function MonthSummary({ monthKey }: Props) {
           </div>
           <NumberInput
             step="0.01"
-            className="w-full bg-panel border border-line rounded-lg px-3 py-2 text-fg text-sm focus:outline-none focus:border-brass"
+            className="w-full bg-panel border border-line rounded-lg px-3 py-2 text-fg text-sm focus:outline-none focus:border-brass disabled:opacity-60"
             value={adjustmentDraft ?? adjustment}
             onChange={e => setAdjustmentDraft(e.target.value)}
+            disabled={closed}
             onBlur={commitAdjustment}
             onKeyDown={e => {
               if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
@@ -220,9 +223,10 @@ export function MonthSummary({ monthKey }: Props) {
           <NumberInput
             min="0"
             step="0.01"
-            className="w-full bg-panel border border-line rounded-lg px-3 py-2 text-fg text-sm focus:outline-none focus:border-brass"
+            className="w-full bg-panel border border-line rounded-lg px-3 py-2 text-fg text-sm focus:outline-none focus:border-brass disabled:opacity-60"
             value={budgetDraft ?? budget}
             onChange={e => setBudgetDraft(e.target.value)}
+            disabled={closed}
             onBlur={commitBudget}
             onKeyDown={e => {
               if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
@@ -231,6 +235,8 @@ export function MonthSummary({ monthKey }: Props) {
           />
         </div>
       </div>
+
+      <MonthClosingPanel monthKey={monthKey} />
     </div>
   )
 }

@@ -33,3 +33,14 @@ export function yearOf(monthKey: string): number {
 export function monthKeyOf(year: number, index: number): string {
   return `${year}-${String(index + 1).padStart(2, '0')}`
 }
+
+// "2026-12" → "2027-01"
+export function nextMonthKey(monthKey: string): string {
+  const index = monthIndex(monthKey)
+  return index === 11 ? monthKeyOf(yearOf(monthKey) + 1, 0) : monthKeyOf(yearOf(monthKey), index + 1)
+}
+
+// "2026-10" → "Oct 2026"
+export function shortMonthLabel(monthKey: string): string {
+  return `${MONTH_ABBR[monthIndex(monthKey)]} ${yearOf(monthKey)}`
+}

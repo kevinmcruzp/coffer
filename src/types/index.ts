@@ -24,7 +24,16 @@ export type Income = {
   id: string
   source: string
   currency: Currency
+  // Negative only on a carried-over entry, when the source month closed below zero.
   amount: number
+  // Set on the entry created by closing the previous month (YYYY-MM of that month).
+  // Such entries are managed by closing/reopening and cannot be edited by hand.
+  carryFrom?: string
+}
+
+export type MonthClosing = {
+  balance: number   // BRL balance at the moment of closing — the amount carried forward
+  closedAt: string  // ISO timestamp
 }
 
 export type MonthData = {
@@ -34,4 +43,6 @@ export type MonthData = {
   saving: number    // amount set aside; subtracted from BRL balance
   adjustment: number // manual correction applied to BRL balance (can be negative)
   budget: number    // spending threshold; UI warns when BRL expenses exceed this
+  // Present while the month is closed; a closed month is read-only.
+  closing?: MonthClosing
 }

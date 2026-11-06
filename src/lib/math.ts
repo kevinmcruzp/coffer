@@ -2,7 +2,8 @@
 // Use after every user-input parse and after every accumulation loop to prevent
 // IEEE 754 floating-point drift from propagating through financial calculations.
 export function round2(n: number): number {
-  return Math.round(n * 100) / 100
+  // `+ 0` turns -0 into 0, so a balance that nets to zero never shows as "-R$ 0,00".
+  return Math.round(n * 100) / 100 + 0
 }
 
 // Parses a user-supplied monetary string and rounds to 2 decimal places.

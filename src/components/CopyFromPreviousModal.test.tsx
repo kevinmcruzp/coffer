@@ -41,6 +41,7 @@ const addIncome = vi.fn().mockResolvedValue(undefined)
 function expResult(expenses: Expense[], add = vi.fn()): UseExpensesResult {
   return {
     expenses,
+    closed: false,
     loading: false,
     error: null,
     totals: {
@@ -57,6 +58,7 @@ function expResult(expenses: Expense[], add = vi.fn()): UseExpensesResult {
 function incResult(incomes: Income[], add = vi.fn()): UseIncomesResult {
   return {
     incomes,
+    closed: false,
     loading: false,
     error: null,
     totals: { BRL: 0, USD: 0, CLP: 0 },
@@ -141,5 +143,17 @@ describe('CopyFromPreviousModal', () => {
     )
     render(<CopyFromPreviousModal monthKey={CUR} onClose={vi.fn()} />)
     expect(screen.getByText(/nothing to copy/i)).toBeInTheDocument()
+  })
+})
+
+describe('CopyFromPreviousModal — carried-over balance', () => {
+  it('never offers the previous month\'s carried balance', () => {
+    vi.mocked(useIncomes).mockImplementation((mk: string) =>
+      mk === PREV
+        ? incResult([...prevIncomes, { id: 'cf', source: 'Balance from Feb 2025', currency: 'BRL', amount: 300, carryFrom: '2025-02' }])
+        : incResult(curIncomes, addIncome),
+    )
+    render(<CopyFromPreviousModal monthKey={CUR} onClose={vi.fn()} onCopied={vi.fn()} />)
+    expect(screen.queryByText('Balance from Feb 2025')).not.toBeInTheDocument()
   })
 })

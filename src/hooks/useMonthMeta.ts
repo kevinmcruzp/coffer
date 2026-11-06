@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { readMonth, writeMonth } from '../lib/db'
 import { monthDataSchema } from '../lib/schemas'
 import { useSession } from './useSession'
+import { useMonthRevision } from './useMonthRevision'
+import { assertMonthOpen, emptyMonth } from '../lib/closing'
 import type { MonthData } from '../types'
 
 export type UseMonthMetaResult = {
@@ -21,13 +23,10 @@ type FetchState = {
   error: string | null
 }
 
-function emptyMonth(key: string): MonthData {
-  return { key, expenses: [], incomes: [], saving: 0, adjustment: 0, budget: 0 }
-}
-
 export function useMonthMeta(monthKey: string): UseMonthMetaResult {
   const { state, db } = useSession()
   const cryptoKey = state.status === 'unlocked' ? state.key : null
+  const revision = useMonthRevision(monthKey)
 
   const [fetchState, setFetchState] = useState<FetchState>({
     resolvedKey: null,
@@ -55,13 +54,14 @@ export function useMonthMeta(monthKey: string): UseMonthMetaResult {
       })
 
     return () => { cancelled = true }
-  }, [monthKey, db, cryptoKey])
+  }, [monthKey, db, cryptoKey, revision])
 
   const loading = !db || !cryptoKey || fetchState.resolvedKey !== monthKey
 
   const setSaving = useCallback(async (value: number) => {
     if (!db || !cryptoKey) throw new Error('Session not active')
     const current = fetchState.monthData ?? emptyMonth(monthKey)
+    assertMonthOpen(current)
     const updated = monthDataSchema.parse({ ...current, saving: value })
     await writeMonth(db, monthKey, updated, cryptoKey)
     setFetchState({ resolvedKey: monthKey, monthData: updated, error: null })
@@ -70,6 +70,7 @@ export function useMonthMeta(monthKey: string): UseMonthMetaResult {
   const setAdjustment = useCallback(async (value: number) => {
     if (!db || !cryptoKey) throw new Error('Session not active')
     const current = fetchState.monthData ?? emptyMonth(monthKey)
+    assertMonthOpen(current)
     const updated = monthDataSchema.parse({ ...current, adjustment: value })
     await writeMonth(db, monthKey, updated, cryptoKey)
     setFetchState({ resolvedKey: monthKey, monthData: updated, error: null })
@@ -78,6 +79,7 @@ export function useMonthMeta(monthKey: string): UseMonthMetaResult {
   const setBudget = useCallback(async (value: number) => {
     if (!db || !cryptoKey) throw new Error('Session not active')
     const current = fetchState.monthData ?? emptyMonth(monthKey)
+    assertMonthOpen(current)
     const updated = monthDataSchema.parse({ ...current, budget: value })
     await writeMonth(db, monthKey, updated, cryptoKey)
     setFetchState({ resolvedKey: monthKey, monthData: updated, error: null })

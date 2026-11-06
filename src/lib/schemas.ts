@@ -25,16 +25,27 @@ export const expenseSchema = z.object({
   { message: 'Enter a debit or credit amount greater than zero' },
 )
 
+export const monthKeySchema = z
+  .string()
+  .regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Invalid format — use YYYY-MM')
+
 export const incomeSchema = z.object({
   id: z.string().min(1),
   source: z.string().min(1, 'Source cannot be empty').max(100),
   currency: z.enum(['BRL', 'USD', 'CLP']),
-  amount: z.number().positive('Amount must be greater than zero'),
-})
+  amount: z.number(),
+  carryFrom: monthKeySchema.optional(),
+}).refine(
+  // A carried-over balance may be negative (the previous month closed below zero);
+  // every other income must be positive.
+  (data) => data.carryFrom !== undefined ? data.amount !== 0 : data.amount > 0,
+  { message: 'Amount must be greater than zero', path: ['amount'] },
+)
 
-export const monthKeySchema = z
-  .string()
-  .regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Invalid format — use YYYY-MM')
+export const monthClosingSchema = z.object({
+  balance: z.number(),
+  closedAt: z.iso.datetime(),
+})
 
 export const monthDataSchema = z.object({
   key: monthKeySchema,
@@ -43,6 +54,7 @@ export const monthDataSchema = z.object({
   saving: z.number().min(0, 'Saving cannot be negative'),
   adjustment: z.number(),
   budget: z.number().min(0).default(0),
+  closing: monthClosingSchema.optional(),
 })
 
 export type ExpenseInput = z.infer<typeof expenseSchema>
