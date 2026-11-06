@@ -217,11 +217,12 @@ Objetivo: app instalável e funcional sem internet.
 
 ## Iteração 15 — Internacionalização (i18n)
 
-Objetivo: suporte a pt-BR e English como idiomas principais.
+Objetivo: suporte a English, Português (pt-BR) e Español.
 
-- [ ] Escolher e instalar biblioteca de i18n (ex: `react-i18next`)
-- [ ] Extrair todos os textos da UI para arquivos de tradução (`en`, `pt-BR`)
-- [ ] Seletor de idioma nas configurações do app
+- [ ] Decidir: biblioteca de i18n (ex: `react-i18next`) vs. solução própria leve (dicionários tipados + hook) — projeto deve continuar enxuto
+- [ ] Extrair todos os textos da UI para arquivos de tradução (`en`, `pt-BR`, `es`)
+- [ ] Idioma padrão detectado do browser (`navigator.language`), fallback `en`
+- [ ] Seletor de idioma na página de Settings (Iteração 36)
 - [ ] Persistir idioma escolhido no IndexedDB (settings store)
 - [ ] Formatar moedas e datas conforme locale selecionado (`Intl.NumberFormat`, `Intl.DateTimeFormat`)
 - [ ] Testes: renderização correta por locale
@@ -524,6 +525,79 @@ affordance de edição inline. Mockup aprovado. Implementação incremental (she
 - [x] Valores light nos tokens (media query + `[data-theme]` nas duas direções)
 - [x] Telas de auth (Setup/Login) migradas para tokens (indigo→latão, warning→neg)
 - [x] Toggle sol/lua na sidebar, persistido em localStorage; aplicado antes do 1º paint no `main.tsx`
+
+---
+
+## Iteração 33 — Fechamento de mês ✅
+
+Objetivo: o saldo de um mês passa para o seguinte de forma automática e auditável —
+sem digitar "Saldo atual" à mão. Hoje todos os dados são BRL; escopo inicial = saldo BRL
+(a Iteração 34 torna isso "saldo do ambiente de moeda ativo").
+
+Decisões tomadas:
+- Mês fechado fica **somente leitura** até "Reabrir"
+- Saldo negativo passa como entrada **negativa** (permitido só na entrada de carry-over)
+- Ao fechar outubro/2026, a entrada manual "Saldo atual" de novembro é substituída pela automática
+
+**Tarefas:**
+- [x] `MonthData`: `closing?: { balance: number; closedAt: string }` + schema
+- [x] `Income`: `carryFrom?: string` (YYYY-MM de origem) + schema — `amount` pode ser negativo só quando `carryFrom` presente
+- [x] Lógica pura `closeMonth` / `reopenMonth` (`lib/closing.ts`): calcula saldo, grava `closing`, cria **ou atualiza** (nunca duplica) a entrada `carryFrom` no mês seguinte; bloqueia se o mês seguinte estiver fechado
+- [x] `writeMonths` grava os dois meses numa única transação IndexedDB (tudo ou nada)
+- [x] Painel "Month closing" no Summary: "Close month" com confirmação mostrando o saldo e o mês destino; "Closed on DD/MM/AAAA · R$ X carried to …" + "Reopen"
+- [x] Selo "Closed" no topo; Add rápido desabilitado; Expenses/Income/Summary somente leitura (UI + guarda nos hooks)
+- [x] Entrada de carry-over em Income: não editável/removível, marcada "↳ Closing of Oct 2026"
+- [x] Aviso no mês seguinte se o mês de origem foi reaberto
+- [x] "Copy from previous month" nunca copia saldo carregado
+- [x] Hooks se atualizam quando o mês é gravado em outro lugar (`monthEvents` + `useMonthRevision`)
+- [x] Testes: fechar, refechar (atualiza sem duplicar), reabrir, saldo negativo/zero, bloqueio de edição, UI
+
+---
+
+## Iteração 34 — Ambientes por moeda
+
+Objetivo: não misturar moedas. Configuração global escolhe a moeda ativa; cada moeda é um
+ambiente independente (receitas, despesas, poupança, reajuste, orçamento, fechamento próprios).
+
+⚠️ Altera decisão arquitetural do CLAUDE.md ("Every Expense and Income has a `currency` field")
+— discutir modelo antes de implementar:
+- [ ] Definir armazenamento (ex.: chave `BRL:2026-11` no store `months` vs store por moeda)
+- [ ] Migração dos dados existentes (meses com itens em moedas misturadas)
+- [ ] Seletor de moeda ativa (Settings ou sidebar) — persistido
+- [ ] Remover coluna/seletor de moeda das linhas de despesa e receita
+- [ ] Annual, Export, Backup e Fechamento passam a operar por ambiente
+- [ ] Resolve a decisão pendente "Saving/adjustment currency"
+
+---
+
+## Iteração 35 — Não bloquear ao recarregar (F5)
+
+Objetivo: hoje todo F5 volta para a tela de senha — atrito alto no uso diário.
+
+⚠️ Altera decisão arquitetural do CLAUDE.md ("Key lives in React state only, never serialized")
+— discutir antes de implementar:
+- [ ] Escolher abordagem (ex.: chave não-extraível guardada em `sessionStorage`/IndexedDB só durante a sessão da aba, mantendo o auto-lock por inatividade)
+- [ ] Avaliar o impacto de segurança e documentar no README (privacy/security model)
+- [ ] Testes: recarregar mantém desbloqueado; fechar aba/timeout bloqueia
+
+---
+
+## Iteração 36 — Página de Settings
+
+Objetivo: um lugar único e claro para as configurações globais, no lugar do `SettingsModal`.
+Base para a moeda ativa (Iteração 34) e o idioma (Iteração 15) — fazer antes delas.
+
+- [ ] Item "Settings" na sidebar abre uma página (não modal), seguindo o design "vault ledger"
+- [ ] Mover o timeout de auto-lock do `SettingsModal` para a página e remover o modal
+- [ ] Seções preparadas para: Moeda (Iteração 34), Idioma (Iteração 15), Segurança (auto-lock, F5 — Iteração 35)
+- [ ] Settings persistidas no store `settings` do IndexedDB (seguir o padrão atual do timeout)
+- [ ] Testes: navegação até a página, alterar e persistir cada configuração
+
+---
+
+## Bugs conhecidos
+
+- [x] Selo "over budget" do topo não atualiza ao editar despesas/orçamento — corrigido na Iteração 33 (hooks relêem o mês via `useMonthRevision`)
 
 ---
 
