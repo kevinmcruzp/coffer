@@ -1,8 +1,8 @@
 # Coffer
 
-**A secure, local-first personal finance tracker — installable as a PWA.**
+**A secure, local-first personal finance tracker for your desktop.**
 
-All your data is encrypted in the browser with AES-256-GCM. Nothing ever leaves your device — no account, no server, no cloud.
+Your finances live in a single encrypted file (`.coffer`) that you keep wherever you like. Nothing ever leaves your device — no account, no server, no cloud.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![CI](https://github.com/kevincruz/coffer/actions/workflows/ci.yml/badge.svg)](https://github.com/kevincruz/coffer/actions/workflows/ci.yml)
@@ -11,18 +11,19 @@ All your data is encrypted in the browser with AES-256-GCM. Nothing ever leaves 
 
 ## Features
 
-- **Zero-server** — runs entirely in the browser, works offline
+- **Zero-server** — a desktop app that works fully offline
+- **Your data is a file** — one `.coffer` vault file you can copy, back up, or keep in a synced folder
 - **AES-256-GCM encryption** — your master password never leaves the device
-- **PWA** — install on desktop or mobile, works without internet
 - **Expenses & Income** — track monthly spending by category and payment method
-- **Fixed expenses** — mark recurring bills, they clone automatically each month
-- **Recurring income** — salary and other recurring sources clone month to month
+- **Copy from previous month** — pick which recurring bills and incomes to bring forward
+- **Month closing** — carry a month's balance into the next one, with an audit trail
 - **Installment support** — track credit card parcelas with automatic countdown
 - **Monthly summary** — balance, budget alerts, savings, and adjustments
 - **Annual view** — full-year table with year-over-year comparison
 - **Charts** — pie chart (fixed vs. others, debit vs. credit) and balance bar chart
 - **Budget alerts** — set a monthly spending limit, get a badge when exceeded
-- **Backup & restore** — export/import a single encrypted `.coffer` file
+- **Backup & restore** — export/import a single encrypted backup file
+- **Previous versions** — the last three sessions are kept next to the vault as `.bak` files
 - **CSV import/export** — migrate from spreadsheets or share data
 - **Auto-lock** — vault locks after configurable inactivity (5/15/30/60 min)
 - **Quick-add** — add an expense in 3 taps from the header
@@ -42,35 +43,46 @@ Most finance apps require an account, sync your data to a third-party server, or
 | UI | React 19 + TypeScript (strict) |
 | Build | Vite 8 |
 | Styling | Tailwind CSS v4 |
-| Storage | IndexedDB |
+| Desktop shell | Tauri 2 (Rust) |
+| Storage | A single vault file, written atomically |
 | Crypto | Web Crypto API — AES-256-GCM + PBKDF2 (200k iterations) |
-| Offline | `vite-plugin-pwa` + Workbox |
 | Testing | Vitest + React Testing Library |
 | Validation | Zod |
 
 ---
 
-## Getting started
+## Install
+
+Download the installer for your system from the [Releases](https://github.com/kevincruz/coffer/releases) page and run it.
+
+The installers are not code-signed yet, so Windows shows a "Windows protected your PC" (SmartScreen) notice the first time: choose **More info → Run anyway**.
+
+On first launch Coffer asks where to keep your vault file. Pick any folder — Documents, a synced folder, a USB drive — then create your master password.
+
+---
+
+## Development
+
+Requirements: Node.js, [Rust](https://rustup.rs) and, on Windows, the Microsoft C++ Build Tools.
 
 ```bash
 # Install dependencies
-npm install
+npm install --legacy-peer-deps
 
-# Start dev server
-npm run dev
+# Run the desktop app with hot reload
+npm run desktop:dev
 
-# Production build
-npm run build
+# Build the installer (src-tauri/target/release/bundle)
+npm run desktop:build
 
-# Preview production build locally
-npm run preview
-
-# Run tests
-npm test
-
-# Lint
+# Checks
+npm run typecheck
 npm run lint
+npm test
+cargo test --manifest-path src-tauri/Cargo.toml
 ```
+
+`npm run dev` still serves the UI in a plain browser tab for quick UI work; there the vault falls back to the browser's storage instead of a file.
 
 ---
 
@@ -78,9 +90,10 @@ npm run lint
 
 - The master password is used to derive an AES-256-GCM key via PBKDF2 (200 000 iterations, SHA-256, random salt).
 - The derived key exists **only in memory** — it is never persisted anywhere.
-- Every write to IndexedDB is encrypted. The salt and a verification token (also encrypted) are stored separately.
-- **There is no password recovery.** If you forget your password, your data is unrecoverable. Export a `.coffer` backup and store it safely.
-- The `.coffer` backup format is: `JSON → gzip → AES-256-GCM`. It is self-contained and readable only with your password.
+- Month data is encrypted before it is written to the vault file. The file also holds the salt and an encrypted verification token, so the file plus your password is all that is needed to open it anywhere. Month names and app settings (such as the auto-lock time) are not secret and are stored unencrypted.
+- The desktop shell can only read and write vault files (`*.coffer` and their `.tmp` / `.bak` siblings); the app makes no network requests.
+- **There is no password recovery.** If you forget your password, your data is unrecoverable.
+- The backup export format is: `JSON → gzip → AES-256-GCM`. It is self-contained and readable only with your password.
 
 ---
 
@@ -88,12 +101,11 @@ npm run lint
 
 See [TODO.md](TODO.md) for the full backlog.
 
-**Phase 2 (planned):**
-- Desktop app via Tauri (macOS, Windows, Linux)
-- Optional cloud sync (Google Drive / WebDAV) — the server only sees the encrypted file
+**Planned:**
+- macOS and Linux installers
+- Signed installers and auto-update
 - OFX/QIF import
 - PDF export
-- Light mode
 
 ---
 

@@ -570,16 +570,18 @@ ambiente independente (receitas, despesas, poupança, reajuste, orçamento, fech
 
 ---
 
-## Iteração 36 — Página de Settings
+## Iteração 36 — Página de Settings ✅
 
-Objetivo: um lugar único e claro para as configurações globais, no lugar do `SettingsModal`.
-Base para a moeda ativa (Iteração 34) e o idioma (Iteração 15) — fazer antes delas.
+Objetivo: um lugar único e claro para as configurações globais, no lugar do `SettingsModal`,
+e uma tela principal mais simples: as ferramentas de dados saem da sidebar.
+Base para a moeda ativa (Iteração 34) e o idioma (Iteração 15) — cada uma acrescenta a sua seção.
 
-- [ ] Item "Settings" na sidebar abre uma página (não modal), seguindo o design "vault ledger"
-- [ ] Mover o timeout de auto-lock do `SettingsModal` para a página e remover o modal
-- [ ] Seções preparadas para: Moeda (Iteração 34), Idioma (Iteração 15), Segurança (auto-lock)
-- [ ] Settings persistidas via `VaultStore.writeSetting` (seguir o padrão atual do timeout)
-- [ ] Testes: navegação até a página, alterar e persistir cada configuração
+- [x] Botão "Settings" da sidebar abre uma página (não modal), seguindo o design "vault ledger"
+- [x] Mover o timeout de auto-lock do `SettingsModal` para a página (salva ao escolher) e remover o modal
+- [x] Mover Backup, Restore, Export CSV e Import CSV da sidebar para a página (seções Backup e Spreadsheet)
+- [x] Restore pede a senha na própria página, sem modal
+- [x] Settings persistidas via `VaultStore.writeSetting` (padrão atual do timeout)
+- [x] Testes: navegação até a página, alterar e persistir a configuração (reabrindo o app), ações de dados
 
 ---
 
@@ -614,16 +616,30 @@ Objetivo: "baixar e usar" — um instalador para Windows, sem depender de navega
 Depende da Iteração 37. O Coffer deixa de ter versão web/PWA (sem celular).
 
 Pré-requisito na máquina de desenvolvimento: Rust (rustup) + Microsoft C++ Build Tools.
+Comandos: `npm run desktop:dev` (app com hot reload) e `npm run desktop:build` (instalador).
 
-- [ ] `tauri init` sobre o build Vite — ícone, nome, janela
-- [ ] Tela inicial: "Criar cofre" (escolher onde salvar) / "Abrir cofre existente"; lembrar o último cofre aberto
-- [ ] Ligar a implementação em arquivo (Iteração 37) ao filesystem do Tauri, com permissão restrita ao arquivo escolhido
-- [ ] Migração dos dados atuais: Backup na versão web (IndexedDB) → Restore do `.coffer` no app desktop; validar com os dados reais antes de remover o IndexedDB
-- [ ] Instalador Windows (.msi/.exe) publicado no GitHub Releases via CI
-- [ ] Documentar no README o aviso do SmartScreen (sem certificado de assinatura) e como instalar
+Decisões tomadas:
+- Acesso a disco por comandos Rust próprios (`vault_*` em `src-tauri/src/lib.rs`) em vez do plugin de
+  filesystem: só aceitam `*.coffer` e os irmãos `.tmp`/`.bakN`, então a janela nunca lê ou grava outro arquivo
+- CSP restritiva no app empacotado: sem requisições de rede
+- O caminho do último cofre fica no `localStorage` do app (só o caminho — nunca conteúdo ou chave)
+
+**Parte 1 — App desktop com cofre em arquivo ✅**
+- [x] `tauri init` sobre o build Vite — ícone (cadeado latão), nome, janela
+- [x] Tela inicial: "Create a new vault" (escolher onde salvar) / "Open an existing vault"; lembra o último cofre aberto
+- [x] Ligar a implementação em arquivo (Iteração 37) ao disco via comandos `vault_*`, restritos a arquivos de cofre
+- [x] "Use another vault" nas telas de senha; caminho do cofre visível em Settings
+- [x] Service worker não é registrado dentro do app desktop
+- [x] Instalador Windows (NSIS `.exe`) gerado por `npm run desktop:build`
+- [x] README: instalação, aviso do SmartScreen, desenvolvimento, modelo de segurança
+- [x] Testes: `useVault`, `VaultPicker`, fluxo completo do `App` no modo desktop, comandos Rust (`cargo test`)
+
+**Parte 2 — Migração e limpeza (depende de validar com os dados reais)**
+- [ ] Migração dos dados atuais: Backup na versão web (IndexedDB) → Restore do arquivo no app desktop; validar com os dados reais antes de remover o IndexedDB
 - [ ] Remover `lib/idbStore.ts` e a dependência `fake-indexeddb` (testes passam a usar a store em arquivo com IO em memória)
 - [ ] Remover o PWA: `vite-plugin-pwa`, service worker, manifest e ícones PWA (e a regra `--legacy-peer-deps`)
-- [ ] Atualizar CLAUDE.md e README: stack, modelo de segurança e instruções de instalação
+- [ ] Backup e Export CSV pelo diálogo nativo "Salvar como" (hoje usam o download do webview)
+- [ ] Instalador publicado no GitHub Releases via CI (rodar também `cargo test` no CI)
 - [ ] Avaliar depois: certificado de assinatura, auto-updater, builds macOS/Linux
 
 ---
@@ -631,8 +647,7 @@ Pré-requisito na máquina de desenvolvimento: Rust (rustup) + Microsoft C++ Bui
 ## Simplificação para o usuário comum — ordem sugerida
 
 1. Iteração 37 (cofre em arquivo) → 38 (app desktop)
-2. Iteração 36 (Settings — tirar Import/Export/Backup/fechamento da tela principal)
-3. Iteração 34 (moeda única por ambiente)
+2. Iteração 34 (moeda única por ambiente)
 
 Ideias ainda sem iteração:
 - [ ] Primeiro uso guiado: mês vazio mostra "Adicione sua primeira receita" em vez de tabela vazia
