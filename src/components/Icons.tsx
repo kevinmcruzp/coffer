@@ -33,14 +33,6 @@ export function AnnualIcon(p: IconProps) {
   return <Svg {...p}><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4" /></Svg>
 }
 
-export function ImportExportIcon(p: IconProps) {
-  return <Svg {...p}><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" /></Svg>
-}
-
-export function BackupIcon(p: IconProps) {
-  return <Svg {...p}><path d="M21 12a9 9 0 1 1-3-6.7M21 4v4h-4" /></Svg>
-}
-
 export function LockIcon(p: IconProps) {
   return <Svg {...p}><rect x="4" y="10" width="16" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></Svg>
 }

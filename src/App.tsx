@@ -11,13 +11,13 @@ import { IncomeList } from './components/IncomeList'
 import { MonthSummary } from './components/MonthSummary'
 import { AnnualView } from './components/AnnualView'
 import { QuickAddModal } from './components/QuickAddModal'
-import { SettingsModal } from './components/SettingsModal'
+import { SettingsPage } from './components/SettingsPage'
 import { ImportScreen } from './components/ImportScreen'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ToastProvider } from './components/Toast'
 import {
   ExpensesIcon, IncomeIcon, SummaryIcon, AnnualIcon,
-  ImportExportIcon, BackupIcon, SettingsIcon, LockIcon, PlusIcon,
+  SettingsIcon, LockIcon, PlusIcon,
   SunIcon, MoonIcon,
 } from './components/Icons'
 
@@ -36,19 +36,15 @@ function useTheme(): [Theme, () => void] {
   const toggle = () => setTheme(t => (t === 'dark' ? 'light' : 'dark'))
   return [theme, toggle]
 }
-import { useToast } from './hooks/useToast'
-import { downloadCSV } from './lib/exportCSV'
-import { readMonth } from './lib/db'
-import { exportBackup, importBackup } from './lib/backup'
-import { userMessage } from './lib/errorMessages'
 import { useExpenses } from './hooks/useExpenses'
 import { useMonthMeta } from './hooks/useMonthMeta'
 import { useMonthClosing } from './hooks/useMonthClosing'
 import { yearOf } from './lib/months'
 
-type Tab = 'expenses' | 'income' | 'summary' | 'annual'
+type LedgerTab = 'expenses' | 'income' | 'summary' | 'annual'
+type Tab = LedgerTab | 'settings'
 
-const TABS: { id: Tab; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
+const TABS: { id: LedgerTab; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'expenses', label: 'Expenses', Icon: ExpensesIcon },
   { id: 'income', label: 'Income', Icon: IncomeIcon },
   { id: 'summary', label: 'Summary', Icon: SummaryIcon },
@@ -101,7 +97,7 @@ function BudgetBadge({ monthKey }: { monthKey: string }) {
 }
 
 function MainApp() {
-  const { state, db, logout } = useSession()
+  const { logout } = useSession()
   const [theme, toggleTheme] = useTheme()
   const { monthKey, canGoBack, goBack, goForward, goTo } = useCurrentMonth(currentMonthKey())
   const { closing } = useMonthClosing(monthKey)
@@ -109,57 +105,7 @@ function MainApp() {
   const [annualYear, setAnnualYear] = useState(() => yearOf(currentMonthKey()))
   const [importing, setImporting] = useState(false)
   const [quickAdd, setQuickAdd] = useState(false)
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  const [restoreFile, setRestoreFile] = useState<File | null>(null)
-  const [restorePassword, setRestorePassword] = useState('')
-  const { toast } = useToast()
-
-  async function handleExport() {
-    if (!db || state.status !== 'unlocked') return
-    try {
-      const data = await readMonth(db, monthKey, state.key)
-      downloadCSV(data, monthKey)
-      toast('Exported successfully')
-    } catch {
-      toast('No data found for this month', 'error')
-    }
-  }
-
-  async function handleBackup() {
-    if (!db || state.status !== 'unlocked') return
-    try {
-      const blob = await exportBackup(db, state.key)
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `coffer-backup-${new Date().toISOString().slice(0, 10)}.coffer`
-      a.click()
-      URL.revokeObjectURL(url)
-      toast('Backup downloaded')
-    } catch {
-      toast('Failed to create backup. Please try again.', 'error')
-    }
-  }
-
-  async function handleRestore(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file) return
-    setRestoreFile(file)
-    setRestorePassword('')
-  }
-
-  async function confirmRestore() {
-    if (!restoreFile || !db || state.status !== 'unlocked') return
-    try {
-      const count = await importBackup(restoreFile, db, restorePassword, state.key)
-      toast(`${count} month${count !== 1 ? 's' : ''} restored`)
-    } catch (err) {
-      toast(userMessage(err, 'Failed to restore backup. Please try again.'), 'error')
-    }
-    setRestoreFile(null)
-    setRestorePassword('')
-  }
+  const isMonthTab = tab !== 'annual' && tab !== 'settings'
 
   if (importing) {
     return <ImportScreen onDone={() => setImporting(false)} />
@@ -191,18 +137,6 @@ function MainApp() {
           ))}
         </nav>
 
-        <nav className="flex md:flex-col gap-1 md:gap-0.5 shrink-0">
-          <p className="hidden md:block text-[10px] uppercase tracking-[0.11em] text-faint px-2 pb-1.5">Data</p>
-          <NavItem label="Export" onClick={handleExport}><ImportExportIcon /></NavItem>
-          <NavItem label="Import" onClick={() => setImporting(true)}><ImportExportIcon /></NavItem>
-          <NavItem label="Backup" onClick={handleBackup}><BackupIcon /></NavItem>
-          <label className="relative flex items-center gap-3 px-2 py-2 rounded-lg text-sm text-dim hover:text-fg hover:bg-panel-2 transition-colors shrink-0 md:w-full cursor-pointer">
-            <span className="w-[17px] h-[17px] shrink-0 opacity-90 [&>svg]:w-full [&>svg]:h-full"><BackupIcon /></span>
-            <span>Restore</span>
-            <input type="file" accept=".coffer" className="hidden" onChange={handleRestore} />
-          </label>
-        </nav>
-
         <div className="hidden md:block md:flex-1" />
 
         <div className="hidden md:flex items-center gap-2 text-[11.5px] text-dim px-2.5 py-2 border border-line rounded-lg bg-panel-2">
@@ -219,8 +153,12 @@ function MainApp() {
             {theme === 'dark' ? <SunIcon className="w-4 h-4" /> : <MoonIcon className="w-4 h-4" />}
           </button>
           <button
-            onClick={() => setSettingsOpen(true)}
-            className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg border border-line text-dim hover:text-fg hover:border-brass transition-colors text-xs"
+            onClick={() => setTab('settings')}
+            aria-label="Settings"
+            aria-current={tab === 'settings' ? 'page' : undefined}
+            className={`flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg border transition-colors text-xs ${
+              tab === 'settings' ? 'border-brass text-fg bg-brass-soft' : 'border-line text-dim hover:text-fg hover:border-brass'
+            }`}
           >
             <SettingsIcon className="w-4 h-4" /><span className="hidden md:inline">Settings</span>
           </button>
@@ -236,11 +174,13 @@ function MainApp() {
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="flex items-center gap-3 md:gap-4 px-4 md:px-7 py-3.5 border-b border-line">
-          {tab !== 'annual'
-            ? <MonthNavigator monthKey={monthKey} canGoBack={canGoBack} goBack={goBack} goForward={goForward} goTo={goTo} />
-            : <YearNavigator year={annualYear} onChange={setAnnualYear} />}
+          {tab === 'settings' && <h1 className="font-serif text-xl font-semibold tracking-tight py-1">Settings</h1>}
+          {tab === 'annual' && <YearNavigator year={annualYear} onChange={setAnnualYear} />}
+          {isMonthTab && (
+            <MonthNavigator monthKey={monthKey} canGoBack={canGoBack} goBack={goBack} goForward={goForward} goTo={goTo} />
+          )}
           <div className="flex-1" />
-          {tab !== 'annual' && closing && (
+          {isMonthTab && closing && (
             <span
               data-testid="closed-badge"
               className="text-xs text-brass font-medium px-2.5 py-0.5 rounded-full bg-brass-soft border border-brass/40 whitespace-nowrap"
@@ -248,16 +188,20 @@ function MainApp() {
               Closed
             </span>
           )}
-          <BudgetBadge monthKey={monthKey} />
-          <button
-            onClick={() => setQuickAdd(true)}
-            disabled={closing !== null}
-            title={closing ? 'This month is closed. Reopen it in Summary to add expenses.' : undefined}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-2 rounded-lg bg-brass text-ink hover:brightness-110 transition disabled:opacity-40 disabled:hover:brightness-100 disabled:cursor-not-allowed"
-            aria-label="Quick add expense"
-          >
-            <PlusIcon className="w-4 h-4" /><span className="hidden sm:inline">Add</span>
-          </button>
+          {tab !== 'settings' && (
+            <>
+              <BudgetBadge monthKey={monthKey} />
+              <button
+                onClick={() => setQuickAdd(true)}
+                disabled={closing !== null}
+                title={closing ? 'This month is closed. Reopen it in Summary to add expenses.' : undefined}
+                className="inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-2 rounded-lg bg-brass text-ink hover:brightness-110 transition disabled:opacity-40 disabled:hover:brightness-100 disabled:cursor-not-allowed"
+                aria-label="Quick add expense"
+              >
+                <PlusIcon className="w-4 h-4" /><span className="hidden sm:inline">Add</span>
+              </button>
+            </>
+          )}
         </header>
 
         <main className="px-4 md:px-7 py-6 max-w-4xl w-full mx-auto">
@@ -270,48 +214,12 @@ function MainApp() {
               onSelectMonth={(key) => { goTo(key); setTab('expenses') }}
             />
           )}
+          {tab === 'settings' && <SettingsPage monthKey={monthKey} onImport={() => setImporting(true)} />}
         </main>
       </div>
 
       {/* Overlays */}
       {quickAdd && <QuickAddModal monthKey={monthKey} onClose={() => setQuickAdd(false)} />}
-      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
-      {restoreFile && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <form
-            onSubmit={(e) => { e.preventDefault(); confirmRestore() }}
-            className="bg-panel border border-line rounded-2xl p-6 w-full max-w-sm mx-4"
-          >
-            <h2 className="text-sm font-semibold text-fg mb-1">Restore Backup</h2>
-            <p className="text-xs text-dim mb-4">
-              Enter the password used when this backup was created.
-            </p>
-            <input
-              type="password"
-              value={restorePassword}
-              onChange={(e) => setRestorePassword(e.target.value)}
-              placeholder="Backup password"
-              className="w-full px-3 py-2 rounded-lg bg-panel-2 border border-line text-fg text-sm focus:outline-none focus:border-brass mb-4"
-              autoFocus
-            />
-            <div className="flex gap-2 justify-end">
-              <button
-                type="button"
-                onClick={() => { setRestoreFile(null); setRestorePassword('') }}
-                className="px-3 py-1.5 text-xs text-dim hover:text-fg rounded-lg hover:bg-panel-2 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-3 py-1.5 text-xs font-semibold text-ink bg-brass hover:brightness-110 rounded-lg transition"
-              >
-                Restore
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
     </div>
   )
 }

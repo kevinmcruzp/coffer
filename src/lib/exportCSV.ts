@@ -8,6 +8,7 @@
  * Rows 4+: expense rows (category carry-forward, name, debit, credit)
  */
 
+import { downloadBlob } from './download'
 import type { MonthData } from '../types'
 
 function fmtBRL(value: number): string {
@@ -75,11 +76,5 @@ export function exportCSV(data: MonthData): string {
 
 export function downloadCSV(data: MonthData, monthKey: string): void {
   const csv = exportCSV(data)
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `Financas(${monthKey}).csv`
-  a.click()
-  URL.revokeObjectURL(url)
+  downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `Financas(${monthKey}).csv`)
 }
