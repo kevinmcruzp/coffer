@@ -223,7 +223,7 @@ Objetivo: suporte a English, Português (pt-BR) e Español.
 - [ ] Extrair todos os textos da UI para arquivos de tradução (`en`, `pt-BR`, `es`)
 - [ ] Idioma padrão detectado do browser (`navigator.language`), fallback `en`
 - [ ] Seletor de idioma na página de Settings (Iteração 36)
-- [ ] Persistir idioma escolhido no IndexedDB (settings store)
+- [ ] Persistir idioma escolhido via `VaultStore.writeSetting`
 - [ ] Formatar moedas e datas conforme locale selecionado (`Intl.NumberFormat`, `Intl.DateTimeFormat`)
 - [ ] Testes: renderização correta por locale
 
@@ -570,18 +570,6 @@ ambiente independente (receitas, despesas, poupança, reajuste, orçamento, fech
 
 ---
 
-## Iteração 35 — Não bloquear ao recarregar (F5)
-
-Objetivo: hoje todo F5 volta para a tela de senha — atrito alto no uso diário.
-
-⚠️ Altera decisão arquitetural do CLAUDE.md ("Key lives in React state only, never serialized")
-— discutir antes de implementar:
-- [ ] Escolher abordagem (ex.: chave não-extraível guardada em `sessionStorage`/IndexedDB só durante a sessão da aba, mantendo o auto-lock por inatividade)
-- [ ] Avaliar o impacto de segurança e documentar no README (privacy/security model)
-- [ ] Testes: recarregar mantém desbloqueado; fechar aba/timeout bloqueia
-
----
-
 ## Iteração 36 — Página de Settings
 
 Objetivo: um lugar único e claro para as configurações globais, no lugar do `SettingsModal`.
@@ -589,70 +577,62 @@ Base para a moeda ativa (Iteração 34) e o idioma (Iteração 15) — fazer ant
 
 - [ ] Item "Settings" na sidebar abre uma página (não modal), seguindo o design "vault ledger"
 - [ ] Mover o timeout de auto-lock do `SettingsModal` para a página e remover o modal
-- [ ] Seções preparadas para: Moeda (Iteração 34), Idioma (Iteração 15), Segurança (auto-lock, F5 — Iteração 35)
-- [ ] Settings persistidas no store `settings` do IndexedDB (seguir o padrão atual do timeout)
+- [ ] Seções preparadas para: Moeda (Iteração 34), Idioma (Iteração 15), Segurança (auto-lock)
+- [ ] Settings persistidas via `VaultStore.writeSetting` (seguir o padrão atual do timeout)
 - [ ] Testes: navegação até a página, alterar e persistir cada configuração
 
 ---
 
-## Iteração 37 — Camada de armazenamento + cofre em arquivo
+## Iteração 37 — Camada de armazenamento + cofre em arquivo ✅
 
 Objetivo: os dados deixam de depender do navegador. O cofre passa a ser um arquivo
 `.coffer` do usuário (ex.: `Documentos\Coffer\meu-cofre.coffer`); limpar/resetar/desinstalar
 o navegador não apaga nada, e copiar o arquivo leva tudo para outra máquina.
 
-⚠️ Altera decisão arquitetural do CLAUDE.md (persistência só em IndexedDB) — atualizar o
-CLAUDE.md junto.
+Altera a decisão arquitetural de persistência só em IndexedDB — CLAUDE.md atualizado.
+A store em arquivo ainda não é usada pela UI: ela é ligada ao filesystem real na Iteração 38.
 
 Decisões tomadas:
 - Arquivo único criptografado (formato `.coffer` existente), **não SQLite** — volume é de poucos KB
   por mês, e SQLite exigiria SQLCipher (quebra a regra "só Web Crypto")
-- IndexedDB continua como implementação para a versão web/celular
+- O Coffer passa a ser só desktop: o IndexedDB fica apenas até a Iteração 38 ligar o cofre em arquivo, e então é removido
 
 **Tarefas:**
-- [ ] Extrair interface de armazenamento (`readMonth`, `writeMonth`, `writeMonths`, `listMonths`, settings) a partir do `lib/db.ts` atual — hooks e UI passam a depender só da interface
-- [ ] Implementação IndexedDB (comportamento atual, sem mudança)
-- [ ] Implementação em arquivo: carrega o `.coffer` na abertura, regrava a cada alteração
-- [ ] Escrita atômica (grava temporário → renomeia) para não corromper em queda de energia
-- [ ] Cópias antigas automáticas (manter as N últimas versões ao lado do arquivo)
-- [ ] Salt e verificationToken dentro do arquivo (o cofre é self-contained)
-- [ ] Testes: a mesma suíte de contrato roda contra as duas implementações; escrita interrompida não corrompe o cofre
+- [x] Extrair interface de armazenamento `VaultStore` (`lib/vaultStore.ts`) a partir do `lib/db.ts` — hooks e UI passam a depender só da interface
+- [x] Implementação IndexedDB (`lib/idbStore.ts` — comportamento atual, sem mudança)
+- [x] Implementação em arquivo (`lib/fileStore.ts`): carrega o `.coffer` na abertura, regrava a cada alteração; primitivas de filesystem injetadas (`VaultFileIO`)
+- [x] Escrita atômica (grava temporário → renomeia) para não corromper em queda de energia
+- [x] Cópias antigas automáticas: uma por sessão de uso, mantendo as 3 últimas (`.bak1`…`.bak3`)
+- [x] Salt e verificationToken dentro do arquivo (o cofre é self-contained)
+- [x] Testes: a mesma suíte de contrato roda contra as duas implementações; escrita interrompida não corrompe o cofre
 
 ---
 
 ## Iteração 38 — App desktop (Tauri)
 
 Objetivo: "baixar e usar" — um instalador para Windows, sem depender de navegador.
-Depende da Iteração 37.
+Depende da Iteração 37. O Coffer deixa de ter versão web/PWA (sem celular).
+
+Pré-requisito na máquina de desenvolvimento: Rust (rustup) + Microsoft C++ Build Tools.
 
 - [ ] `tauri init` sobre o build Vite — ícone, nome, janela
 - [ ] Tela inicial: "Criar cofre" (escolher onde salvar) / "Abrir cofre existente"; lembrar o último cofre aberto
 - [ ] Ligar a implementação em arquivo (Iteração 37) ao filesystem do Tauri, com permissão restrita ao arquivo escolhido
-- [ ] Importar dados de quem já usa a versão web (Restore de um `.coffer` de backup)
+- [ ] Migração dos dados atuais: Backup na versão web (IndexedDB) → Restore do `.coffer` no app desktop; validar com os dados reais antes de remover o IndexedDB
 - [ ] Instalador Windows (.msi/.exe) publicado no GitHub Releases via CI
 - [ ] Documentar no README o aviso do SmartScreen (sem certificado de assinatura) e como instalar
+- [ ] Remover `lib/idbStore.ts` e a dependência `fake-indexeddb` (testes passam a usar a store em arquivo com IO em memória)
+- [ ] Remover o PWA: `vite-plugin-pwa`, service worker, manifest e ícones PWA (e a regra `--legacy-peer-deps`)
+- [ ] Atualizar CLAUDE.md e README: stack, modelo de segurança e instruções de instalação
 - [ ] Avaliar depois: certificado de assinatura, auto-updater, builds macOS/Linux
-
----
-
-## Iteração 39 — Versão web: link público e proteção dos dados
-
-Objetivo: manter a versão web utilizável (demo e celular) com menos risco de perda de dados.
-
-- [ ] Deploy do build em URL pública (GitHub Pages) via CI a cada push na `main`
-- [ ] Chamar `navigator.storage.persist()` para o navegador não descartar os dados
-- [ ] Lembrete "último backup há X dias" com botão de backup em um clique
-- [ ] Aviso na versão web: os dados moram neste navegador — recomendar o app desktop ou backup
 
 ---
 
 ## Simplificação para o usuário comum — ordem sugerida
 
 1. Iteração 37 (cofre em arquivo) → 38 (app desktop)
-2. Iteração 35 (não bloquear no F5)
-3. Iteração 36 (Settings — tirar Import/Export/Backup/fechamento da tela principal)
-4. Iteração 34 (moeda única por ambiente)
-5. Iteração 39 (versão web)
+2. Iteração 36 (Settings — tirar Import/Export/Backup/fechamento da tela principal)
+3. Iteração 34 (moeda única por ambiente)
 
 Ideias ainda sem iteração:
 - [ ] Primeiro uso guiado: mês vazio mostra "Adicione sua primeira receita" em vez de tabela vazia
@@ -670,6 +650,9 @@ Ideias ainda sem iteração:
 
 Objetivo: ampliar o alcance da aplicação sem perder o local-first.
 
+Sync entre máquinas: basta guardar o arquivo do cofre numa pasta sincronizada (OneDrive, Google Drive,
+Dropbox) — não há integração de cloud própria.
+
 ### 2.1 — Executável desktop
 
 Antecipado para a Iteração 38 (Tauri, Windows primeiro). Restante para depois:
@@ -678,22 +661,11 @@ Antecipado para a Iteração 38 (Tauri, Windows primeiro). Restante para depois:
 - [ ] CI cross-platform para gerar releases automaticamente
 - [ ] Auto-updater (Tauri tem embutido)
 
-### 2.2 — Sync de backup para cloud (opcional, E2E)
-
-- [ ] Modelo: usuário escolhe provider (Google Drive / Dropbox / iCloud / WebDAV), Coffer faz upload do `.coffer` criptografado — nunca a chave
-- [ ] O arquivo `.coffer` já é self-contained (salt embutido + ciphertext); serve como unidade de sync
-- [ ] Implementar OAuth para Google Drive primeiro (maior alcance)
-- [ ] Sync automático configurável: após cada write, a cada N minutos, ou só manual
-- [ ] Detectar conflito (arquivo remoto mais recente) e oferecer merge/escolha
-- [ ] Tela de configuração "Cloud sync" nas settings
-- [ ] Nunca enviar senha/chave — o provider só vê o arquivo criptografado
-
-### 2.3 — Nice-to-haves
+### 2.2 — Nice-to-haves
 
 - [ ] Deletar mês (com confirmação forte, ex: digitar o `YYYY-MM`)
 - [ ] Import OFX/QIF (formatos de extrato bancário)
 - [ ] Export para PDF do resumo mensal
-- [ ] Modo light (hoje só dark)
 
 ---
 
