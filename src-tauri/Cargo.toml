@@ -1,0 +1,21 @@
+[package]
+name = "coffer"
+version = "0.1.0"
+description = "Secure, local-first personal finance manager"
+license = "MIT"
+edition = "2024"
+rust-version = "1.90"
+
+[lib]
+name = "coffer_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.7.4", features = [] }
+
+[dependencies]
+tauri = { version = "2.12.5", features = [] }
+tauri-plugin-dialog = "2"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt"] }

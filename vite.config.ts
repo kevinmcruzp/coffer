@@ -4,6 +4,12 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  // The desktop shell loads the dev server from this exact port and owns src-tauri.
+  server: {
+    port: 5173,
+    strictPort: true,
+    watch: { ignored: ['**/src-tauri/**'] },
+  },
   plugins: [
     react(),
     tailwindcss(),
