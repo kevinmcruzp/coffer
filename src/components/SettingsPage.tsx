@@ -11,6 +11,8 @@ import { shortMonthLabel } from '../lib/months'
 
 type Props = {
   monthKey: string
+  // Location of the vault file; only known in the desktop app.
+  vaultPath?: string
   onImport: () => void
 }
 
@@ -46,7 +48,7 @@ function Row({ title, hint, children }: { title: ReactNode; hint: string; childr
   )
 }
 
-export function SettingsPage({ monthKey, onImport }: Props) {
+export function SettingsPage({ monthKey, vaultPath, onImport }: Props) {
   const { state, db, lockTimeout, setLockTimeout } = useSession()
   const { toast } = useToast()
   const [restoreFile, setRestoreFile] = useState<File | null>(null)
@@ -106,6 +108,18 @@ export function SettingsPage({ monthKey, onImport }: Props) {
 
   return (
     <div className="space-y-8">
+      {vaultPath && (
+        <Section title="Vault">
+          <div className="px-4 py-3.5">
+            <p className="text-sm text-fg">Vault file</p>
+            <p className="text-xs text-dim font-mono break-all pt-1">{vaultPath}</p>
+            <p className="text-xs text-faint pt-1.5">
+              Everything is stored in this one encrypted file. Copy it to move your finances to another computer.
+            </p>
+          </div>
+        </Section>
+      )}
+
       <Section title="Security">
         <Row
           title={<label htmlFor="lock-timeout">Auto-lock after inactivity</label>}

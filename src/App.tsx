@@ -1,7 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { SessionProvider } from './contexts/SessionContext'
 import { useSession } from './hooks/useSession'
 import { useCurrentMonth } from './hooks/useCurrentMonth'
+import { useVault } from './hooks/useVault'
+import { isDesktop } from './lib/platform'
+import type { VaultStore } from './lib/vaultStore'
+import { VaultPicker } from './components/VaultPicker'
 import { SetupScreen } from './components/SetupScreen'
 import { LoginScreen } from './components/LoginScreen'
 import { MonthNavigator } from './components/MonthNavigator'
@@ -96,7 +100,13 @@ function BudgetBadge({ monthKey }: { monthKey: string }) {
   )
 }
 
-function MainApp() {
+// The vault file the desktop app is working on; absent in the browser build.
+type VaultFile = {
+  path: string
+  onSwitch: () => void
+}
+
+function MainApp({ vaultPath }: { vaultPath?: string }) {
   const { logout } = useSession()
   const [theme, toggleTheme] = useTheme()
   const { monthKey, canGoBack, goBack, goForward, goTo } = useCurrentMonth(currentMonthKey())
@@ -214,7 +224,7 @@ function MainApp() {
               onSelectMonth={(key) => { goTo(key); setTab('expenses') }}
             />
           )}
-          {tab === 'settings' && <SettingsPage monthKey={monthKey} onImport={() => setImporting(true)} />}
+          {tab === 'settings' && <SettingsPage monthKey={monthKey} vaultPath={vaultPath} onImport={() => setImporting(true)} />}
         </main>
       </div>
 
@@ -224,31 +234,71 @@ function MainApp() {
   )
 }
 
-function AppShell() {
+function Loading() {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-ink">
+      <span className="text-dim text-sm">Loading…</span>
+    </main>
+  )
+}
+
+// Shown under the password screens so a wrong or unwanted vault is never a dead end.
+function VaultFooter({ path, onSwitch }: VaultFile) {
+  return (
+    <footer className="fixed inset-x-0 bottom-4 px-4 flex flex-col items-center gap-1 text-xs text-faint">
+      <span className="max-w-full truncate font-mono">{path}</span>
+      <button onClick={onSwitch} className="text-dim hover:text-brass underline underline-offset-2">
+        Use another vault
+      </button>
+    </footer>
+  )
+}
+
+function AppShell({ vault }: { vault?: VaultFile }) {
   const { state, setup, login } = useSession()
 
-  if (state.status === 'loading') {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-gray-950">
-        <span className="text-gray-400 text-sm">Loading…</span>
-      </main>
-    )
+  if (state.status === 'loading') return <Loading />
+  if (state.status === 'unlocked') return <MainApp vaultPath={vault?.path} />
+
+  return (
+    <>
+      {state.status === 'setup' ? <SetupScreen onSetup={setup} /> : <LoginScreen onLogin={login} />}
+      {vault && <VaultFooter {...vault} />}
+    </>
+  )
+}
+
+function OpenVault({ store, vault }: { store: VaultStore; vault: VaultFile }) {
+  const openStore = useCallback(async () => store, [store])
+  return (
+    <SessionProvider openStore={openStore}>
+      <AppShell vault={vault} />
+    </SessionProvider>
+  )
+}
+
+function DesktopApp() {
+  const { state, create, open, close } = useVault()
+
+  if (state.status === 'open') {
+    return <OpenVault key={state.path} store={state.store} vault={{ path: state.path, onSwitch: close }} />
   }
-
-  if (state.status === 'setup') return <SetupScreen onSetup={setup} />
-  if (state.status === 'locked') return <LoginScreen onLogin={login} />
-
-  return <MainApp />
+  return (
+    <VaultPicker
+      error={state.status === 'choosing' ? state.error : null}
+      busy={state.status === 'opening'}
+      onCreate={create}
+      onOpen={open}
+    />
+  )
 }
 
 export default function App() {
   return (
     <ErrorBoundary>
-      <SessionProvider>
-        <ToastProvider>
-          <AppShell />
-        </ToastProvider>
-      </SessionProvider>
+      <ToastProvider>
+        {isDesktop() ? <DesktopApp /> : <SessionProvider><AppShell /></SessionProvider>}
+      </ToastProvider>
     </ErrorBoundary>
   )
 }
