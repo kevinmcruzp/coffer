@@ -37,7 +37,7 @@ export type MonthClosing = {
 }
 
 export type MonthData = {
-  key: string       // YYYY-MM — used as the IndexedDB store key
+  key: string       // YYYY-MM — used as the vault store key
   expenses: Expense[]
   incomes: Income[]
   saving: number    // amount set aside; subtracted from BRL balance

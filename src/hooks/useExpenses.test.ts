@@ -3,7 +3,9 @@ import { renderHook, waitFor, act } from '@testing-library/react'
 import { IDBFactory } from 'fake-indexeddb'
 import { useExpenses } from './useExpenses'
 import { useSession } from './useSession'
-import { openDB, writeMonth } from '../lib/db'
+import { writeMonth } from '../lib/db'
+import { openIdbStore } from '../lib/idbStore'
+import type { VaultStore } from '../lib/vaultStore'
 import { deriveKey, generateSalt } from '../lib/crypto'
 import type { Expense } from '../types'
 
@@ -21,12 +23,12 @@ const baseExpense: Expense = {
 }
 
 async function makeContext() {
-  const db = await openDB(new IDBFactory())
+  const db = await openIdbStore(new IDBFactory())
   const key = await deriveKey('test-pass', generateSalt())
   return { db, key }
 }
 
-function mockSession(db: IDBDatabase, key: CryptoKey) {
+function mockSession(db: VaultStore, key: CryptoKey) {
   vi.mocked(useSession).mockReturnValue({
     state: { status: 'unlocked', key },
     db,

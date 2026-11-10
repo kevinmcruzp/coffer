@@ -1,8 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { IDBFactory } from 'fake-indexeddb'
-import { openDB, writeSetting, readSetting, writeMonth, writeMonths, readMonth, listMonths } from './db'
+import { writeMonth, writeMonths, readMonth } from './db'
+import { openIdbStore } from './idbStore'
+import { openFileStore } from './fileStore'
 import { onMonthChanged } from './monthEvents'
 import { deriveKey, generateSalt } from './crypto'
+import { createMemoryFileIO } from '../test/memoryFileIO'
+import type { VaultStore } from './vaultStore'
 import type { MonthData } from '../types'
 
 const sampleMonth: MonthData = {
@@ -30,131 +34,117 @@ const sampleMonth: MonthData = {
   budget: 0,
 }
 
-async function makeDB() {
-  return openDB(new IDBFactory())
+function blankMonth(key: string, saving = 0): MonthData {
+  return { key, expenses: [], incomes: [], saving, adjustment: 0, budget: 0 }
 }
 
 async function makeKey() {
   return deriveKey('test-password', generateSalt())
 }
 
-describe('openDB', () => {
-  it('opens the database and creates stores', async () => {
-    const db = await makeDB()
-    expect(db.objectStoreNames.contains('settings')).toBe(true)
-    expect(db.objectStoreNames.contains('months')).toBe(true)
-  })
-})
+// The same contract runs against every VaultStore implementation.
+const implementations: [string, () => Promise<VaultStore>][] = [
+  ['IndexedDB store', () => openIdbStore(new IDBFactory())],
+  ['file store', () => openFileStore(createMemoryFileIO(), 'vault.coffer')],
+]
 
-describe('writeSetting / readSetting', () => {
-  let db: IDBDatabase
-
-  beforeEach(async () => {
-    db = await makeDB()
-  })
-
-  it('reads back a written value', async () => {
-    await writeSetting(db, 'salt', 'abc123')
-    expect(await readSetting(db, 'salt')).toBe('abc123')
-  })
-
-  it('returns undefined for a missing key', async () => {
-    expect(await readSetting(db, 'nonexistent')).toBeUndefined()
-  })
-
-  it('overwrites an existing value', async () => {
-    await writeSetting(db, 'token', 'first')
-    await writeSetting(db, 'token', 'second')
-    expect(await readSetting(db, 'token')).toBe('second')
-  })
-})
-
-describe('writeMonth / readMonth', () => {
-  let db: IDBDatabase
+describe.each(implementations)('%s', (_name, makeStore) => {
+  let store: VaultStore
   let key: CryptoKey
 
   beforeEach(async () => {
-    db = await makeDB()
+    store = await makeStore()
     key = await makeKey()
   })
 
-  it('round-trip returns the original MonthData', async () => {
-    await writeMonth(db, sampleMonth.key, sampleMonth, key)
-    const result = await readMonth(db, sampleMonth.key, key)
-    expect(result).toEqual(sampleMonth)
+  describe('settings', () => {
+    it('reads back a written value', async () => {
+      await store.writeSetting('salt', 'abc123')
+      expect(await store.readSetting('salt')).toBe('abc123')
+    })
+
+    it('returns undefined for a missing key', async () => {
+      expect(await store.readSetting('nonexistent')).toBeUndefined()
+    })
+
+    it('overwrites an existing value', async () => {
+      await store.writeSetting('token', 'first')
+      await store.writeSetting('token', 'second')
+      expect(await store.readSetting('token')).toBe('second')
+    })
+
+    it('keeps settings and months apart', async () => {
+      await writeMonth(store, sampleMonth.key, sampleMonth, key)
+      expect(await store.readSetting(sampleMonth.key)).toBeUndefined()
+    })
   })
 
-  it('throws when reading with the wrong key', async () => {
-    const wrongKey = await makeKey()
-    await writeMonth(db, sampleMonth.key, sampleMonth, key)
-    await expect(readMonth(db, sampleMonth.key, wrongKey)).rejects.toThrow()
+  describe('writeMonth / readMonth', () => {
+    it('round-trip returns the original MonthData', async () => {
+      await writeMonth(store, sampleMonth.key, sampleMonth, key)
+      expect(await readMonth(store, sampleMonth.key, key)).toEqual(sampleMonth)
+    })
+
+    it('throws when reading with the wrong key', async () => {
+      const wrongKey = await makeKey()
+      await writeMonth(store, sampleMonth.key, sampleMonth, key)
+      await expect(readMonth(store, sampleMonth.key, wrongKey)).rejects.toThrow()
+    })
+
+    it('throws when reading a non-existent month', async () => {
+      await expect(readMonth(store, '2099-01', key)).rejects.toThrow('not found')
+    })
+
+    it('stores only ciphertext', async () => {
+      await writeMonth(store, sampleMonth.key, sampleMonth, key)
+      const raw = await store.readMonthCiphertext(sampleMonth.key)
+      expect(raw).toBeDefined()
+      expect(raw).not.toContain('Rent')
+      expect(raw).not.toContain('Salary')
+    })
+
+    it('overwrites an existing month', async () => {
+      await writeMonth(store, '2025-03', blankMonth('2025-03', 1), key)
+      await writeMonth(store, '2025-03', blankMonth('2025-03', 2), key)
+      expect((await readMonth(store, '2025-03', key)).saving).toBe(2)
+    })
   })
 
-  it('throws when reading a non-existent month', async () => {
-    await expect(readMonth(db, '2099-01', key)).rejects.toThrow('not found')
+  describe('listMonths', () => {
+    it('returns an empty list when no months exist', async () => {
+      expect(await store.listMonths()).toEqual([])
+    })
+
+    it('returns all written month keys', async () => {
+      await writeMonth(store, '2025-01', blankMonth('2025-01'), key)
+      await writeMonth(store, '2025-02', blankMonth('2025-02'), key)
+      const months = await store.listMonths()
+      expect(months).toHaveLength(2)
+      expect(months).toContain('2025-01')
+      expect(months).toContain('2025-02')
+    })
   })
 
-  it('stores data encrypted (plaintext is not readable in the store)', async () => {
-    await writeMonth(db, sampleMonth.key, sampleMonth, key)
-    const raw = await readSetting(
-      db,
-      sampleMonth.key,
-    )
-    expect(raw).toBeUndefined()
-  })
-})
+  describe('writeMonths', () => {
+    it('writes several months in one call', async () => {
+      await writeMonths(store, [blankMonth('2026-10', 1), blankMonth('2026-11', 2)], key)
 
-describe('listMonths', () => {
-  let db: IDBDatabase
-  let key: CryptoKey
-
-  beforeEach(async () => {
-    db = await makeDB()
-    key = await makeKey()
+      expect((await readMonth(store, '2026-10', key)).saving).toBe(1)
+      expect((await readMonth(store, '2026-11', key)).saving).toBe(2)
+    })
   })
 
-  it('returns an empty list when no months exist', async () => {
-    expect(await listMonths(db)).toEqual([])
-  })
+  describe('month change notifications', () => {
+    it('notifies listeners with the key of each written month until unsubscribed', async () => {
+      const seen: string[] = []
+      const unsubscribe = onMonthChanged(k => seen.push(k))
 
-  it('returns all written month keys', async () => {
-    await writeMonth(db, '2025-01', { ...sampleMonth, key: '2025-01' }, key)
-    await writeMonth(db, '2025-02', { ...sampleMonth, key: '2025-02' }, key)
-    const months = await listMonths(db)
-    expect(months).toHaveLength(2)
-    expect(months).toContain('2025-01')
-    expect(months).toContain('2025-02')
-  })
-})
+      await writeMonth(store, '2026-09', blankMonth('2026-09'), key)
+      await writeMonths(store, [blankMonth('2026-10'), blankMonth('2026-11')], key)
+      unsubscribe()
+      await writeMonth(store, '2026-12', blankMonth('2026-12'), key)
 
-function blankMonth(key: string, saving = 0): MonthData {
-  return { key, expenses: [], incomes: [], saving, adjustment: 0, budget: 0 }
-}
-
-describe('writeMonths', () => {
-  it('writes several months in one call', async () => {
-    const db = await openDB(new IDBFactory())
-    const key = await deriveKey('pw', generateSalt())
-
-    await writeMonths(db, [blankMonth('2026-10', 1), blankMonth('2026-11', 2)], key)
-
-    expect((await readMonth(db, '2026-10', key)).saving).toBe(1)
-    expect((await readMonth(db, '2026-11', key)).saving).toBe(2)
-  })
-})
-
-describe('month change notifications', () => {
-  it('notifies listeners with the key of each written month until unsubscribed', async () => {
-    const db = await openDB(new IDBFactory())
-    const key = await deriveKey('pw', generateSalt())
-    const seen: string[] = []
-    const unsubscribe = onMonthChanged(k => seen.push(k))
-
-    await writeMonth(db, '2026-09', blankMonth('2026-09'), key)
-    await writeMonths(db, [blankMonth('2026-10'), blankMonth('2026-11')], key)
-    unsubscribe()
-    await writeMonth(db, '2026-12', blankMonth('2026-12'), key)
-
-    expect(seen).toEqual(['2026-09', '2026-10', '2026-11'])
+      expect(seen).toEqual(['2026-09', '2026-10', '2026-11'])
+    })
   })
 })

@@ -1,4 +1,4 @@
-// In-memory signal that a month was written to IndexedDB. Each data hook holds its own
+// In-memory signal that a month was written to the vault. Each data hook holds its own
 // copy of the month, so without this a write made through one hook (or through closing,
 // which also writes the next month) would leave the others showing stale data.
 // Carries only the month key — never month contents.

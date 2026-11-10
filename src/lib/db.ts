@@ -1,112 +1,45 @@
 import { encrypt, decrypt } from './crypto'
 import { monthDataSchema } from './schemas'
 import { notifyMonthChanged } from './monthEvents'
+import type { VaultStore } from './vaultStore'
 import type { MonthData } from '../types'
 
-const DB_NAME = 'coffer'
-const DB_VERSION = 1
-
-// Object stores:
-//   settings — key/value strings: "salt", "verificationToken", "lockTimeoutMinutes"
-//   months   — key = YYYY-MM, value = encrypted MonthData JSON (via writeMonth/readMonth)
-
-export function openDB(idb: IDBFactory = indexedDB): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const request = idb.open(DB_NAME, DB_VERSION)
-
-    request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result
-      if (!db.objectStoreNames.contains('settings')) {
-        db.createObjectStore('settings')
-      }
-      if (!db.objectStoreNames.contains('months')) {
-        db.createObjectStore('months')
-      }
-    }
-
-    request.onsuccess = () => resolve(request.result)
-    request.onerror = () => reject(request.error)
-  })
-}
-
-export function writeSetting(db: IDBDatabase, key: string, value: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('settings', 'readwrite')
-    const request = tx.objectStore('settings').put(value, key)
-    request.onsuccess = () => resolve()
-    request.onerror = () => reject(request.error)
-  })
-}
-
-export function readSetting(db: IDBDatabase, key: string): Promise<string | undefined> {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('settings', 'readonly')
-    const request = tx.objectStore('settings').get(key)
-    request.onsuccess = () => resolve(request.result as string | undefined)
-    request.onerror = () => reject(request.error)
-  })
-}
+// Encrypted month access on top of any VaultStore: nothing reaches the store in plaintext,
+// and everything read back is validated before use.
 
 export async function writeMonth(
-  db: IDBDatabase,
+  store: VaultStore,
   monthKey: string,
   data: MonthData,
   cryptoKey: CryptoKey,
 ): Promise<void> {
   const ciphertext = await encrypt(JSON.stringify(data), cryptoKey)
-  await putMonths(db, [[monthKey, ciphertext]])
+  await store.writeMonthCiphertexts([[monthKey, ciphertext]])
+  notifyMonthChanged(monthKey)
 }
 
-// Writes several months in a single transaction: either all are saved or none is.
+// Writes several months at once: either all are saved or none is.
 // Each month is stored under its own `key`.
 export async function writeMonths(
-  db: IDBDatabase,
+  store: VaultStore,
   months: MonthData[],
   cryptoKey: CryptoKey,
 ): Promise<void> {
   const entries = await Promise.all(
     months.map(async (m): Promise<[string, string]> => [m.key, await encrypt(JSON.stringify(m), cryptoKey)]),
   )
-  await putMonths(db, entries)
-}
-
-function putMonths(db: IDBDatabase, entries: [string, string][]): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
-    const tx = db.transaction('months', 'readwrite')
-    const store = tx.objectStore('months')
-    for (const [monthKey, ciphertext] of entries) store.put(ciphertext, monthKey)
-    tx.oncomplete = () => resolve()
-    tx.onerror = () => reject(tx.error)
-    tx.onabort = () => reject(tx.error)
-  }).then(() => {
-    for (const [monthKey] of entries) notifyMonthChanged(monthKey)
-  })
+  await store.writeMonthCiphertexts(entries)
+  for (const [monthKey] of entries) notifyMonthChanged(monthKey)
 }
 
 export async function readMonth(
-  db: IDBDatabase,
+  store: VaultStore,
   monthKey: string,
   cryptoKey: CryptoKey,
 ): Promise<MonthData> {
-  const ciphertext = await new Promise<string>((resolve, reject) => {
-    const tx = db.transaction('months', 'readonly')
-    const request = tx.objectStore('months').get(monthKey)
-    request.onsuccess = () => {
-      if (request.result === undefined) reject(new Error(`Month "${monthKey}" not found`))
-      else resolve(request.result as string)
-    }
-    request.onerror = () => reject(request.error)
-  })
+  const ciphertext = await store.readMonthCiphertext(monthKey)
+  if (ciphertext === undefined) throw new Error(`Month "${monthKey}" not found`)
 
   const plaintext = await decrypt(ciphertext, cryptoKey)
   return monthDataSchema.parse(JSON.parse(plaintext))
-}
-
-export function listMonths(db: IDBDatabase): Promise<string[]> {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('months', 'readonly')
-    const request = tx.objectStore('months').getAllKeys()
-    request.onsuccess = () => resolve(request.result as string[])
-    request.onerror = () => reject(request.error)
-  })
 }

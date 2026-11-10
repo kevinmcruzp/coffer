@@ -1,7 +1,8 @@
 import { createContext } from 'react'
+import type { VaultStore } from '../lib/vaultStore'
 
 // State machine:
-//   loading  → setup    (no salt in DB — first launch)
+//   loading  → setup    (no salt in the vault — first launch)
 //   loading  → locked   (salt found — returning user)
 //   setup    → unlocked (password created)
 //   locked   → unlocked (correct password entered)
@@ -30,7 +31,7 @@ export function parseLockTimeout(raw: string | undefined): LockTimeout {
 
 export type SessionContextType = {
   state: SessionState
-  db: IDBDatabase | null
+  db: VaultStore | null
   lockTimeout: LockTimeout
   setup: (password: string) => Promise<void>
   login: (password: string) => Promise<void>

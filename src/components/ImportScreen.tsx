@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { parseCSV } from '../lib/parseCSV'
-import { writeMonth, listMonths } from '../lib/db'
+import { writeMonth } from '../lib/db'
 import { monthKeySchema } from '../lib/schemas'
 import { userMessage } from '../lib/errorMessages'
 import { useSession } from '../hooks/useSession'
@@ -61,7 +61,7 @@ export function ImportScreen({ onDone }: Props) {
     }
 
     if (!overwriteWarning) {
-      const existing = await listMonths(db)
+      const existing = await db.listMonths()
       if (existing.includes(preview.monthKey)) {
         setOverwriteWarning(true)
         return

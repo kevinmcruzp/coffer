@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { listMonths, readMonth } from '../lib/db'
+import { readMonth } from '../lib/db'
 import { userMessage } from '../lib/errorMessages'
 import { round2 } from '../lib/math'
 import { useSession } from './useSession'
@@ -75,7 +75,7 @@ export function useYearSummary(year: number): UseYearSummaryResult {
     let cancelled = false
 
     async function load() {
-      const allKeys = await listMonths(db!)
+      const allKeys = await db!.listMonths()
       const yearKeys = allKeys.filter(k => k.startsWith(`${year}-`)).sort()
       const prevYearKeys = allKeys.filter(k => k.startsWith(`${year - 1}-`))
 

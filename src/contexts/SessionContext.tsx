@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { deriveKey, generateSalt, generateVerificationToken, verifyKey } from '../lib/crypto'
-import { openDB, readSetting, writeSetting } from '../lib/db'
+import { openIdbStore } from '../lib/idbStore'
+import type { VaultStore } from '../lib/vaultStore'
 import { base64ToUint8Array, uint8ArrayToBase64 } from '../lib/encoding'
 import { useAutoLock } from '../hooks/useAutoLock'
 import {
@@ -13,25 +14,26 @@ import {
 
 type Props = {
   children: ReactNode
-  idbFactory?: IDBFactory
+  // Where the vault lives. Must be a stable reference — a new function reopens the vault.
+  openStore?: () => Promise<VaultStore>
 }
 
-export function SessionProvider({ children, idbFactory }: Props) {
+export function SessionProvider({ children, openStore = openIdbStore }: Props) {
   const [state, setState] = useState<SessionState>({ status: 'loading' })
-  const [db, setDb] = useState<IDBDatabase | null>(null)
+  const [db, setDb] = useState<VaultStore | null>(null)
   const [lockTimeout, setLockTimeoutState] = useState<LockTimeout>(DEFAULT_LOCK_TIMEOUT)
-  const dbRef = useRef<IDBDatabase | null>(null)
+  const dbRef = useRef<VaultStore | null>(null)
 
   useEffect(() => {
-    openDB(idbFactory ?? indexedDB).then(async (dbInstance) => {
+    openStore().then(async (dbInstance) => {
       dbRef.current = dbInstance
       setDb(dbInstance)
-      const salt = await readSetting(dbInstance, 'salt')
-      const timeout = parseLockTimeout(await readSetting(dbInstance, 'lockTimeoutMinutes'))
+      const salt = await dbInstance.readSetting('salt')
+      const timeout = parseLockTimeout(await dbInstance.readSetting('lockTimeoutMinutes'))
       setLockTimeoutState(timeout)
       setState(salt === undefined ? { status: 'setup' } : { status: 'locked' })
     })
-  }, [idbFactory])
+  }, [openStore])
 
   // First-time setup: generates a random salt, derives a key from the password,
   // and stores an encrypted verification token. The salt is stored in plaintext
@@ -42,8 +44,8 @@ export function SessionProvider({ children, idbFactory }: Props) {
     const salt = generateSalt()
     const key = await deriveKey(password, salt)
     const token = await generateVerificationToken(key)
-    await writeSetting(dbInstance, 'salt', uint8ArrayToBase64(salt))
-    await writeSetting(dbInstance, 'verificationToken', token)
+    await dbInstance.writeSetting('salt', uint8ArrayToBase64(salt))
+    await dbInstance.writeSetting('verificationToken', token)
     setState({ status: 'unlocked', key })
   }
 
@@ -52,8 +54,8 @@ export function SessionProvider({ children, idbFactory }: Props) {
   async function login(password: string) {
     const dbInstance = dbRef.current
     if (!dbInstance) throw new Error('Database not ready')
-    const saltB64 = await readSetting(dbInstance, 'salt')
-    const token = await readSetting(dbInstance, 'verificationToken')
+    const saltB64 = await dbInstance.readSetting('salt')
+    const token = await dbInstance.readSetting('verificationToken')
     if (!saltB64 || !token) throw new Error('App not initialized')
 
     const key = await deriveKey(password, base64ToUint8Array(saltB64))
@@ -70,7 +72,7 @@ export function SessionProvider({ children, idbFactory }: Props) {
   async function setLockTimeout(value: LockTimeout) {
     const dbInstance = dbRef.current
     if (!dbInstance) throw new Error('Database not ready')
-    await writeSetting(dbInstance, 'lockTimeoutMinutes', String(value))
+    await dbInstance.writeSetting('lockTimeoutMinutes', String(value))
     setLockTimeoutState(value)
   }
 

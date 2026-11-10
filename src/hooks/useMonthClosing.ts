@@ -5,6 +5,7 @@ import { nextMonthKey } from '../lib/months'
 import { userMessage } from '../lib/errorMessages'
 import { useSession } from './useSession'
 import { useMonthRevision } from './useMonthRevision'
+import type { VaultStore } from '../lib/vaultStore'
 import type { MonthClosing, MonthData } from '../types'
 
 export type UseMonthClosingResult = {
@@ -23,7 +24,7 @@ type FetchState = {
   error: string | null
 }
 
-async function readOrEmpty(db: IDBDatabase, monthKey: string, cryptoKey: CryptoKey): Promise<MonthData> {
+async function readOrEmpty(db: VaultStore, monthKey: string, cryptoKey: CryptoKey): Promise<MonthData> {
   try {
     return await readMonth(db, monthKey, cryptoKey)
   } catch (err) {

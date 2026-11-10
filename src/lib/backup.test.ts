@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { IDBFactory } from 'fake-indexeddb'
-import { openDB, writeMonth, writeSetting } from './db'
+import { writeMonth } from './db'
+import { openIdbStore } from './idbStore'
+import type { VaultStore } from './vaultStore'
 import { deriveKey, generateSalt } from './crypto'
 import { uint8ArrayToBase64 } from './encoding'
 import { exportBackup, importBackup } from './backup'
@@ -27,10 +29,10 @@ const month2: MonthData = {
 const TEST_PASSWORD = 'test-password'
 
 async function makeSetup() {
-  const db = await openDB(new IDBFactory())
+  const db = await openIdbStore(new IDBFactory())
   const salt = generateSalt()
   const key = await deriveKey(TEST_PASSWORD, salt)
-  await writeSetting(db, 'salt', uint8ArrayToBase64(salt))
+  await db.writeSetting('salt', uint8ArrayToBase64(salt))
   return { db, key }
 }
 
@@ -39,7 +41,7 @@ function makeFile(content: string): File {
 }
 
 describe('exportBackup / importBackup', () => {
-  let db: IDBDatabase
+  let db: VaultStore
   let key: CryptoKey
 
   beforeEach(async () => {
@@ -53,7 +55,7 @@ describe('exportBackup / importBackup', () => {
     const blob = await exportBackup(db, key)
     const text = await blob.text()
 
-    const restoreDB = await openDB(new IDBFactory())
+    const restoreDB = await openIdbStore(new IDBFactory())
     const restoreKey = await deriveKey(TEST_PASSWORD, generateSalt())
     const count = await importBackup(makeFile(text), restoreDB, TEST_PASSWORD, restoreKey)
 
@@ -69,7 +71,7 @@ describe('exportBackup / importBackup', () => {
   it('export of empty db returns 0 months on import', async () => {
     const blob = await exportBackup(db, key)
     const text = await blob.text()
-    const restoreDB = await openDB(new IDBFactory())
+    const restoreDB = await openIdbStore(new IDBFactory())
     const count = await importBackup(makeFile(text), restoreDB, TEST_PASSWORD, key)
     expect(count).toBe(0)
   })

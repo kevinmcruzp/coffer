@@ -1,7 +1,8 @@
 import { encrypt, decrypt, deriveKey } from './crypto'
 import { uint8ArrayToBase64, base64ToUint8Array } from './encoding'
-import { listMonths, readMonth, readSetting, writeMonth } from './db'
+import { readMonth, writeMonth } from './db'
 import { monthDataSchema } from './schemas'
+import type { VaultStore } from './vaultStore'
 import type { MonthData } from '../types'
 
 type BackupPayload = {
@@ -41,11 +42,11 @@ async function decompress(bytes: Uint8Array): Promise<string> {
 // the backup salt + backup password allows restoring to a different account or device.
 // The session key (passed as `key` to importBackup) is only used to write months to the DB.
 
-export async function exportBackup(db: IDBDatabase, key: CryptoKey): Promise<Blob> {
-  const saltB64 = await readSetting(db, 'salt')
+export async function exportBackup(db: VaultStore, key: CryptoKey): Promise<Blob> {
+  const saltB64 = await db.readSetting('salt')
   if (!saltB64) throw new Error('Session not initialized')
 
-  const monthKeys = await listMonths(db)
+  const monthKeys = await db.listMonths()
   const months: Record<string, MonthData> = {}
   for (const k of monthKeys) {
     months[k] = await readMonth(db, k, key)
@@ -60,7 +61,7 @@ export async function exportBackup(db: IDBDatabase, key: CryptoKey): Promise<Blo
 
 export async function importBackup(
   file: File,
-  db: IDBDatabase,
+  db: VaultStore,
   password: string,
   sessionKey: CryptoKey,
 ): Promise<number> {

@@ -1,5 +1,5 @@
 // Binary values (salt, IV, ciphertext) are base64-encoded so they can be stored
-// as strings in IndexedDB settings and serialized inside JSON backup files.
+// as strings in the vault settings and serialized inside JSON backup files.
 
 export function uint8ArrayToBase64(bytes: Uint8Array<ArrayBufferLike>): string {
   let binary = ''

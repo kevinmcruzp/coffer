@@ -3,6 +3,7 @@ import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { IDBFactory } from 'fake-indexeddb'
 import { SessionProvider } from './SessionContext'
+import { openIdbStore } from '../lib/idbStore'
 import { useSession } from '../hooks/useSession'
 
 function makeIdb() {
@@ -23,8 +24,9 @@ function TestConsumer() {
 }
 
 function renderWithProvider(idb: IDBFactory) {
+  const openStore = () => openIdbStore(idb)
   return render(
-    <SessionProvider idbFactory={idb}>
+    <SessionProvider openStore={openStore}>
       <TestConsumer />
     </SessionProvider>,
   )
