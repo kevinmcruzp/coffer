@@ -595,6 +595,71 @@ Base para a moeda ativa (Iteração 34) e o idioma (Iteração 15) — fazer ant
 
 ---
 
+## Iteração 37 — Camada de armazenamento + cofre em arquivo
+
+Objetivo: os dados deixam de depender do navegador. O cofre passa a ser um arquivo
+`.coffer` do usuário (ex.: `Documentos\Coffer\meu-cofre.coffer`); limpar/resetar/desinstalar
+o navegador não apaga nada, e copiar o arquivo leva tudo para outra máquina.
+
+⚠️ Altera decisão arquitetural do CLAUDE.md (persistência só em IndexedDB) — atualizar o
+CLAUDE.md junto.
+
+Decisões tomadas:
+- Arquivo único criptografado (formato `.coffer` existente), **não SQLite** — volume é de poucos KB
+  por mês, e SQLite exigiria SQLCipher (quebra a regra "só Web Crypto")
+- IndexedDB continua como implementação para a versão web/celular
+
+**Tarefas:**
+- [ ] Extrair interface de armazenamento (`readMonth`, `writeMonth`, `writeMonths`, `listMonths`, settings) a partir do `lib/db.ts` atual — hooks e UI passam a depender só da interface
+- [ ] Implementação IndexedDB (comportamento atual, sem mudança)
+- [ ] Implementação em arquivo: carrega o `.coffer` na abertura, regrava a cada alteração
+- [ ] Escrita atômica (grava temporário → renomeia) para não corromper em queda de energia
+- [ ] Cópias antigas automáticas (manter as N últimas versões ao lado do arquivo)
+- [ ] Salt e verificationToken dentro do arquivo (o cofre é self-contained)
+- [ ] Testes: a mesma suíte de contrato roda contra as duas implementações; escrita interrompida não corrompe o cofre
+
+---
+
+## Iteração 38 — App desktop (Tauri)
+
+Objetivo: "baixar e usar" — um instalador para Windows, sem depender de navegador.
+Depende da Iteração 37.
+
+- [ ] `tauri init` sobre o build Vite — ícone, nome, janela
+- [ ] Tela inicial: "Criar cofre" (escolher onde salvar) / "Abrir cofre existente"; lembrar o último cofre aberto
+- [ ] Ligar a implementação em arquivo (Iteração 37) ao filesystem do Tauri, com permissão restrita ao arquivo escolhido
+- [ ] Importar dados de quem já usa a versão web (Restore de um `.coffer` de backup)
+- [ ] Instalador Windows (.msi/.exe) publicado no GitHub Releases via CI
+- [ ] Documentar no README o aviso do SmartScreen (sem certificado de assinatura) e como instalar
+- [ ] Avaliar depois: certificado de assinatura, auto-updater, builds macOS/Linux
+
+---
+
+## Iteração 39 — Versão web: link público e proteção dos dados
+
+Objetivo: manter a versão web utilizável (demo e celular) com menos risco de perda de dados.
+
+- [ ] Deploy do build em URL pública (GitHub Pages) via CI a cada push na `main`
+- [ ] Chamar `navigator.storage.persist()` para o navegador não descartar os dados
+- [ ] Lembrete "último backup há X dias" com botão de backup em um clique
+- [ ] Aviso na versão web: os dados moram neste navegador — recomendar o app desktop ou backup
+
+---
+
+## Simplificação para o usuário comum — ordem sugerida
+
+1. Iteração 37 (cofre em arquivo) → 38 (app desktop)
+2. Iteração 35 (não bloquear no F5)
+3. Iteração 36 (Settings — tirar Import/Export/Backup/fechamento da tela principal)
+4. Iteração 34 (moeda única por ambiente)
+5. Iteração 39 (versão web)
+
+Ideias ainda sem iteração:
+- [ ] Primeiro uso guiado: mês vazio mostra "Adicione sua primeira receita" em vez de tabela vazia
+- [ ] Chave de recuperação imprimível no setup (mexe na decisão de autenticação — discutir antes)
+
+---
+
 ## Bugs conhecidos
 
 - [x] Selo "over budget" do topo não atualiza ao editar despesas/orçamento — corrigido na Iteração 33 (hooks relêem o mês via `useMonthRevision`)
@@ -607,9 +672,9 @@ Objetivo: ampliar o alcance da aplicação sem perder o local-first.
 
 ### 2.1 — Executável desktop
 
-- [ ] Avaliar Tauri vs Electron (Tauri preferível: binário ~5 MB vs ~150 MB, usa WebView do SO)
-- [ ] Wrapper Tauri com o build Vite — `tauri init` + configurar ícone/meta
-- [ ] Builds assinados para macOS (.dmg), Windows (.msi), Linux (.AppImage)
+Antecipado para a Iteração 38 (Tauri, Windows primeiro). Restante para depois:
+
+- [ ] Builds assinados para macOS (.dmg) e Linux (.AppImage)
 - [ ] CI cross-platform para gerar releases automaticamente
 - [ ] Auto-updater (Tauri tem embutido)
 
