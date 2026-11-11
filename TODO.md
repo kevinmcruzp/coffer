@@ -651,8 +651,17 @@ O Import CSV continua.
 
 ## Iteração 39 — Release do instalador
 
-- [ ] Instalador publicado no GitHub Releases via CI (rodar também `cargo test` no CI)
-- [ ] Avaliar depois: certificado de assinatura, auto-updater, builds macOS/Linux
+Decisões tomadas:
+- O release é disparado por tag `vX.Y.Z`, que precisa bater com a versão em `src-tauri/tauri.conf.json`
+- O release nasce como **rascunho**: o instalador é testado à mão antes de publicar
+- Sem action de terceiros para publicar: `npm run desktop:build` + `gh release create`
+
+- [x] `cargo test` no CI (job `desktop` em `windows-latest`)
+- [x] Workflow `release.yml`: tag `v*` → instalador NSIS anexado a um release em rascunho
+- [x] README: seção "Releasing" e link de Releases corrigido
+- [ ] Validar com a primeira tag (`v0.1.0`): workflow verde, instalador baixado e testado, rascunho publicado
+
+Assinatura, auto-updater e builds macOS/Linux ficam na Fase 2.1.
 
 ---
 
@@ -685,6 +694,7 @@ Dropbox) — não há integração de cloud própria.
 
 Antecipado para a Iteração 38 (Tauri, Windows primeiro). Restante para depois:
 
+- [ ] Certificado de assinatura para o instalador Windows (remove o aviso do SmartScreen)
 - [ ] Builds assinados para macOS (.dmg) e Linux (.AppImage)
 - [ ] CI cross-platform para gerar releases automaticamente
 - [ ] Auto-updater (Tauri tem embutido)

@@ -5,7 +5,7 @@ Thank you for considering a contribution! Here is everything you need to get sta
 ## Running locally
 
 ```bash
-git clone https://github.com/kevincruz/coffer.git
+git clone https://github.com/kevinmcruzp/coffer.git
 cd coffer
 npm install
 npm run dev

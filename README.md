@@ -5,7 +5,7 @@
 Your finances live in a single encrypted file (`.coffer`) that you keep wherever you like. Nothing ever leaves your device — no account, no server, no cloud.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![CI](https://github.com/kevincruz/coffer/actions/workflows/ci.yml/badge.svg)](https://github.com/kevincruz/coffer/actions/workflows/ci.yml)
+[![CI](https://github.com/kevinmcruzp/coffer/actions/workflows/ci.yml/badge.svg)](https://github.com/kevinmcruzp/coffer/actions/workflows/ci.yml)
 
 ---
 
@@ -53,7 +53,7 @@ Most finance apps require an account, sync your data to a third-party server, or
 
 ## Install
 
-Download the installer for your system from the [Releases](https://github.com/kevincruz/coffer/releases) page and run it.
+Download the installer for your system from the [Releases](https://github.com/kevinmcruzp/coffer/releases) page and run it.
 
 The installers are not code-signed yet, so Windows shows a "Windows protected your PC" (SmartScreen) notice the first time: choose **More info → Run anyway**.
 
@@ -83,6 +83,13 @@ cargo test --manifest-path src-tauri/Cargo.toml
 ```
 
 Coffer is a desktop app only: `npm run dev` just serves the UI for the desktop shell, and a plain browser tab cannot open a vault.
+
+### Releasing
+
+1. Set the new version in `src-tauri/tauri.conf.json` and commit it.
+2. Tag that commit and push the tag: `git tag v0.2.0 && git push origin v0.2.0`.
+3. The `Release` workflow builds the Windows installer and attaches it to a **draft** release.
+4. Download and try the installer, then publish the draft on GitHub.
 
 ---
 
