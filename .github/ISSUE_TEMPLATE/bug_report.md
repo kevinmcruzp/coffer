@@ -20,9 +20,8 @@ What you expected to happen.
 
 ## Environment
 
-- Browser: [e.g. Chrome 124, Firefox 126, Safari 17]
-- OS: [e.g. macOS 14, Windows 11, iOS 17]
-- Installed as PWA: yes / no
+- Coffer version: [e.g. 0.1.0]
+- OS: [e.g. Windows 11]
 
 ## Additional context
 

@@ -1,10 +1,9 @@
 import { describe, it, expect, vi } from 'vitest'
 import { renderHook, waitFor, act } from '@testing-library/react'
-import { IDBFactory } from 'fake-indexeddb'
 import { useMonthClosing } from './useMonthClosing'
 import { useSession } from './useSession'
 import { writeMonth, readMonth } from '../lib/db'
-import { openIdbStore } from '../lib/idbStore'
+import { openMemoryStore } from '../test/memoryFileIO'
 import type { VaultStore } from '../lib/vaultStore'
 import { deriveKey, generateSalt } from '../lib/crypto'
 import type { MonthData } from '../types'
@@ -15,7 +14,7 @@ const OCT = '2026-10'
 const NOV = '2026-11'
 
 async function makeContext() {
-  const db = await openIdbStore(new IDBFactory())
+  const db = await openMemoryStore()
   const key = await deriveKey('test-pass', generateSalt())
   return { db, key }
 }

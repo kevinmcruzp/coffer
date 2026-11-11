@@ -610,7 +610,7 @@ Decisões tomadas:
 
 ---
 
-## Iteração 38 — App desktop (Tauri)
+## Iteração 38 — App desktop (Tauri) ✅
 
 Objetivo: "baixar e usar" — um instalador para Windows, sem depender de navegador.
 Depende da Iteração 37. O Coffer deixa de ter versão web/PWA (sem celular).
@@ -634,11 +634,23 @@ Decisões tomadas:
 - [x] README: instalação, aviso do SmartScreen, desenvolvimento, modelo de segurança
 - [x] Testes: `useVault`, `VaultPicker`, fluxo completo do `App` no modo desktop, comandos Rust (`cargo test`)
 
-**Parte 2 — Migração e limpeza (depende de validar com os dados reais)**
-- [ ] Migração dos dados atuais: Backup na versão web (IndexedDB) → Restore do arquivo no app desktop; validar com os dados reais antes de remover o IndexedDB
-- [ ] Remover `lib/idbStore.ts` e a dependência `fake-indexeddb` (testes passam a usar a store em arquivo com IO em memória)
-- [ ] Remover o PWA: `vite-plugin-pwa`, service worker, manifest e ícones PWA (e a regra `--legacy-peer-deps`)
-- [ ] Backup e Export CSV pelo diálogo nativo "Salvar como" (hoje usam o download do webview)
+**Parte 2 — Migração e limpeza ✅**
+
+Decisão tomada: o backup criptografado é a única exportação. O Export CSV foi removido em vez de ganhar um
+comando de disco próprio — menos superfície de bug e manutenção, e os comandos Rust continuam só tocando `*.coffer`.
+O Import CSV continua.
+
+- [x] Migração dos dados atuais: Backup na versão web (IndexedDB) → Restore do arquivo no app desktop; validado com os dados reais
+- [x] Remover `lib/idbStore.ts` e a dependência `fake-indexeddb` (testes usam a store em arquivo com IO em memória — `openMemoryStore`)
+- [x] Remover o PWA: `vite-plugin-pwa`, service worker, manifest e ícones PWA (e a regra `--legacy-peer-deps`)
+- [x] Remover o modo browser (`lib/platform.ts`): o app sempre abre pelo cofre em arquivo
+- [x] Backup pelo diálogo nativo "Salvar como" (`lib/backupFile.ts`); recusa gravar por cima do cofre aberto
+- [x] Remover o Export CSV (`lib/exportCSV.ts`, `lib/download.ts`)
+
+---
+
+## Iteração 39 — Release do instalador
+
 - [ ] Instalador publicado no GitHub Releases via CI (rodar também `cargo test` no CI)
 - [ ] Avaliar depois: certificado de assinatura, auto-updater, builds macOS/Linux
 
@@ -646,8 +658,9 @@ Decisões tomadas:
 
 ## Simplificação para o usuário comum — ordem sugerida
 
-1. Iteração 37 (cofre em arquivo) → 38 (app desktop)
-2. Iteração 34 (moeda única por ambiente)
+1. ~~Iteração 37 (cofre em arquivo) → 38 (app desktop)~~ ✅
+2. Iteração 39 (release do instalador)
+3. Iteração 34 (moeda única por ambiente)
 
 Ideias ainda sem iteração:
 - [ ] Primeiro uso guiado: mês vazio mostra "Adicione sua primeira receita" em vez de tabela vazia

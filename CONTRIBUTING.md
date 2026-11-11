@@ -20,7 +20,7 @@ npm test          # run once
 npm run test:watch  # watch mode
 ```
 
-We use **Vitest** + **React Testing Library** + **fake-indexeddb** for integration tests. All new features must ship with tests.
+We use **Vitest** + **React Testing Library** for integration tests; the vault runs on an in-memory disk (`src/test/memoryFileIO.ts`). All new features must ship with tests.
 
 ## Code style
 

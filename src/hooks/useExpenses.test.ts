@@ -1,10 +1,9 @@
 import { describe, it, expect, vi } from 'vitest'
 import { renderHook, waitFor, act } from '@testing-library/react'
-import { IDBFactory } from 'fake-indexeddb'
 import { useExpenses } from './useExpenses'
 import { useSession } from './useSession'
 import { writeMonth } from '../lib/db'
-import { openIdbStore } from '../lib/idbStore'
+import { openMemoryStore } from '../test/memoryFileIO'
 import type { VaultStore } from '../lib/vaultStore'
 import { deriveKey, generateSalt } from '../lib/crypto'
 import type { Expense } from '../types'
@@ -23,7 +22,7 @@ const baseExpense: Expense = {
 }
 
 async function makeContext() {
-  const db = await openIdbStore(new IDBFactory())
+  const db = await openMemoryStore()
   const key = await deriveKey('test-pass', generateSalt())
   return { db, key }
 }

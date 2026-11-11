@@ -3,7 +3,6 @@ import { SessionProvider } from './contexts/SessionContext'
 import { useSession } from './hooks/useSession'
 import { useCurrentMonth } from './hooks/useCurrentMonth'
 import { useVault } from './hooks/useVault'
-import { isDesktop } from './lib/platform'
 import type { VaultStore } from './lib/vaultStore'
 import { VaultPicker } from './components/VaultPicker'
 import { SetupScreen } from './components/SetupScreen'
@@ -100,13 +99,13 @@ function BudgetBadge({ monthKey }: { monthKey: string }) {
   )
 }
 
-// The vault file the desktop app is working on; absent in the browser build.
+// The vault file the app is working on.
 type VaultFile = {
   path: string
   onSwitch: () => void
 }
 
-function MainApp({ vaultPath }: { vaultPath?: string }) {
+function MainApp({ vaultPath }: { vaultPath: string }) {
   const { logout } = useSession()
   const [theme, toggleTheme] = useTheme()
   const { monthKey, canGoBack, goBack, goForward, goTo } = useCurrentMonth(currentMonthKey())
@@ -224,7 +223,7 @@ function MainApp({ vaultPath }: { vaultPath?: string }) {
               onSelectMonth={(key) => { goTo(key); setTab('expenses') }}
             />
           )}
-          {tab === 'settings' && <SettingsPage monthKey={monthKey} vaultPath={vaultPath} onImport={() => setImporting(true)} />}
+          {tab === 'settings' && <SettingsPage vaultPath={vaultPath} onImport={() => setImporting(true)} />}
         </main>
       </div>
 
@@ -254,16 +253,16 @@ function VaultFooter({ path, onSwitch }: VaultFile) {
   )
 }
 
-function AppShell({ vault }: { vault?: VaultFile }) {
+function AppShell({ vault }: { vault: VaultFile }) {
   const { state, setup, login } = useSession()
 
   if (state.status === 'loading') return <Loading />
-  if (state.status === 'unlocked') return <MainApp vaultPath={vault?.path} />
+  if (state.status === 'unlocked') return <MainApp vaultPath={vault.path} />
 
   return (
     <>
       {state.status === 'setup' ? <SetupScreen onSetup={setup} /> : <LoginScreen onLogin={login} />}
-      {vault && <VaultFooter {...vault} />}
+      <VaultFooter {...vault} />
     </>
   )
 }
@@ -277,7 +276,7 @@ function OpenVault({ store, vault }: { store: VaultStore; vault: VaultFile }) {
   )
 }
 
-function DesktopApp() {
+function VaultApp() {
   const { state, create, open, close } = useVault()
 
   if (state.status === 'open') {
@@ -297,7 +296,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <ToastProvider>
-        {isDesktop() ? <DesktopApp /> : <SessionProvider><AppShell /></SessionProvider>}
+        <VaultApp />
       </ToastProvider>
     </ErrorBoundary>
   )

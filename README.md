@@ -22,9 +22,9 @@ Your finances live in a single encrypted file (`.coffer`) that you keep wherever
 - **Annual view** — full-year table with year-over-year comparison
 - **Charts** — pie chart (fixed vs. others, debit vs. credit) and balance bar chart
 - **Budget alerts** — set a monthly spending limit, get a badge when exceeded
-- **Backup & restore** — export/import a single encrypted backup file
+- **Backup & restore** — save a single encrypted backup file wherever you choose, and restore from it
 - **Previous versions** — the last three sessions are kept next to the vault as `.bak` files
-- **CSV import/export** — migrate from spreadsheets or share data
+- **CSV import** — bring your months over from a spreadsheet
 - **Auto-lock** — vault locks after configurable inactivity (5/15/30/60 min)
 - **Quick-add** — add an expense in 3 taps from the header
 
@@ -67,7 +67,7 @@ Requirements: Node.js, [Rust](https://rustup.rs) and, on Windows, the Microsoft 
 
 ```bash
 # Install dependencies
-npm install --legacy-peer-deps
+npm install
 
 # Run the desktop app with hot reload
 npm run desktop:dev
@@ -82,7 +82,7 @@ npm test
 cargo test --manifest-path src-tauri/Cargo.toml
 ```
 
-`npm run dev` still serves the UI in a plain browser tab for quick UI work; there the vault falls back to the browser's storage instead of a file.
+Coffer is a desktop app only: `npm run dev` just serves the UI for the desktop shell, and a plain browser tab cannot open a vault.
 
 ---
 

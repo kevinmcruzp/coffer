@@ -42,7 +42,7 @@ async function decompress(bytes: Uint8Array): Promise<string> {
 // the backup salt + backup password allows restoring to a different account or device.
 // The session key (passed as `key` to importBackup) is only used to write months to the DB.
 
-export async function exportBackup(db: VaultStore, key: CryptoKey): Promise<Blob> {
+export async function exportBackup(db: VaultStore, key: CryptoKey): Promise<string> {
   const saltB64 = await db.readSetting('salt')
   if (!saltB64) throw new Error('Session not initialized')
 
@@ -56,7 +56,7 @@ export async function exportBackup(db: VaultStore, key: CryptoKey): Promise<Blob
   const ciphertext = await encrypt(uint8ArrayToBase64(compressed), key)
 
   const envelope: BackupEnvelope = { version: 1, salt: saltB64, ciphertext }
-  return new Blob([JSON.stringify(envelope)], { type: 'application/octet-stream' })
+  return JSON.stringify(envelope)
 }
 
 export async function importBackup(

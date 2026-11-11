@@ -2,17 +2,13 @@ import { useState, type ReactNode } from 'react'
 import { useSession } from '../hooks/useSession'
 import { useToast } from '../hooks/useToast'
 import { LOCK_TIMEOUT_OPTIONS, parseLockTimeout, type LockTimeout } from '../contexts/session'
-import { readMonth } from '../lib/db'
-import { downloadCSV } from '../lib/exportCSV'
 import { exportBackup, importBackup } from '../lib/backup'
-import { downloadBlob } from '../lib/download'
+import { saveBackupFile } from '../lib/backupFile'
 import { userMessage } from '../lib/errorMessages'
-import { shortMonthLabel } from '../lib/months'
 
 type Props = {
-  monthKey: string
-  // Location of the vault file; only known in the desktop app.
-  vaultPath?: string
+  // Location of the vault file on disk.
+  vaultPath: string
   onImport: () => void
 }
 
@@ -48,7 +44,7 @@ function Row({ title, hint, children }: { title: ReactNode; hint: string; childr
   )
 }
 
-export function SettingsPage({ monthKey, vaultPath, onImport }: Props) {
+export function SettingsPage({ vaultPath, onImport }: Props) {
   const { state, db, lockTimeout, setLockTimeout } = useSession()
   const { toast } = useToast()
   const [restoreFile, setRestoreFile] = useState<File | null>(null)
@@ -56,7 +52,6 @@ export function SettingsPage({ monthKey, vaultPath, onImport }: Props) {
   const [restoring, setRestoring] = useState(false)
 
   const cryptoKey = state.status === 'unlocked' ? state.key : null
-  const month = shortMonthLabel(monthKey)
 
   async function handleLockTimeout(raw: string) {
     try {
@@ -67,24 +62,13 @@ export function SettingsPage({ monthKey, vaultPath, onImport }: Props) {
     }
   }
 
-  async function handleExport() {
-    if (!db || !cryptoKey) return
-    try {
-      downloadCSV(await readMonth(db, monthKey, cryptoKey), monthKey)
-      toast('Exported successfully')
-    } catch {
-      toast('No data found for this month', 'error')
-    }
-  }
-
   async function handleBackup() {
     if (!db || !cryptoKey) return
     try {
-      const blob = await exportBackup(db, cryptoKey)
-      downloadBlob(blob, `coffer-backup-${new Date().toISOString().slice(0, 10)}.coffer`)
-      toast('Backup downloaded')
-    } catch {
-      toast('Failed to create backup. Please try again.', 'error')
+      const saved = await saveBackupFile(await exportBackup(db, cryptoKey), vaultPath)
+      if (saved) toast('Backup saved')
+    } catch (err) {
+      toast(userMessage(err, 'Failed to create backup. Please try again.'), 'error')
     }
   }
 
@@ -108,17 +92,15 @@ export function SettingsPage({ monthKey, vaultPath, onImport }: Props) {
 
   return (
     <div className="space-y-8">
-      {vaultPath && (
-        <Section title="Vault">
-          <div className="px-4 py-3.5">
-            <p className="text-sm text-fg">Vault file</p>
-            <p className="text-xs text-dim font-mono break-all pt-1">{vaultPath}</p>
-            <p className="text-xs text-faint pt-1.5">
-              Everything is stored in this one encrypted file. Copy it to move your finances to another computer.
-            </p>
-          </div>
-        </Section>
-      )}
+      <Section title="Vault">
+        <div className="px-4 py-3.5">
+          <p className="text-sm text-fg">Vault file</p>
+          <p className="text-xs text-dim font-mono break-all pt-1">{vaultPath}</p>
+          <p className="text-xs text-faint pt-1.5">
+            Everything is stored in this one encrypted file. Copy it to move your finances to another computer.
+          </p>
+        </div>
+      </Section>
 
       <Section title="Security">
         <Row
@@ -145,7 +127,7 @@ export function SettingsPage({ monthKey, vaultPath, onImport }: Props) {
           title="Encrypted backup"
           hint="One file with every month, readable only with your master password. Keep a copy somewhere safe."
         >
-          <button onClick={handleBackup} className={ACTION_BUTTON}>Download backup</button>
+          <button onClick={handleBackup} className={ACTION_BUTTON}>Save backup</button>
         </Row>
         <Row
           title="Restore from a backup"
@@ -195,9 +177,6 @@ export function SettingsPage({ monthKey, vaultPath, onImport }: Props) {
       </Section>
 
       <Section title="Spreadsheet">
-        <Row title={`Export ${month} as CSV`} hint="The month you were viewing, in the spreadsheet format.">
-          <button onClick={handleExport} aria-label={`Export ${month}`} className={ACTION_BUTTON}>Export</button>
-        </Row>
         <Row title="Import a month from CSV" hint="Bring a month over from the spreadsheet. You review it before saving.">
           <button onClick={onImport} aria-label="Import CSV" className={ACTION_BUTTON}>Import</button>
         </Row>

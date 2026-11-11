@@ -1,11 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { IDBFactory } from 'fake-indexeddb'
 import { writeMonth, writeMonths, readMonth } from './db'
-import { openIdbStore } from './idbStore'
-import { openFileStore } from './fileStore'
 import { onMonthChanged } from './monthEvents'
 import { deriveKey, generateSalt } from './crypto'
-import { createMemoryFileIO } from '../test/memoryFileIO'
+import { openMemoryStore } from '../test/memoryFileIO'
 import type { VaultStore } from './vaultStore'
 import type { MonthData } from '../types'
 
@@ -42,18 +39,12 @@ async function makeKey() {
   return deriveKey('test-password', generateSalt())
 }
 
-// The same contract runs against every VaultStore implementation.
-const implementations: [string, () => Promise<VaultStore>][] = [
-  ['IndexedDB store', () => openIdbStore(new IDBFactory())],
-  ['file store', () => openFileStore(createMemoryFileIO(), 'vault.coffer')],
-]
-
-describe.each(implementations)('%s', (_name, makeStore) => {
+describe('encrypted months on a vault store', () => {
   let store: VaultStore
   let key: CryptoKey
 
   beforeEach(async () => {
-    store = await makeStore()
+    store = await openMemoryStore()
     key = await makeKey()
   })
 

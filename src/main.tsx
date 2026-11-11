@@ -1,12 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { registerSW } from 'virtual:pwa-register'
 import './index.css'
 import App from './App.tsx'
-import { isDesktop } from './lib/platform'
-
-// The desktop app ships its own files; a service worker there would only serve stale ones.
-if (!isDesktop()) registerSW({ immediate: true })
 
 // Apply the saved theme before first paint so there's no flash. The OS
 // preference is the default until the user picks a theme in the app.

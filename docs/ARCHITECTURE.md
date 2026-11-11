@@ -1,6 +1,6 @@
 # Architecture
 
-Coffer is a local-first, offline-capable PWA. No data leaves the device. Everything is encrypted in IndexedDB using keys derived from the user's master password.
+Coffer is a local-first desktop app (Tauri). No data leaves the device. Everything lives in a single vault file (`.coffer`) chosen by the user, encrypted with keys derived from the user's master password.
 
 ---
 
@@ -10,8 +10,8 @@ Coffer is a local-first, offline-capable PWA. No data leaves the device. Everyth
 password + salt  ──PBKDF2-SHA256 (200k iter)──►  CryptoKey (AES-256-GCM, non-extractable)
 ```
 
-- **Salt** — 16 random bytes, generated once at first launch and stored in plaintext in the `settings` store. Needed to re-derive the same key on future logins.
-- **CryptoKey** — lives only in memory inside `SessionState.unlocked.key`. Never persisted. Closing the tab loses the key.
+- **Salt** — 16 random bytes, generated once at first launch and stored in plaintext in the vault file's `settings`. Needed to re-derive the same key on future logins.
+- **CryptoKey** — lives only in memory inside `SessionState.unlocked.key`. Never persisted. Closing the app loses the key.
 - **Verification token** — the fixed string `"coffer-v1-ok"` encrypted with the derived key, stored in `settings`. On login, decrypting this token proves the password is correct without touching real data.
 - **Encrypted values** — `base64(IV[12 bytes] + AES-GCM ciphertext)`. The IV is freshly generated per write and prepended to the output so the reader can extract it without out-of-band storage.
 
@@ -33,16 +33,21 @@ The `SessionProvider` drives all transitions. Auto-lock uses `useAutoLock`, whic
 
 ## Persistence
 
-**Object stores (IndexedDB `coffer` v1):**
+The vault file is JSON: `{ format: "coffer-vault", version: 1, settings, months }`. Hooks and UI only see the
+`VaultStore` interface (`lib/vaultStore.ts`); `lib/fileStore.ts` implements it over the file, and the desktop
+shell's `vault_*` commands (`src-tauri/src/lib.rs`) are the only code that touches the disk.
 
-| Store | Key | Value |
-|-------|-----|-------|
+| Section | Key | Value |
+|---------|-----|-------|
 | `settings` | `"salt"` | base64 Uint8Array |
 | `settings` | `"verificationToken"` | base64(IV + ciphertext) |
 | `settings` | `"lockTimeoutMinutes"` | `"5"` \| `"15"` \| `"30"` \| `"60"` \| `"never"` |
 | `months` | `"YYYY-MM"` | base64(IV + ciphertext of MonthData JSON) |
 
 All month data is encrypted before any write. `readMonth` decrypts and validates against `monthDataSchema`.
+
+Every change rewrites the whole file atomically (write `<vault>.tmp`, then rename over the vault). Before the first
+change of a session the vault as found is copied to `<vault>.bak1`, keeping the last three (`.bak1`…`.bak3`).
 
 ---
 
@@ -93,7 +98,7 @@ When the user moves **forward** one month (`goForward`), the app:
 
 ## Backup format
 
-A `.coffer` backup file is a JSON envelope:
+A `.coffer` backup file is saved through the native "Save as" dialog and is a JSON envelope:
 
 ```json
 {
@@ -109,10 +114,10 @@ On import, each month is validated against `monthDataSchema` before being writte
 
 ---
 
-## CSV export/import
+## CSV import
 
 CSV files follow the format of the Google Sheets finance template the app was designed around.
 
-- **Export** is BRL-only. Non-BRL entries are excluded silently.
 - **Import** reads the summary row (row 2) for saving/adjustment/income total, then expense rows (row 4+) with category carry-forward.
-- Both operations are one-shot: export downloads the current month; import requires the user to supply the target `YYYY-MM` key.
+- It is one-shot: the user supplies the target `YYYY-MM` key and reviews the month before saving.
+- There is no CSV export: the encrypted backup is the only way data leaves the vault.

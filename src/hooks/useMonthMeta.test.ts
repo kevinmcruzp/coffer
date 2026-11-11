@@ -1,10 +1,9 @@
 import { describe, it, expect, vi } from 'vitest'
 import { renderHook, waitFor, act } from '@testing-library/react'
-import { IDBFactory } from 'fake-indexeddb'
 import { useMonthMeta } from './useMonthMeta'
 import { useSession } from './useSession'
 import { writeMonth, readMonth } from '../lib/db'
-import { openIdbStore } from '../lib/idbStore'
+import { openMemoryStore } from '../test/memoryFileIO'
 import type { VaultStore } from '../lib/vaultStore'
 import { deriveKey, generateSalt } from '../lib/crypto'
 
@@ -13,7 +12,7 @@ vi.mock('./useSession')
 const MONTH_KEY = '2025-06'
 
 async function makeContext() {
-  const db = await openIdbStore(new IDBFactory())
+  const db = await openMemoryStore()
   const key = await deriveKey('test-pass', generateSalt())
   return { db, key }
 }

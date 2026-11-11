@@ -1,4 +1,5 @@
-import type { VaultFileIO } from '../lib/fileStore'
+import { openFileStore, type VaultFileIO } from '../lib/fileStore'
+import type { VaultStore } from '../lib/vaultStore'
 
 type Operation = keyof VaultFileIO
 
@@ -51,4 +52,10 @@ export function createMemoryFileIO(): MemoryFileIO {
       files.set(to, mustRead(from))
     },
   }
+}
+
+// A vault store on a disk that only exists in memory. Pass the same `io` again to
+// reopen the same vault.
+export function openMemoryStore(io: VaultFileIO = createMemoryFileIO()): Promise<VaultStore> {
+  return openFileStore(io, 'vault.coffer')
 }

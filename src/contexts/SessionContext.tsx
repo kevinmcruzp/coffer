@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { deriveKey, generateSalt, generateVerificationToken, verifyKey } from '../lib/crypto'
-import { openIdbStore } from '../lib/idbStore'
 import type { VaultStore } from '../lib/vaultStore'
 import { base64ToUint8Array, uint8ArrayToBase64 } from '../lib/encoding'
 import { useAutoLock } from '../hooks/useAutoLock'
@@ -15,10 +14,10 @@ import {
 type Props = {
   children: ReactNode
   // Where the vault lives. Must be a stable reference — a new function reopens the vault.
-  openStore?: () => Promise<VaultStore>
+  openStore: () => Promise<VaultStore>
 }
 
-export function SessionProvider({ children, openStore = openIdbStore }: Props) {
+export function SessionProvider({ children, openStore }: Props) {
   const [state, setState] = useState<SessionState>({ status: 'loading' })
   const [db, setDb] = useState<VaultStore | null>(null)
   const [lockTimeout, setLockTimeoutState] = useState<LockTimeout>(DEFAULT_LOCK_TIMEOUT)

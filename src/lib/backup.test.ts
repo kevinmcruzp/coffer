@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { IDBFactory } from 'fake-indexeddb'
 import { writeMonth } from './db'
-import { openIdbStore } from './idbStore'
+import { openMemoryStore } from '../test/memoryFileIO'
 import type { VaultStore } from './vaultStore'
 import { deriveKey, generateSalt } from './crypto'
 import { uint8ArrayToBase64 } from './encoding'
@@ -29,7 +28,7 @@ const month2: MonthData = {
 const TEST_PASSWORD = 'test-password'
 
 async function makeSetup() {
-  const db = await openIdbStore(new IDBFactory())
+  const db = await openMemoryStore()
   const salt = generateSalt()
   const key = await deriveKey(TEST_PASSWORD, salt)
   await db.writeSetting('salt', uint8ArrayToBase64(salt))
@@ -52,10 +51,9 @@ describe('exportBackup / importBackup', () => {
     await writeMonth(db, month1.key, month1, key)
     await writeMonth(db, month2.key, month2, key)
 
-    const blob = await exportBackup(db, key)
-    const text = await blob.text()
+    const text = await exportBackup(db, key)
 
-    const restoreDB = await openIdbStore(new IDBFactory())
+    const restoreDB = await openMemoryStore()
     const restoreKey = await deriveKey(TEST_PASSWORD, generateSalt())
     const count = await importBackup(makeFile(text), restoreDB, TEST_PASSWORD, restoreKey)
 
@@ -69,17 +67,15 @@ describe('exportBackup / importBackup', () => {
   })
 
   it('export of empty db returns 0 months on import', async () => {
-    const blob = await exportBackup(db, key)
-    const text = await blob.text()
-    const restoreDB = await openIdbStore(new IDBFactory())
+    const text = await exportBackup(db, key)
+    const restoreDB = await openMemoryStore()
     const count = await importBackup(makeFile(text), restoreDB, TEST_PASSWORD, key)
     expect(count).toBe(0)
   })
 
   it('throws descriptive error when password is wrong', async () => {
     await writeMonth(db, month1.key, month1, key)
-    const blob = await exportBackup(db, key)
-    const text = await blob.text()
+    const text = await exportBackup(db, key)
 
     await expect(importBackup(makeFile(text), db, 'wrong-password', key)).rejects.toThrow(
       'Invalid backup file or wrong password',
