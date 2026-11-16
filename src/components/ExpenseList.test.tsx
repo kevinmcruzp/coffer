@@ -6,6 +6,7 @@ import { useExpenses } from '../hooks/useExpenses'
 import type { Expense } from '../types'
 import type { UseExpensesResult } from '../hooks/useExpenses'
 
+vi.mock('../hooks/useSession', () => ({ useSession: () => ({ currency: 'BRL' }) }))
 vi.mock('../hooks/useExpenses')
 vi.mock('../hooks/useToast', () => ({
   useToast: () => ({ toast: vi.fn() }),
@@ -15,7 +16,6 @@ const fixedExpense: Expense = {
   id: 'e1',
   name: 'Rent',
   category: 'fixed',
-  currency: 'BRL',
   debit: 1500,
   credit: 0,
 }
@@ -24,14 +24,13 @@ const otherExpense: Expense = {
   id: 'e2',
   name: 'Coffee',
   category: 'other',
-  currency: 'BRL',
   debit: 0,
   credit: 25,
 }
 
-const expenseA: Expense = { id: 'a', name: 'Alpha', category: 'fixed', currency: 'BRL', debit: 300, credit: 0 }
-const expenseB: Expense = { id: 'b', name: 'Beta',  category: 'fixed', currency: 'BRL', debit: 100, credit: 0 }
-const expenseC: Expense = { id: 'c', name: 'Gamma', category: 'fixed', currency: 'BRL', debit: 200, credit: 0 }
+const expenseA: Expense = { id: 'a', name: 'Alpha', category: 'fixed', debit: 300, credit: 0 }
+const expenseB: Expense = { id: 'b', name: 'Beta',  category: 'fixed', debit: 100, credit: 0 }
+const expenseC: Expense = { id: 'c', name: 'Gamma', category: 'fixed', debit: 200, credit: 0 }
 
 function makeHookResult(overrides: Partial<UseExpensesResult> = {}): UseExpensesResult {
   return {
@@ -39,11 +38,7 @@ function makeHookResult(overrides: Partial<UseExpensesResult> = {}): UseExpenses
     closed: false,
     loading: false,
     error: null,
-    totals: {
-      BRL: { debit: 0, credit: 0, total: 0 },
-      USD: { debit: 0, credit: 0, total: 0 },
-      CLP: { debit: 0, credit: 0, total: 0 },
-    },
+    totals: { debit: 0, credit: 0, total: 0 },
     add: vi.fn().mockResolvedValue(undefined),
     update: vi.fn().mockResolvedValue(undefined),
     remove: vi.fn().mockResolvedValue(undefined),
@@ -176,32 +171,31 @@ describe('ExpenseList', () => {
     expect(update).toHaveBeenCalledWith('e1', expect.objectContaining({ name: 'New Rent' }))
   })
 
-  it('shows BRL totals row', () => {
+  it('shows the totals row', () => {
     vi.mocked(useExpenses).mockReturnValue(makeHookResult({
       totals: {
-        BRL: { debit: 1500, credit: 200, total: 1700 },
-        USD: { debit: 0, credit: 0, total: 0 },
-        CLP: { debit: 0, credit: 0, total: 0 },
+        debit: 1500, credit: 200, total: 1700,
       },
     }))
     render(<ExpenseList monthKey="2025-03" />)
 
-    expect(screen.getByTestId('totals-BRL')).toBeInTheDocument()
-    expect(screen.getByTestId('totals-BRL')).toHaveTextContent('1.500')
-    expect(screen.getByTestId('totals-BRL')).toHaveTextContent('200')
+    expect(screen.getByTestId('totals')).toHaveTextContent('R$ 1.500,00')
+    expect(screen.getByTestId('totals')).toHaveTextContent('R$ 200,00')
+    expect(screen.getByTestId('totals')).toHaveTextContent('R$ 1.700,00')
   })
 
-  it('does not show USD totals when all USD values are zero', () => {
-    vi.mocked(useExpenses).mockReturnValue(makeHookResult({
-      totals: {
-        BRL: { debit: 100, credit: 0, total: 100 },
-        USD: { debit: 0, credit: 0, total: 0 },
-        CLP: { debit: 0, credit: 0, total: 0 },
-      },
-    }))
+  it('hides the totals row while there is nothing to total', () => {
     render(<ExpenseList monthKey="2025-03" />)
 
-    expect(screen.queryByTestId('totals-USD')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('totals')).not.toBeInTheDocument()
+  })
+
+  it('has no per-expense currency: the month belongs to the active currency', () => {
+    vi.mocked(useExpenses).mockReturnValue(makeHookResult({ expenses: [fixedExpense] }))
+    render(<ExpenseList monthKey="2025-03" />)
+
+    expect(screen.queryByText('Currency')).not.toBeInTheDocument()
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
   })
 
   it('clears add form after successful submission', async () => {
@@ -232,7 +226,7 @@ describe('ExpenseList — installments', () => {
 
   it('renders (Nx) badge when installments > 1', () => {
     const expense: Expense = {
-      id: 'tv', name: 'TV', category: 'other', currency: 'BRL',
+      id: 'tv', name: 'TV', category: 'other',
       debit: 0, credit: 200, installments: 6,
     }
     vi.mocked(useExpenses).mockReturnValue(makeHookResult({ expenses: [expense] }))
@@ -243,8 +237,8 @@ describe('ExpenseList — installments', () => {
   })
 
   it('does not render badge when installments is 1 or undefined', () => {
-    const e1: Expense = { id: 'a', name: 'A', category: 'other', currency: 'BRL', debit: 10, credit: 0 }
-    const e2: Expense = { id: 'b', name: 'B', category: 'other', currency: 'BRL', debit: 10, credit: 0, installments: 1 }
+    const e1: Expense = { id: 'a', name: 'A', category: 'other', debit: 10, credit: 0 }
+    const e2: Expense = { id: 'b', name: 'B', category: 'other', debit: 10, credit: 0, installments: 1 }
     vi.mocked(useExpenses).mockReturnValue(makeHookResult({ expenses: [e1, e2] }))
 
     render(<ExpenseList monthKey="2025-03" />)
@@ -378,10 +372,5 @@ describe('ExpenseList — closed month', () => {
     render(<ExpenseList monthKey="2025-03" />)
     fireEvent.click(screen.getByTestId('name-a'))
     expect(screen.queryByDisplayValue('Alpha')).not.toBeInTheDocument()
-  })
-
-  it('disables the currency selector', () => {
-    render(<ExpenseList monthKey="2025-03" />)
-    expect(screen.getByDisplayValue('BRL')).toBeDisabled()
   })
 })

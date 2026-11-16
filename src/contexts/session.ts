@@ -1,5 +1,6 @@
 import { createContext } from 'react'
 import type { VaultStore } from '../lib/vaultStore'
+import type { Currency } from '../types'
 
 // State machine:
 //   loading  → setup    (no salt in the vault — first launch)
@@ -31,12 +32,19 @@ export function parseLockTimeout(raw: string | undefined): LockTimeout {
 
 export type SessionContextType = {
   state: SessionState
+  // The whole vault, every currency included. Only what works across currencies
+  // (backup, restore) should reach for it.
+  vault: VaultStore | null
+  // The vault limited to the active currency — what the data hooks read and write.
   db: VaultStore | null
+  // Each currency is a separate environment with its own months.
+  currency: Currency
   lockTimeout: LockTimeout
   setup: (password: string) => Promise<void>
   login: (password: string) => Promise<void>
   logout: () => void
   setLockTimeout: (value: LockTimeout) => Promise<void>
+  setCurrency: (value: Currency) => Promise<void>
 }
 
 export const SessionContext = createContext<SessionContextType | null>(null)

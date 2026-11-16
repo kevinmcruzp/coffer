@@ -10,7 +10,7 @@ import type { MonthClosing, MonthData } from '../types'
 
 export type UseMonthClosingResult = {
   closing: MonthClosing | null
-  balance: number      // current BRL balance — what closing now would carry forward
+  balance: number      // current balance — what closing now would carry forward
   nextKey: string
   loading: boolean
   error: string | null

@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useExpenses } from '../hooks/useExpenses'
+import { useSession } from '../hooks/useSession'
 import { NumberInput } from './NumberInput'
 import { ParcelsInfo } from './ParcelsInfo'
 import { userMessage } from '../lib/errorMessages'
 import { round2, parseMoney } from '../lib/math'
-import { CURRENCIES } from '../types'
-import type { Currency } from '../types'
+import { formatMoney } from '../lib/money'
 
 type Props = {
   monthKey: string
@@ -14,8 +14,8 @@ type Props = {
 
 export function QuickAddModal({ monthKey, onClose }: Props) {
   const { add } = useExpenses(monthKey)
+  const { currency } = useSession()
   const [name, setName] = useState('')
-  const [currency, setCurrency] = useState<Currency>('BRL')
   const [debit, setDebit] = useState('')
   const [credit, setCredit] = useState('')
   const [parcels, setParcels] = useState('')
@@ -35,7 +35,6 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
       await add({
         name: name.trim(),
         category: 'other',
-        currency,
         debit: parseMoney(debit),
         credit: perParcel,
         ...(isParceled ? { installments: parcelsNum } : {}),
@@ -47,7 +46,7 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
     }
   }
 
-  const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 2 }).format(v)
+  const fmt = (v: number) => formatMoney(v, currency)
 
   return (
     <div
@@ -76,13 +75,6 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
           />
 
           <div className="flex gap-2">
-            <select
-              className="bg-panel-2 border border-line rounded-lg px-2 py-2 text-fg text-sm focus:outline-none"
-              value={currency}
-              onChange={e => setCurrency(e.target.value as Currency)}
-            >
-              {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
             <NumberInput
               min="0"
               step="0.01"

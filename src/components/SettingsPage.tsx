@@ -4,7 +4,10 @@ import { useToast } from '../hooks/useToast'
 import { LOCK_TIMEOUT_OPTIONS, parseLockTimeout, type LockTimeout } from '../contexts/session'
 import { exportBackup, importBackup } from '../lib/backup'
 import { saveBackupFile } from '../lib/backupFile'
+import { parseCurrency } from '../lib/currencyStore'
 import { userMessage } from '../lib/errorMessages'
+import { CURRENCIES } from '../types'
+import type { Currency } from '../types'
 
 type Props = {
   // Location of the vault file on disk.
@@ -19,6 +22,15 @@ const LOCK_TIMEOUT_LABELS: Record<LockTimeout, string> = {
   60: '1 hour',
   never: 'Never',
 }
+
+const CURRENCY_LABELS: Record<Currency, string> = {
+  BRL: 'BRL — Brazilian real',
+  USD: 'USD — US dollar',
+  CLP: 'CLP — Chilean peso',
+}
+
+const SELECT =
+  'shrink-0 bg-panel-2 border border-line rounded-lg px-3 py-1.5 text-fg text-sm focus:outline-none focus:border-brass'
 
 const ACTION_BUTTON =
   'shrink-0 text-xs text-dim hover:text-fg px-3 py-1.5 rounded-lg border border-line hover:border-brass transition-colors disabled:opacity-50 cursor-pointer'
@@ -45,7 +57,7 @@ function Row({ title, hint, children }: { title: ReactNode; hint: string; childr
 }
 
 export function SettingsPage({ vaultPath, onImport }: Props) {
-  const { state, db, lockTimeout, setLockTimeout } = useSession()
+  const { state, vault, currency, lockTimeout, setLockTimeout, setCurrency } = useSession()
   const { toast } = useToast()
   const [restoreFile, setRestoreFile] = useState<File | null>(null)
   const [restorePassword, setRestorePassword] = useState('')
@@ -62,10 +74,20 @@ export function SettingsPage({ vaultPath, onImport }: Props) {
     }
   }
 
-  async function handleBackup() {
-    if (!db || !cryptoKey) return
+  async function handleCurrency(raw: string) {
+    const next = parseCurrency(raw)
     try {
-      const saved = await saveBackupFile(await exportBackup(db, cryptoKey), vaultPath)
+      await setCurrency(next)
+      toast(`Now showing ${next}`)
+    } catch (err) {
+      toast(userMessage(err, 'Failed to save settings'), 'error')
+    }
+  }
+
+  async function handleBackup() {
+    if (!vault || !cryptoKey) return
+    try {
+      const saved = await saveBackupFile(await exportBackup(vault, cryptoKey), vaultPath)
       if (saved) toast('Backup saved')
     } catch (err) {
       toast(userMessage(err, 'Failed to create backup. Please try again.'), 'error')
@@ -78,10 +100,10 @@ export function SettingsPage({ vaultPath, onImport }: Props) {
   }
 
   async function handleRestore() {
-    if (!restoreFile || !db || !cryptoKey) return
+    if (!restoreFile || !vault || !cryptoKey) return
     setRestoring(true)
     try {
-      const count = await importBackup(restoreFile, db, restorePassword, cryptoKey)
+      const count = await importBackup(restoreFile, vault, restorePassword, cryptoKey)
       toast(`${count} month${count !== 1 ? 's' : ''} restored`)
     } catch (err) {
       toast(userMessage(err, 'Failed to restore backup. Please try again.'), 'error')
@@ -102,6 +124,26 @@ export function SettingsPage({ vaultPath, onImport }: Props) {
         </div>
       </Section>
 
+      <Section title="Currency">
+        <Row
+          title={<label htmlFor="currency">Active currency</label>}
+          hint="Each currency is a separate ledger with its own months, budget and closing. Switching never converts or moves anything."
+        >
+          <select
+            id="currency"
+            value={currency}
+            onChange={e => handleCurrency(e.target.value)}
+            className={SELECT}
+          >
+            {CURRENCIES.map(option => (
+              <option key={option} value={option}>
+                {CURRENCY_LABELS[option]}
+              </option>
+            ))}
+          </select>
+        </Row>
+      </Section>
+
       <Section title="Security">
         <Row
           title={<label htmlFor="lock-timeout">Auto-lock after inactivity</label>}
@@ -111,7 +153,7 @@ export function SettingsPage({ vaultPath, onImport }: Props) {
             id="lock-timeout"
             value={String(lockTimeout)}
             onChange={e => handleLockTimeout(e.target.value)}
-            className="shrink-0 bg-panel-2 border border-line rounded-lg px-3 py-1.5 text-fg text-sm focus:outline-none focus:border-brass"
+            className={SELECT}
           >
             {LOCK_TIMEOUT_OPTIONS.map(option => (
               <option key={option} value={String(option)}>
@@ -125,13 +167,13 @@ export function SettingsPage({ vaultPath, onImport }: Props) {
       <Section title="Backup">
         <Row
           title="Encrypted backup"
-          hint="One file with every month, readable only with your master password. Keep a copy somewhere safe."
+          hint="One file with every month of every currency, readable only with your master password. Keep a copy somewhere safe."
         >
           <button onClick={handleBackup} className={ACTION_BUTTON}>Save backup</button>
         </Row>
         <Row
           title="Restore from a backup"
-          hint="Months in the backup replace the months with the same date in this vault."
+          hint="Months in the backup replace the months with the same date and currency in this vault."
         >
           {restoreFile ? (
             <form
@@ -177,7 +219,7 @@ export function SettingsPage({ vaultPath, onImport }: Props) {
       </Section>
 
       <Section title="Spreadsheet">
-        <Row title="Import a month from CSV" hint="Bring a month over from the spreadsheet. You review it before saving.">
+        <Row title="Import a month from CSV" hint={`Bring a month over from the spreadsheet into ${currency}. You review it before saving.`}>
           <button onClick={onImport} aria-label="Import CSV" className={ACTION_BUTTON}>Import</button>
         </Row>
       </Section>

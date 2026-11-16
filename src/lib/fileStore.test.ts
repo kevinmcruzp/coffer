@@ -127,6 +127,51 @@ describe('openFileStore', () => {
     })
   })
 
+  describe('version 1 vaults (months without a currency)', () => {
+    const legacy = JSON.stringify({
+      format: 'coffer-vault',
+      version: 1,
+      settings: { salt: 's' },
+      months: { '2026-01': 'cipher-jan', '2026-02': 'cipher-feb' },
+    })
+
+    it('opens with every month moved to BRL', async () => {
+      io.files.set(PATH, legacy)
+      const store = await openFileStore(io, PATH)
+
+      expect((await store.listMonths()).sort()).toEqual(['BRL:2026-01', 'BRL:2026-02'])
+      expect(await store.readMonthCiphertext('BRL:2026-01')).toBe('cipher-jan')
+      expect(await store.readMonthCiphertext('2026-01')).toBeUndefined()
+      expect(await store.readSetting('salt')).toBe('s')
+    })
+
+    it('leaves the file untouched until something is written', async () => {
+      io.files.set(PATH, legacy)
+      await openFileStore(io, PATH)
+
+      expect(io.files.get(PATH)).toBe(legacy)
+    })
+
+    it('saves in the current version and keeps the original as a previous copy', async () => {
+      io.files.set(PATH, legacy)
+      const store = await openFileStore(io, PATH)
+      await store.writeSetting('lockTimeoutMinutes', '30')
+
+      expect(JSON.parse(io.files.get(PATH)!)).toEqual({
+        format: 'coffer-vault',
+        version: 2,
+        settings: { salt: 's', lockTimeoutMinutes: '30' },
+        months: { 'BRL:2026-01': 'cipher-jan', 'BRL:2026-02': 'cipher-feb' },
+      })
+      expect(io.files.get(`${PATH}.bak1`)).toBe(legacy)
+    })
+
+    it('rejects a vault from a newer version', async () => {
+      io.files.set(PATH, legacy.replace('"version":1', '"version":3'))
+      await expect(openFileStore(io, PATH)).rejects.toThrow('not a valid Coffer vault')
+    })
+  })
+
   describe('previous versions', () => {
     async function session(write: string): Promise<void> {
       const store = await openFileStore(io, PATH)

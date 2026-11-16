@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { deriveKey, generateSalt, generateVerificationToken, verifyKey } from '../lib/crypto'
 import type { VaultStore } from '../lib/vaultStore'
+import { DEFAULT_CURRENCY, parseCurrency, scopeToCurrency } from '../lib/currencyStore'
+import type { Currency } from '../types'
 import { base64ToUint8Array, uint8ArrayToBase64 } from '../lib/encoding'
 import { useAutoLock } from '../hooks/useAutoLock'
 import {
@@ -19,16 +21,19 @@ type Props = {
 
 export function SessionProvider({ children, openStore }: Props) {
   const [state, setState] = useState<SessionState>({ status: 'loading' })
-  const [db, setDb] = useState<VaultStore | null>(null)
+  const [vault, setVault] = useState<VaultStore | null>(null)
+  const [currency, setCurrencyState] = useState<Currency>(DEFAULT_CURRENCY)
   const [lockTimeout, setLockTimeoutState] = useState<LockTimeout>(DEFAULT_LOCK_TIMEOUT)
   const dbRef = useRef<VaultStore | null>(null)
+  const db = useMemo(() => (vault ? scopeToCurrency(vault, currency) : null), [vault, currency])
 
   useEffect(() => {
     openStore().then(async (dbInstance) => {
       dbRef.current = dbInstance
-      setDb(dbInstance)
       const salt = await dbInstance.readSetting('salt')
       const timeout = parseLockTimeout(await dbInstance.readSetting('lockTimeoutMinutes'))
+      setCurrencyState(parseCurrency(await dbInstance.readSetting('currency')))
+      setVault(dbInstance)
       setLockTimeoutState(timeout)
       setState(salt === undefined ? { status: 'setup' } : { status: 'locked' })
     })
@@ -75,6 +80,13 @@ export function SessionProvider({ children, openStore }: Props) {
     setLockTimeoutState(value)
   }
 
+  async function setCurrency(value: Currency) {
+    const dbInstance = dbRef.current
+    if (!dbInstance) throw new Error('Database not ready')
+    await dbInstance.writeSetting('currency', value)
+    setCurrencyState(value)
+  }
+
   const timeoutMs = lockTimeout === 'never' ? 0 : lockTimeout * 60 * 1000
 
   useAutoLock({
@@ -85,7 +97,7 @@ export function SessionProvider({ children, openStore }: Props) {
 
   return (
     <SessionContext.Provider
-      value={{ state, db, lockTimeout, setup, login, logout, setLockTimeout }}
+      value={{ state, vault, db, currency, lockTimeout, setup, login, logout, setLockTimeout, setCurrency }}
     >
       {children}
     </SessionContext.Provider>

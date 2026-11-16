@@ -107,7 +107,6 @@ describe('parseCSV — valid input', () => {
     expect(result.data.incomes).toHaveLength(1)
     expect(result.data.incomes[0].source).toBe('Receitas')
     expect(result.data.incomes[0].amount).toBeCloseTo(3828.54)
-    expect(result.data.incomes[0].currency).toBe('BRL')
   })
 
   it('assigns unique ids to each expense', () => {

@@ -1,15 +1,13 @@
 import { useState } from 'react'
 import { useMonthClosing } from '../hooks/useMonthClosing'
+import { useSession } from '../hooks/useSession'
 import { useToast } from '../hooks/useToast'
 import { userMessage } from '../lib/errorMessages'
+import { formatMoney } from '../lib/money'
 import { shortMonthLabel } from '../lib/months'
 import { InfoTip } from './InfoTip'
 
-const INFO = 'Closing locks this month and carries its BRL balance into the next month as an income entry. Reopen to fix something — closing again updates that entry.'
-
-function fmtBRL(value: number): string {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
-}
+const INFO = 'Closing locks this month and carries its balance into the next month as an income entry. Reopen to fix something — closing again updates that entry.'
 
 type Props = {
   monthKey: string
@@ -21,8 +19,11 @@ export function MonthClosingPanel({ monthKey }: Props) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
+  const { currency } = useSession()
 
   if (loading) return null
+
+  const fmt = (value: number) => formatMoney(value, currency)
 
   const month = shortMonthLabel(monthKey)
   const next = shortMonthLabel(nextKey)
@@ -54,7 +55,7 @@ export function MonthClosingPanel({ monthKey }: Props) {
             {' · '}
             {closing.balance === 0
               ? 'nothing to carry (balance R$ 0,00)'
-              : <><span className="font-mono tabular-nums text-fg">{fmtBRL(closing.balance)}</span> carried to {next}</>}
+              : <><span className="font-mono tabular-nums text-fg">{fmt(closing.balance)}</span> carried to {next}</>}
           </p>
           <button
             onClick={() => run(reopen, `${month} reopened`)}
@@ -67,7 +68,7 @@ export function MonthClosingPanel({ monthKey }: Props) {
       ) : confirming ? (
         <div data-testid="close-confirm" className="rounded-lg border border-brass/50 bg-panel p-4 space-y-3">
           <p className="text-sm text-fg">
-            Carry <span className="font-mono tabular-nums">{fmtBRL(balance)}</span> to {next} as income and lock {month} for editing?
+            Carry <span className="font-mono tabular-nums">{fmt(balance)}</span> to {next} as income and lock {month} for editing?
           </p>
           <div className="flex gap-2">
             <button
@@ -90,7 +91,7 @@ export function MonthClosingPanel({ monthKey }: Props) {
       ) : (
         <div className="flex flex-wrap items-center gap-3">
           <p className="text-sm text-dim flex-1">
-            Balance to carry into {next}: <span className="font-mono tabular-nums text-fg">{fmtBRL(balance)}</span>
+            Balance to carry into {next}: <span className="font-mono tabular-nums text-fg">{fmt(balance)}</span>
           </p>
           <button
             onClick={() => setConfirming(true)}

@@ -554,19 +554,30 @@ Decisões tomadas:
 
 ---
 
-## Iteração 34 — Ambientes por moeda
+## Iteração 34 — Ambientes por moeda ✅
 
 Objetivo: não misturar moedas. Configuração global escolhe a moeda ativa; cada moeda é um
 ambiente independente (receitas, despesas, poupança, reajuste, orçamento, fechamento próprios).
 
-⚠️ Altera decisão arquitetural do CLAUDE.md ("Every Expense and Income has a `currency` field")
-— discutir modelo antes de implementar:
-- [ ] Definir armazenamento (ex.: chave `BRL:2026-11` no store `months` vs store por moeda)
-- [ ] Migração dos dados existentes (meses com itens em moedas misturadas)
-- [ ] Seletor de moeda ativa (Settings ou sidebar) — persistido
-- [ ] Remover coluna/seletor de moeda das linhas de despesa e receita
-- [ ] Annual, Export, Backup e Fechamento passam a operar por ambiente
-- [ ] Resolve a decisão pendente "Saving/adjustment currency"
+Altera a decisão arquitetural "Every Expense and Income has a `currency` field" — CLAUDE.md atualizado.
+
+Decisões tomadas:
+- Cada mês é gravado por moeda, sob a chave `BRL:2026-11` (`lib/currencyStore.ts`). Hooks e UI continuam usando
+  `YYYY-MM`: a sessão entrega um `VaultStore` já limitado à moeda ativa
+- Despesas e receitas não têm mais `currency`; poupança, ajuste, orçamento e fechamento são da moeda do mês
+- Migração "tudo vira BRL": o arquivo do cofre passa para a versão 2 e os meses antigos viram `BRL:…`
+  (itens que estavam em outra moeda mantêm o número). A cópia `.bak1` da sessão guarda o arquivo original
+- O backup continua sendo do cofre inteiro (todas as moedas), qualquer que seja a moeda ativa;
+  backups antigos são restaurados em BRL
+- Trocar de moeda nunca converte nem move valores
+
+- [x] Armazenamento por moeda (`scopeToCurrency`) + versão 2 do arquivo do cofre com migração automática
+- [x] Seletor de moeda ativa em Settings — persistido no cofre; moeda ativa visível no topo
+- [x] Remover coluna/seletor de moeda das linhas de despesa e receita, do Quick add e do Annual
+- [x] Summary, Annual, Fechamento, Copy from previous e Import CSV operam na moeda ativa
+- [x] Backup/Restore com todas as moedas (payload versão 2; versão 1 ainda é aceita)
+- [x] Resolve a decisão pendente "Saving/adjustment currency"
+- [x] Testes: isolamento entre moedas, migração do arquivo, backup multi-moeda, troca de moeda no App
 
 ---
 
@@ -668,8 +679,8 @@ Assinatura, auto-updater e builds macOS/Linux ficam na Fase 2.1.
 ## Simplificação para o usuário comum — ordem sugerida
 
 1. ~~Iteração 37 (cofre em arquivo) → 38 (app desktop)~~ ✅
-2. Iteração 39 (release do instalador)
-3. Iteração 34 (moeda única por ambiente)
+2. Iteração 39 (release do instalador) — falta só validar e publicar o rascunho `v0.1.0`
+3. ~~Iteração 34 (moeda única por ambiente)~~ ✅
 
 Ideias ainda sem iteração:
 - [ ] Primeiro uso guiado: mês vazio mostra "Adicione sua primeira receita" em vez de tabela vazia

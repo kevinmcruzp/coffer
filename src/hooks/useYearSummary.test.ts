@@ -20,21 +20,24 @@ function mockSession(db: VaultStore, key: CryptoKey) {
   vi.mocked(useSession).mockReturnValue({
     state: { status: 'unlocked', key },
     db,
+    vault: db,
+    currency: 'BRL',
     lockTimeout: 15,
     setup: vi.fn(),
     login: vi.fn(),
     logout: vi.fn(),
     setLockTimeout: vi.fn(),
+    setCurrency: vi.fn(),
   })
 }
 
 const jan: MonthData = {
   key: '2025-01',
   expenses: [
-    { id: 'e1', name: 'Rent', category: 'fixed', currency: 'BRL', debit: 600, credit: 0 },
-    { id: 'e2', name: 'Card', category: 'other', currency: 'BRL', debit: 0, credit: 200 },
+    { id: 'e1', name: 'Rent', category: 'fixed', debit: 600, credit: 0 },
+    { id: 'e2', name: 'Card', category: 'other', debit: 0, credit: 200 },
   ],
-  incomes: [{ id: 'i1', source: 'Salary', currency: 'BRL', amount: 3000 }],
+  incomes: [{ id: 'i1', source: 'Salary', amount: 3000 }],
   saving: 400,
   adjustment: 50,
   budget: 0,
@@ -43,9 +46,9 @@ const jan: MonthData = {
 const feb: MonthData = {
   key: '2025-02',
   expenses: [
-    { id: 'e3', name: 'Rent', category: 'fixed', currency: 'BRL', debit: 600, credit: 0 },
+    { id: 'e3', name: 'Rent', category: 'fixed', debit: 600, credit: 0 },
   ],
-  incomes: [{ id: 'i2', source: 'Salary', currency: 'BRL', amount: 3000 }],
+  incomes: [{ id: 'i2', source: 'Salary', amount: 3000 }],
   saving: 500,
   adjustment: 0,
   budget: 0,
@@ -107,14 +110,14 @@ describe('useYearSummary — row calculations', () => {
     await waitFor(() => expect(result.current.loading).toBe(false))
 
     const row = result.current.rows[0]
-    expect(row.income.BRL).toBe(3000)
-    expect(row.debit.BRL).toBe(600)
-    expect(row.credit.BRL).toBe(200)
+    expect(row.income).toBe(3000)
+    expect(row.debit).toBe(600)
+    expect(row.credit).toBe(200)
     expect(row.saving).toBe(400)
     expect(row.adjustment).toBe(50)
   })
 
-  it('computes BRL balance = income - debit - credit - saving + adjustment', async () => {
+  it('computes balance = income - debit - credit - saving + adjustment', async () => {
     const { db, key } = await makeContext()
     await writeMonth(db, '2025-01', jan, key)
     mockSession(db, key)
@@ -124,7 +127,7 @@ describe('useYearSummary — row calculations', () => {
 
     const row = result.current.rows[0]
     // 3000 - 600 - 200 - 400 + 50 = 1850
-    expect(row.balance.BRL).toBe(1850)
+    expect(row.balance).toBe(1850)
   })
 })
 
@@ -167,9 +170,9 @@ describe('useYearSummary — annual totals', () => {
     await waitFor(() => expect(result.current.loading).toBe(false))
 
     const t = result.current.totals
-    expect(t.income.BRL).toBe(6000)
-    expect(t.debit.BRL).toBe(1200)
-    expect(t.credit.BRL).toBe(200)
+    expect(t.income).toBe(6000)
+    expect(t.debit).toBe(1200)
+    expect(t.credit).toBe(200)
     expect(t.saving).toBe(900)
     expect(t.adjustment).toBe(50)
   })
@@ -184,6 +187,6 @@ describe('useYearSummary — annual totals', () => {
     await waitFor(() => expect(result.current.loading).toBe(false))
 
     // 6000 - 1200 - 200 - 900 + 50 = 3750
-    expect(result.current.totals.balance.BRL).toBe(3750)
+    expect(result.current.totals.balance).toBe(3750)
   })
 })

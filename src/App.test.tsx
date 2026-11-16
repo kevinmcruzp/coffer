@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
 import { tauriFileIO } from './lib/tauriFileIO'
@@ -101,5 +101,37 @@ describe('App', () => {
     await unlockVault()
     await userEvent.click(screen.getByRole('button', { name: 'Settings' }))
     expect(screen.getByLabelText('Auto-lock after inactivity')).toHaveValue('30')
+  }, 40_000)
+
+  it('keeps each currency as a separate ledger', async () => {
+    const first = render(<App />)
+    await createVault('C:\\currencies.coffer')
+    expect(screen.getByRole('button', { name: 'Active currency: BRL' })).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Quick add expense' }))
+    const quickAdd = within(screen.getByRole('heading', { name: /Quick add/ }).parentElement!.parentElement!)
+    await userEvent.type(quickAdd.getByPlaceholderText('Name'), 'Aluguel')
+    await userEvent.type(quickAdd.getByLabelText('Debit'), '1500')
+    await userEvent.click(quickAdd.getByRole('button', { name: 'Add expense' }))
+    expect(await screen.findByText('Aluguel')).toBeInTheDocument()
+
+    // Switching currency opens an empty ledger; nothing is converted or carried over.
+    await userEvent.click(screen.getByRole('button', { name: 'Settings' }))
+    await userEvent.selectOptions(screen.getByLabelText('Active currency'), 'USD')
+    await screen.findByText('Now showing USD')
+    await userEvent.click(screen.getByRole('button', { name: 'Expenses' }))
+    expect(await screen.findByRole('button', { name: 'Active currency: USD' })).toBeInTheDocument()
+    await screen.findAllByPlaceholderText('Name')
+    expect(screen.queryByText('Aluguel')).not.toBeInTheDocument()
+
+    // The choice is remembered, and the BRL ledger is still there when switching back.
+    first.unmount()
+    render(<App />)
+    await unlockVault()
+    expect(screen.getByRole('button', { name: 'Active currency: USD' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Settings' }))
+    await userEvent.selectOptions(screen.getByLabelText('Active currency'), 'BRL')
+    await userEvent.click(screen.getByRole('button', { name: 'Expenses' }))
+    expect(await screen.findByText('Aluguel')).toBeInTheDocument()
   }, 40_000)
 })

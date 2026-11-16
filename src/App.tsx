@@ -43,6 +43,8 @@ import { useExpenses } from './hooks/useExpenses'
 import { useMonthMeta } from './hooks/useMonthMeta'
 import { useMonthClosing } from './hooks/useMonthClosing'
 import { yearOf } from './lib/months'
+import { round2 } from './lib/math'
+import { formatMoney } from './lib/money'
 
 type LedgerTab = 'expenses' | 'income' | 'summary' | 'annual'
 type Tab = LedgerTab | 'settings'
@@ -88,13 +90,13 @@ function currentMonthKey(): string {
 function BudgetBadge({ monthKey }: { monthKey: string }) {
   const { totals } = useExpenses(monthKey)
   const { budget } = useMonthMeta(monthKey)
+  const { currency } = useSession()
   if (budget === 0) return null
-  const spent = totals.BRL.total
-  const excess = spent - budget
+  const excess = round2(totals.total - budget)
   if (excess <= 0) return null
   return (
     <span className="text-xs text-neg font-medium px-2.5 py-0.5 rounded-full bg-neg/10 border border-neg/40 tabular-nums whitespace-nowrap">
-      +{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(excess)} over budget
+      +{formatMoney(excess, currency)} over budget
     </span>
   )
 }
@@ -106,7 +108,7 @@ type VaultFile = {
 }
 
 function MainApp({ vaultPath }: { vaultPath: string }) {
-  const { logout } = useSession()
+  const { logout, currency } = useSession()
   const [theme, toggleTheme] = useTheme()
   const { monthKey, canGoBack, goBack, goForward, goTo } = useCurrentMonth(currentMonthKey())
   const { closing } = useMonthClosing(monthKey)
@@ -187,6 +189,16 @@ function MainApp({ vaultPath }: { vaultPath: string }) {
           {tab === 'annual' && <YearNavigator year={annualYear} onChange={setAnnualYear} />}
           {isMonthTab && (
             <MonthNavigator monthKey={monthKey} canGoBack={canGoBack} goBack={goBack} goForward={goForward} goTo={goTo} />
+          )}
+          {tab !== 'settings' && (
+            <button
+              onClick={() => setTab('settings')}
+              title="Active currency — change it in Settings"
+              aria-label={`Active currency: ${currency}`}
+              className="text-xs font-mono text-dim px-2 py-0.5 rounded-md border border-line hover:text-brass hover:border-brass transition-colors"
+            >
+              {currency}
+            </button>
           )}
           <div className="flex-1" />
           {isMonthTab && closing && (

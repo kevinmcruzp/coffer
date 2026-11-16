@@ -6,18 +6,16 @@ import { round2 } from '../lib/math'
 import { useSession } from './useSession'
 import { useMonthRevision } from './useMonthRevision'
 import { assertMonthOpen } from '../lib/closing'
-import { CURRENCIES } from '../types'
-import type { Currency, Expense, MonthData } from '../types'
+import type { Expense, MonthData } from '../types'
 
-export type CurrencyTotals = { debit: number; credit: number; total: number }
-export type Totals = Record<Currency, CurrencyTotals>
+export type ExpenseTotals = { debit: number; credit: number; total: number }
 
 export type UseExpensesResult = {
   expenses: Expense[]
   closed: boolean
   loading: boolean
   error: string | null
-  totals: Totals
+  totals: ExpenseTotals
   add: (input: Omit<Expense, 'id'>) => Promise<void>
   update: (id: string, changes: Partial<Omit<Expense, 'id'>>) => Promise<void>
   remove: (id: string) => Promise<void>
@@ -29,28 +27,13 @@ type FetchState = {
   error: string | null
 }
 
-function zeroCurrencyTotals(): Totals {
-  const result = {} as Totals
-  for (const c of CURRENCIES) result[c] = { debit: 0, credit: 0, total: 0 }
-  return result
+function computeTotals(expenses: Expense[]): ExpenseTotals {
+  const debit = expenses.reduce((sum, e) => sum + e.debit, 0)
+  const credit = expenses.reduce((sum, e) => sum + e.credit, 0)
+  return { debit: round2(debit), credit: round2(credit), total: round2(debit + credit) }
 }
 
-function computeTotals(expenses: Expense[]): Totals {
-  const result = zeroCurrencyTotals()
-  for (const e of expenses) {
-    result[e.currency].debit += e.debit
-    result[e.currency].credit += e.credit
-    result[e.currency].total += e.debit + e.credit
-  }
-  for (const c of CURRENCIES) {
-    result[c].debit = round2(result[c].debit)
-    result[c].credit = round2(result[c].credit)
-    result[c].total = round2(result[c].total)
-  }
-  return result
-}
-
-const ZERO_TOTALS: Totals = zeroCurrencyTotals()
+const ZERO_TOTALS: ExpenseTotals = { debit: 0, credit: 0, total: 0 }
 
 export function useExpenses(monthKey: string): UseExpensesResult {
   const { state, db } = useSession()

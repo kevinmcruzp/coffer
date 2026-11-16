@@ -8,14 +8,12 @@ function october(): MonthData {
   return {
     key: '2026-10',
     incomes: [
-      { id: 'r', source: 'Receitas', currency: 'BRL', amount: 4828.40 },
-      { id: 's', source: 'Saldo atual', currency: 'BRL', amount: 1539.30 },
-      { id: 'u', source: 'Freela', currency: 'USD', amount: 300 },
+      { id: 'r', source: 'Receitas', amount: 4828.40 },
+      { id: 's', source: 'Saldo atual', amount: 1539.30 },
     ],
     expenses: [
-      { id: 'a', name: 'Aluguel', category: 'fixed', currency: 'BRL', debit: 2114.03, credit: 0 },
-      { id: 'b', name: 'Cartão', category: 'other', currency: 'BRL', debit: 0, credit: 2092.55 },
-      { id: 'c', name: 'Netflix', category: 'other', currency: 'USD', debit: 0, credit: 20 },
+      { id: 'a', name: 'Aluguel', category: 'fixed', debit: 2114.03, credit: 0 },
+      { id: 'b', name: 'Cartão', category: 'other', debit: 0, credit: 2092.55 },
     ],
     saving: 1591.93,
     adjustment: 0,
@@ -26,12 +24,12 @@ function october(): MonthData {
 function november(): MonthData {
   return {
     ...emptyMonth('2026-11'),
-    incomes: [{ id: 'n', source: 'Receitas', currency: 'BRL', amount: 4828.40 }],
+    incomes: [{ id: 'n', source: 'Receitas', amount: 4828.40 }],
   }
 }
 
 describe('monthBalance', () => {
-  it('is BRL income − debit − credit − saving + adjustment, ignoring other currencies', () => {
+  it('is income − debit − credit − saving + adjustment', () => {
     expect(monthBalance(october())).toBe(569.19)
   })
 
@@ -53,7 +51,7 @@ describe('closeMonth', () => {
   it('carries the balance into the next month as a linked income', () => {
     const { next } = closeMonth(october(), november(), CLOSED_AT)
     const carry = next.incomes.find(i => i.carryFrom === '2026-10')
-    expect(carry).toMatchObject({ source: 'Balance from Oct 2026', currency: 'BRL', amount: 569.19 })
+    expect(carry).toMatchObject({ source: 'Balance from Oct 2026', amount: 569.19 })
   })
 
   it('keeps the other incomes of the next month untouched', () => {

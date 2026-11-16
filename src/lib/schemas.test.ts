@@ -5,7 +5,6 @@ const validExpense = {
   id: 'e1',
   name: 'Rent',
   category: 'fixed' as const,
-  currency: 'BRL' as const,
   debit: 1500,
   credit: 0,
 }
@@ -13,7 +12,6 @@ const validExpense = {
 const validIncome = {
   id: 'i1',
   source: 'Salary',
-  currency: 'USD' as const,
   amount: 5000,
 }
 
@@ -29,11 +27,6 @@ describe('expenseSchema', () => {
 
   it('accepts expense with both debit and credit', () => {
     const data = { ...validExpense, debit: 100, credit: 50 }
-    expect(expenseSchema.safeParse(data).success).toBe(true)
-  })
-
-  it('accepts USD currency', () => {
-    const data = { ...validExpense, currency: 'USD' as const }
     expect(expenseSchema.safeParse(data).success).toBe(true)
   })
 
@@ -62,9 +55,8 @@ describe('expenseSchema', () => {
     expect(expenseSchema.safeParse(data).success).toBe(false)
   })
 
-  it('rejects invalid currency', () => {
-    const data = { ...validExpense, currency: 'EUR' }
-    expect(expenseSchema.safeParse(data).success).toBe(false)
+  it('drops the per-item currency stored by older versions', () => {
+    expect(expenseSchema.parse({ ...validExpense, currency: 'USD' })).toEqual(validExpense)
   })
 
   it('accepts installments when omitted', () => {
@@ -90,11 +82,6 @@ describe('incomeSchema', () => {
     expect(incomeSchema.safeParse(validIncome).success).toBe(true)
   })
 
-  it('accepts BRL currency', () => {
-    const data = { ...validIncome, currency: 'BRL' as const }
-    expect(incomeSchema.safeParse(data).success).toBe(true)
-  })
-
   it('rejects empty source', () => {
     const data = { ...validIncome, source: '' }
     expect(incomeSchema.safeParse(data).success).toBe(false)
@@ -110,9 +97,8 @@ describe('incomeSchema', () => {
     expect(incomeSchema.safeParse(data).success).toBe(false)
   })
 
-  it('rejects invalid currency', () => {
-    const data = { ...validIncome, currency: 'GBP' }
-    expect(incomeSchema.safeParse(data).success).toBe(false)
+  it('drops the per-item currency stored by older versions', () => {
+    expect(incomeSchema.parse({ ...validIncome, currency: 'USD' })).toEqual(validIncome)
   })
 })
 
@@ -197,7 +183,7 @@ describe('budget in monthDataSchema', () => {
 
 describe('month closing in schemas', () => {
   const base = { key: '2026-10', expenses: [], incomes: [], saving: 0, adjustment: 0, budget: 0 }
-  const income = { id: 'i1', source: 'Balance from Sep 2026', currency: 'BRL', amount: 100 }
+  const income = { id: 'i1', source: 'Balance from Sep 2026', amount: 100 }
 
   it('keeps the closing record of a closed month', () => {
     const closing = { balance: 569.19, closedAt: '2026-11-06T12:00:00.000Z' }

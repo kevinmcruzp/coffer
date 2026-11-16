@@ -1,4 +1,4 @@
-// Month closing: freezes a month and carries its BRL balance into the next month as a
+// Month closing: freezes a month and carries its balance into the next month as a
 // linked income entry (`carryFrom`). Pure functions — persistence lives in useMonthClosing.
 
 import { round2 } from './math'
@@ -11,14 +11,10 @@ export function emptyMonth(key: string): MonthData {
   return { key, expenses: [], incomes: [], saving: 0, adjustment: 0, budget: 0 }
 }
 
-// BRL balance: income − debit − credit − saving + adjustment (same formula as the Summary).
+// Balance: income − debit − credit − saving + adjustment (same formula as the Summary).
 export function monthBalance(month: MonthData): number {
-  const income = month.incomes
-    .filter(i => i.currency === 'BRL')
-    .reduce((sum, i) => sum + i.amount, 0)
-  const spent = month.expenses
-    .filter(e => e.currency === 'BRL')
-    .reduce((sum, e) => sum + e.debit + e.credit, 0)
+  const income = month.incomes.reduce((sum, i) => sum + i.amount, 0)
+  const spent = month.expenses.reduce((sum, e) => sum + e.debit + e.credit, 0)
   return round2(income - spent - month.saving + month.adjustment)
 }
 
@@ -45,7 +41,6 @@ export function closeMonth(
   const carry: Income | null = balance === 0 ? null : {
     id: existing?.id ?? crypto.randomUUID(),
     source: `Balance from ${shortMonthLabel(current.key)}`,
-    currency: 'BRL',
     amount: balance,
     carryFrom: current.key,
   }

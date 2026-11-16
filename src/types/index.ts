@@ -6,11 +6,12 @@ export type Category = 'fixed' | 'other'
 
 export type PaymentMethod = 'debit' | 'credit'
 
+// Amounts carry no currency of their own: a month belongs to one currency environment
+// (see lib/currencyStore.ts), and everything in it is in that currency.
 export type Expense = {
   id: string
   name: string
   category: Category
-  currency: Currency
   // Both can be > 0 on the same expense (e.g., partially paid by card, rest in cash).
   // Schema enforces at least one > 0.
   debit: number   // paid via debit/cash
@@ -23,7 +24,6 @@ export type Expense = {
 export type Income = {
   id: string
   source: string
-  currency: Currency
   // Negative only on a carried-over entry, when the source month closed below zero.
   amount: number
   // Set on the entry created by closing the previous month (YYYY-MM of that month).
@@ -32,7 +32,7 @@ export type Income = {
 }
 
 export type MonthClosing = {
-  balance: number   // BRL balance at the moment of closing — the amount carried forward
+  balance: number   // balance at the moment of closing — the amount carried forward
   closedAt: string  // ISO timestamp
 }
 
@@ -40,9 +40,9 @@ export type MonthData = {
   key: string       // YYYY-MM — used as the vault store key
   expenses: Expense[]
   incomes: Income[]
-  saving: number    // amount set aside; subtracted from BRL balance
-  adjustment: number // manual correction applied to BRL balance (can be negative)
-  budget: number    // spending threshold; UI warns when BRL expenses exceed this
+  saving: number    // amount set aside; subtracted from the balance
+  adjustment: number // manual correction applied to the balance (can be negative)
+  budget: number    // spending threshold; UI warns when expenses exceed this
   // Present while the month is closed; a closed month is read-only.
   closing?: MonthClosing
 }

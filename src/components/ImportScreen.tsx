@@ -4,6 +4,7 @@ import { writeMonth } from '../lib/db'
 import { monthKeySchema } from '../lib/schemas'
 import { userMessage } from '../lib/errorMessages'
 import { useSession } from '../hooks/useSession'
+import { formatMoney } from '../lib/money'
 import type { MonthData } from '../types'
 
 type PreviewData = {
@@ -16,7 +17,7 @@ type Props = {
 }
 
 export function ImportScreen({ onDone }: Props) {
-  const { state, db } = useSession()
+  const { state, db, currency } = useSession()
   const cryptoKey = state.status === 'unlocked' ? state.key : null
 
   const fileRef = useRef<HTMLInputElement>(null)
@@ -158,10 +159,10 @@ export function ImportScreen({ onDone }: Props) {
 
             <div className="text-sm text-dim space-y-1">
               {preview.data.incomes[0] && (
-                <p>Income: BRL {preview.data.incomes[0].amount.toFixed(2)}</p>
+                <p>Income: {formatMoney(preview.data.incomes[0].amount, currency)}</p>
               )}
-              <p>Saving: BRL {preview.data.saving.toFixed(2)}</p>
-              <p>Adjustment: BRL {preview.data.adjustment.toFixed(2)}</p>
+              <p>Saving: {formatMoney(preview.data.saving, currency)}</p>
+              <p>Adjustment: {formatMoney(preview.data.adjustment, currency)}</p>
             </div>
 
             {overwriteWarning && (

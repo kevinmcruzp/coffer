@@ -6,17 +6,14 @@ import { round2 } from '../lib/math'
 import { useSession } from './useSession'
 import { useMonthRevision } from './useMonthRevision'
 import { assertMonthOpen } from '../lib/closing'
-import { CURRENCIES } from '../types'
-import type { Currency, Income, MonthData } from '../types'
-
-export type IncomeTotals = Record<Currency, number>
+import type { Income, MonthData } from '../types'
 
 export type UseIncomesResult = {
   incomes: Income[]
   closed: boolean
   loading: boolean
   error: string | null
-  totals: IncomeTotals
+  total: number
   add: (input: Omit<Income, 'id'>) => Promise<void>
   update: (id: string, changes: Partial<Omit<Income, 'id'>>) => Promise<void>
   remove: (id: string) => Promise<void>
@@ -27,25 +24,6 @@ type FetchState = {
   monthData: MonthData | null
   error: string | null
 }
-
-function zeroCurrencyMap(): IncomeTotals {
-  const result = {} as IncomeTotals
-  for (const c of CURRENCIES) result[c] = 0
-  return result
-}
-
-function computeTotals(incomes: Income[]): IncomeTotals {
-  const result = zeroCurrencyMap()
-  for (const i of incomes) {
-    result[i.currency] += i.amount
-  }
-  for (const c of CURRENCIES) {
-    result[c] = round2(result[c])
-  }
-  return result
-}
-
-const ZERO_TOTALS: IncomeTotals = zeroCurrencyMap()
 
 function assertNotCarried(income: Income): void {
   if (income.carryFrom) {
@@ -101,7 +79,6 @@ export function useIncomes(monthKey: string): UseIncomesResult {
     const income = parseOrThrow(incomeSchema, {
       id: crypto.randomUUID(),
       source: input.source,
-      currency: input.currency,
       amount: input.amount,
     })
     const updated: MonthData = { ...current, incomes: [...current.incomes, income] }
@@ -140,8 +117,8 @@ export function useIncomes(monthKey: string): UseIncomesResult {
     setFetchState({ resolvedKey: monthKey, monthData, error: null })
   }, [fetchState.monthData, monthKey, db, cryptoKey])
 
-  const totals = useMemo(
-    () => fetchState.monthData ? computeTotals(fetchState.monthData.incomes) : ZERO_TOTALS,
+  const total = useMemo(
+    () => round2((fetchState.monthData?.incomes ?? []).reduce((sum, i) => sum + i.amount, 0)),
     [fetchState.monthData],
   )
 
@@ -150,7 +127,7 @@ export function useIncomes(monthKey: string): UseIncomesResult {
     closed: fetchState.monthData?.closing !== undefined,
     loading,
     error: fetchState.error,
-    totals,
+    total,
     add,
     update,
     remove,

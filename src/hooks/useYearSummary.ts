@@ -2,31 +2,25 @@ import { useState, useEffect } from 'react'
 import { readMonth } from '../lib/db'
 import { userMessage } from '../lib/errorMessages'
 import { round2 } from '../lib/math'
+import { monthBalance } from '../lib/closing'
 import { useSession } from './useSession'
-import { CURRENCIES } from '../types'
-import type { Currency } from '../types'
+import type { MonthData } from '../types'
 
+// Every amount is in the currency of the session's active environment.
 export type MonthRow = {
   monthKey: string
-  income: Record<Currency, number>
-  debit: Record<Currency, number>
-  credit: Record<Currency, number>
+  income: number
+  debit: number
+  credit: number
   saving: number
   adjustment: number
-  balance: Record<Currency, number>
+  balance: number
   items: number
-  prevBalance: Record<Currency, number> | null
+  // Balance of the same calendar month in the prior year (year-over-year comparison).
+  prevBalance: number | null
 }
 
-export type YearTotals = {
-  income: Record<Currency, number>
-  debit: Record<Currency, number>
-  credit: Record<Currency, number>
-  saving: number
-  adjustment: number
-  balance: Record<Currency, number>
-  items: number
-}
+export type YearTotals = Omit<MonthRow, 'monthKey' | 'prevBalance'>
 
 export type UseYearSummaryResult = {
   rows: MonthRow[]
@@ -36,28 +30,19 @@ export type UseYearSummaryResult = {
   warning: string | null
 }
 
-function zeroCurrencyMap(): Record<Currency, number> {
-  const result = {} as Record<Currency, number>
-  for (const c of CURRENCIES) result[c] = 0
-  return result
-}
-
-// balance[c] = income[c] - debit[c] - credit[c], then BRL is further adjusted
-// by saving (subtracted) and adjustment (added). Saving and adjustment are BRL-only
-// because they are entered as plain numbers without a currency selector.
-function computeBalance(
-  income: Record<Currency, number>,
-  debit: Record<Currency, number>,
-  credit: Record<Currency, number>,
-  saving: number,
-  adjustment: number,
-): Record<Currency, number> {
-  const result = zeroCurrencyMap()
-  for (const c of CURRENCIES) {
-    result[c] = round2(income[c] - debit[c] - credit[c])
+function summarize(data: MonthData): YearTotals {
+  const income = round2(data.incomes.reduce((sum, i) => sum + i.amount, 0))
+  const debit = round2(data.expenses.reduce((sum, e) => sum + e.debit, 0))
+  const credit = round2(data.expenses.reduce((sum, e) => sum + e.credit, 0))
+  return {
+    income,
+    debit,
+    credit,
+    saving: data.saving,
+    adjustment: data.adjustment,
+    balance: monthBalance(data),
+    items: data.expenses.length + data.incomes.length,
   }
-  result.BRL = round2(result.BRL - saving + adjustment)
-  return result
 }
 
 export function useYearSummary(year: number): UseYearSummaryResult {
@@ -79,18 +64,11 @@ export function useYearSummary(year: number): UseYearSummaryResult {
       const yearKeys = allKeys.filter(k => k.startsWith(`${year}-`)).sort()
       const prevYearKeys = allKeys.filter(k => k.startsWith(`${year - 1}-`))
 
-      // build prev-year balance map keyed by month suffix (e.g. "03")
-      const prevBalances: Record<string, Record<Currency, number>> = {}
+      // Prior-year balances keyed by month suffix (e.g. "03").
+      const prevBalances: Record<string, number> = {}
       for (const k of prevYearKeys) {
         try {
-          const data = await readMonth(db!, k, cryptoKey!)
-          const inc = zeroCurrencyMap()
-          for (const i of data.incomes) inc[i.currency] += i.amount
-          const deb = zeroCurrencyMap()
-          const crd = zeroCurrencyMap()
-          for (const e of data.expenses) { deb[e.currency] += e.debit; crd[e.currency] += e.credit }
-          const suffix = k.split('-')[1]
-          prevBalances[suffix] = computeBalance(inc, deb, crd, data.saving, data.adjustment)
+          prevBalances[k.split('-')[1]] = monthBalance(await readMonth(db!, k, cryptoKey!))
         } catch { /* skip */ }
       }
 
@@ -100,35 +78,10 @@ export function useYearSummary(year: number): UseYearSummaryResult {
       for (const monthKey of yearKeys) {
         try {
           const data = await readMonth(db!, monthKey, cryptoKey!)
-
-          const income = zeroCurrencyMap()
-          for (const i of data.incomes) income[i.currency] += i.amount
-
-          const debit = zeroCurrencyMap()
-          const credit = zeroCurrencyMap()
-          for (const e of data.expenses) {
-            debit[e.currency] += e.debit
-            credit[e.currency] += e.credit
-          }
-
-          for (const c of CURRENCIES) {
-            income[c] = round2(income[c])
-            debit[c] = round2(debit[c])
-            credit[c] = round2(credit[c])
-          }
-
-          const suffix = monthKey.split('-')[1]
           result.push({
             monthKey,
-            income,
-            debit,
-            credit,
-            saving: data.saving,
-            adjustment: data.adjustment,
-            balance: computeBalance(income, debit, credit, data.saving, data.adjustment),
-            items: data.expenses.length + data.incomes.length,
-            // prevBalance = balance of the same calendar month in the prior year (year-over-year comparison).
-          prevBalance: prevBalances[suffix] ?? null,
+            ...summarize(data),
+            prevBalance: prevBalances[monthKey.split('-')[1]] ?? null,
           })
         } catch {
           failed.push(monthKey)
@@ -155,37 +108,16 @@ export function useYearSummary(year: number): UseYearSummaryResult {
     return () => { cancelled = true }
   }, [year, db, cryptoKey])
 
-  const totals: YearTotals = rows.reduce<YearTotals>(
-    (acc, row) => {
-      for (const c of CURRENCIES) {
-        acc.income[c] += row.income[c]
-        acc.debit[c] += row.debit[c]
-        acc.credit[c] += row.credit[c]
-      }
-      acc.saving += row.saving
-      acc.adjustment += row.adjustment
-      acc.items += row.items
-      return acc
-    },
-    {
-      income: zeroCurrencyMap(),
-      debit: zeroCurrencyMap(),
-      credit: zeroCurrencyMap(),
-      saving: 0,
-      adjustment: 0,
-      balance: zeroCurrencyMap(),
-      items: 0,
-    },
-  )
-
-  for (const c of CURRENCIES) {
-    totals.income[c] = round2(totals.income[c])
-    totals.debit[c] = round2(totals.debit[c])
-    totals.credit[c] = round2(totals.credit[c])
+  const sum = (pick: (row: MonthRow) => number): number => round2(rows.reduce((acc, row) => acc + pick(row), 0))
+  const totals: YearTotals = {
+    income: sum(r => r.income),
+    debit: sum(r => r.debit),
+    credit: sum(r => r.credit),
+    saving: sum(r => r.saving),
+    adjustment: sum(r => r.adjustment),
+    balance: sum(r => r.balance),
+    items: rows.reduce((acc, row) => acc + row.items, 0),
   }
-  totals.saving = round2(totals.saving)
-  totals.adjustment = round2(totals.adjustment)
-  totals.balance = computeBalance(totals.income, totals.debit, totals.credit, totals.saving, totals.adjustment)
 
   return { rows, totals, loading, error, warning }
 }

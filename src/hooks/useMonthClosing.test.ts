@@ -23,19 +23,22 @@ function mockSession(db: VaultStore, key: CryptoKey) {
   vi.mocked(useSession).mockReturnValue({
     state: { status: 'unlocked', key },
     db,
+    vault: db,
+    currency: 'BRL',
     lockTimeout: 15,
     setup: vi.fn(),
     login: vi.fn(),
     logout: vi.fn(),
     setLockTimeout: vi.fn(),
+    setCurrency: vi.fn(),
   })
 }
 
 function october(): MonthData {
   return {
     key: OCT,
-    incomes: [{ id: 'r', source: 'Receitas', currency: 'BRL', amount: 1000 }],
-    expenses: [{ id: 'a', name: 'Aluguel', category: 'fixed', currency: 'BRL', debit: 400, credit: 0 }],
+    incomes: [{ id: 'r', source: 'Receitas', amount: 1000 }],
+    expenses: [{ id: 'a', name: 'Aluguel', category: 'fixed', debit: 400, credit: 0 }],
     saving: 100,
     adjustment: 0,
     budget: 0,

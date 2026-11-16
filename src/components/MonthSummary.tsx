@@ -2,30 +2,22 @@ import { useState } from 'react'
 import { useExpenses } from '../hooks/useExpenses'
 import { useIncomes } from '../hooks/useIncomes'
 import { useMonthMeta } from '../hooks/useMonthMeta'
+import { useSession } from '../hooks/useSession'
 import { useToast } from '../hooks/useToast'
 import { userMessage } from '../lib/errorMessages'
 import { round2, parseMoney } from '../lib/math'
+import { formatMoney } from '../lib/money'
 import { PieChart } from './PieChart'
 import { NumberInput } from './NumberInput'
 import { StatCard } from './StatCard'
 import { InfoTip } from './InfoTip'
 import { MonthClosingPanel } from './MonthClosingPanel'
-import { CURRENCIES } from '../types'
-import type { Currency } from '../types'
-
-function fmt(value: number, currency: Currency): string {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-  }).format(value)
-}
 
 const INFO = {
-  saving: 'Money set aside this month. It is subtracted from the BRL balance.',
-  adjustment: 'Manual correction to the BRL balance — use a negative value to subtract.',
-  budget: 'Monthly spending ceiling in BRL. Only BRL expenses count against it. It only warns you — it does not change the balance. 0 = no limit.',
-  balance: 'Income − Debit − Credit. In BRL, Saving is also subtracted and Adjustment added.',
+  saving: 'Money set aside this month. It is subtracted from the balance.',
+  adjustment: 'Manual correction to the balance — use a negative value to subtract.',
+  budget: 'Monthly spending ceiling. It only warns you — it does not change the balance. 0 = no limit.',
+  balance: 'Income − Debit − Credit − Saving + Adjustment.',
 }
 
 type Props = {
@@ -34,23 +26,23 @@ type Props = {
 
 export function MonthSummary({ monthKey }: Props) {
   const { expenses, totals: expenseTotals, loading: loadingExp } = useExpenses(monthKey)
-  const { totals: incomeTotals, closed, loading: loadingInc } = useIncomes(monthKey)
+  const { total: income, closed, loading: loadingInc } = useIncomes(monthKey)
   const { saving, adjustment, budget, loading: loadingMeta, setSaving, setAdjustment, setBudget } = useMonthMeta(monthKey)
 
   const [savingDraft, setSavingDraft] = useState<string | null>(null)
   const [adjustmentDraft, setAdjustmentDraft] = useState<string | null>(null)
   const [budgetDraft, setBudgetDraft] = useState<string | null>(null)
   const { toast } = useToast()
+  const { currency } = useSession()
 
   if (loadingExp || loadingInc || loadingMeta) {
     return <div className="text-dim text-sm text-center py-12">Loading…</div>
   }
 
-  const currencies = CURRENCIES
-  const activeCurrencies = currencies.filter(c =>
-    incomeTotals[c] !== 0 ||
-    expenseTotals[c].total > 0
-  )
+  const fmt = (value: number) => formatMoney(value, currency)
+  const hasData = income !== 0 || expenseTotals.total > 0 || saving !== 0 || adjustment !== 0
+  const balance = round2(income - expenseTotals.total - saving + adjustment)
+  const balanceHighlight = balance > 0 ? 'positive' : balance < 0 ? 'negative' : 'neutral'
 
   async function commitSaving() {
     if (savingDraft === null) return
@@ -90,43 +82,22 @@ export function MonthSummary({ monthKey }: Props) {
 
   return (
     <div className="space-y-6">
-      {activeCurrencies.map(c => {
-        const income = incomeTotals[c]
-        const debit = expenseTotals[c].debit
-        const credit = expenseTotals[c].credit
-        const savingBRL = c === 'BRL' ? saving : 0
-        const adjBRL = c === 'BRL' ? adjustment : 0
-        const balance = round2(income - debit - credit - savingBRL + adjBRL)
-        const balanceHighlight = balance > 0 ? 'positive' : balance < 0 ? 'negative' : 'neutral'
-
-        return (
-          <div key={c} className="space-y-3">
-            {activeCurrencies.length > 1 && (
-              <h2 className="text-xs font-semibold text-faint uppercase tracking-widest">{c}</h2>
-            )}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <StatCard label="Income" value={fmt(income, c)} />
-              <StatCard label="Debit" value={fmt(debit, c)} />
-              <StatCard label="Credit card" value={fmt(credit, c)} />
-              {c === 'BRL' && (
-                <>
-                  <StatCard label="Saving" value={fmt(saving, 'BRL')} info={INFO.saving} />
-                  <StatCard label="Adjustment" value={fmt(adjustment, 'BRL')} info={INFO.adjustment} />
-                </>
-              )}
-              <StatCard label="Balance" value={fmt(balance, c)} info={INFO.balance} highlight={balanceHighlight} />
-            </div>
-          </div>
-        )
-      })}
-
-      {activeCurrencies.length === 0 && (
+      {hasData ? (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <StatCard label="Income" value={fmt(income)} />
+          <StatCard label="Debit" value={fmt(expenseTotals.debit)} />
+          <StatCard label="Credit card" value={fmt(expenseTotals.credit)} />
+          <StatCard label="Saving" value={fmt(saving)} info={INFO.saving} />
+          <StatCard label="Adjustment" value={fmt(adjustment)} info={INFO.adjustment} />
+          <StatCard label="Balance" value={fmt(balance)} info={INFO.balance} highlight={balanceHighlight} />
+        </div>
+      ) : (
         <p className="text-faint text-sm text-center py-8">No data for this month yet.</p>
       )}
 
       {/* Budget progress bar */}
       {budget > 0 && (() => {
-        const spent = expenseTotals.BRL.total
+        const spent = expenseTotals.total
         const pct = Math.min(spent / budget, 1)
         const over = spent > budget
         const barColor = over ? 'bg-neg' : pct >= 0.8 ? 'bg-brass' : 'bg-pos'
@@ -135,8 +106,8 @@ export function MonthSummary({ monthKey }: Props) {
             <div className="flex justify-between text-xs text-dim">
               <span className="flex items-center gap-1.5">Budget <InfoTip label="Budget">{INFO.budget}</InfoTip></span>
               <span className={over ? 'text-neg font-semibold' : ''}>
-                {fmt(spent, 'BRL')} / {fmt(budget, 'BRL')}
-                {over && <span className="ml-2 text-neg">+{fmt(round2(spent - budget), 'BRL')} over</span>}
+                {fmt(spent)} / {fmt(budget)}
+                {over && <span className="ml-2 text-neg">+{fmt(round2(spent - budget))} over</span>}
               </span>
             </div>
             <div className="h-2 bg-panel-2 rounded-full overflow-hidden">
@@ -149,13 +120,10 @@ export function MonthSummary({ monthKey }: Props) {
         )
       })()}
 
-      {/* Pie charts — BRL expenses breakdown */}
-      {expenses.some(e => e.currency === 'BRL') && (() => {
-        const brl = expenses.filter(e => e.currency === 'BRL')
-        const fixedTotal = round2(brl.filter(e => e.category === 'fixed').reduce((s, e) => s + e.debit + e.credit, 0))
-        const otherTotal = round2(brl.filter(e => e.category === 'other').reduce((s, e) => s + e.debit + e.credit, 0))
-        const debitTotal = round2(brl.reduce((s, e) => s + e.debit, 0))
-        const creditTotal = round2(brl.reduce((s, e) => s + e.credit, 0))
+      {/* Pie charts — expenses breakdown */}
+      {expenses.length > 0 && (() => {
+        const fixedTotal = round2(expenses.filter(e => e.category === 'fixed').reduce((s, e) => s + e.debit + e.credit, 0))
+        const otherTotal = round2(expenses.filter(e => e.category === 'other').reduce((s, e) => s + e.debit + e.credit, 0))
         return (
           <div className="flex justify-around flex-wrap gap-4 pt-2">
             <PieChart
@@ -168,8 +136,8 @@ export function MonthSummary({ monthKey }: Props) {
             <PieChart
               title="By Payment"
               slices={[
-                { label: 'Debit', value: debitTotal, color: '#7FA88C' },
-                { label: 'Credit', value: creditTotal, color: '#C08457' },
+                { label: 'Debit', value: expenseTotals.debit, color: '#7FA88C' },
+                { label: 'Credit', value: expenseTotals.credit, color: '#C08457' },
               ]}
             />
           </div>
@@ -180,7 +148,7 @@ export function MonthSummary({ monthKey }: Props) {
       <div className="border-t border-line pt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1">
           <div className="flex items-center gap-1.5">
-            <label className="text-xs text-faint uppercase tracking-wider">Saving (BRL)</label>
+            <label className="text-xs text-faint uppercase tracking-wider">Saving ({currency})</label>
             <InfoTip label="Saving">{INFO.saving}</InfoTip>
           </div>
           <NumberInput
@@ -199,7 +167,7 @@ export function MonthSummary({ monthKey }: Props) {
         </div>
         <div className="space-y-1">
           <div className="flex items-center gap-1.5">
-            <label className="text-xs text-faint uppercase tracking-wider">Adjustment (BRL)</label>
+            <label className="text-xs text-faint uppercase tracking-wider">Adjustment ({currency})</label>
             <InfoTip label="Adjustment">{INFO.adjustment}</InfoTip>
           </div>
           <NumberInput
@@ -217,7 +185,7 @@ export function MonthSummary({ monthKey }: Props) {
         </div>
         <div className="space-y-1">
           <div className="flex items-center gap-1.5">
-            <label className="text-xs text-faint uppercase tracking-wider">Budget (BRL) <span className="normal-case text-faint">— 0 = no limit</span></label>
+            <label className="text-xs text-faint uppercase tracking-wider">Budget ({currency}) <span className="normal-case text-faint">— 0 = no limit</span></label>
             <InfoTip label="Budget">{INFO.budget}</InfoTip>
           </div>
           <NumberInput

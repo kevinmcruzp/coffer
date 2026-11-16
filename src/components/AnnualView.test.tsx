@@ -4,20 +4,21 @@ import { AnnualView } from './AnnualView'
 import { useYearSummary } from '../hooks/useYearSummary'
 import type { UseYearSummaryResult, MonthRow } from '../hooks/useYearSummary'
 
-vi.mock('../hooks/useYearSummary')
+const session = vi.hoisted(() => ({ currency: 'BRL' }))
 
-const ZERO = { BRL: 0, USD: 0, CLP: 0 }
+vi.mock('../hooks/useYearSummary')
+vi.mock('../hooks/useSession', () => ({ useSession: () => session }))
 
 function makeHook(overrides: Partial<UseYearSummaryResult> = {}): UseYearSummaryResult {
   return {
     rows: [],
     totals: {
-      income: { ...ZERO },
-      debit: { ...ZERO },
-      credit: { ...ZERO },
+      income: 0,
+      debit: 0,
+      credit: 0,
       saving: 0,
       adjustment: 0,
-      balance: { ...ZERO },
+      balance: 0,
       items: 0,
     },
     loading: false,
@@ -30,12 +31,12 @@ function makeHook(overrides: Partial<UseYearSummaryResult> = {}): UseYearSummary
 function makeRow(overrides: Partial<MonthRow> = {}): MonthRow {
   return {
     monthKey: '2025-03',
-    income: { ...ZERO, BRL: 5000 },
-    debit: { ...ZERO, BRL: 1000 },
-    credit: { ...ZERO, BRL: 500 },
+    income: 5000,
+    debit: 1000,
+    credit: 500,
     saving: 300,
     adjustment: 0,
-    balance: { ...ZERO, BRL: 3200 },
+    balance: 3200,
     items: 7,
     prevBalance: null,
     ...overrides,
@@ -52,6 +53,7 @@ beforeEach(() => {
   vi.useFakeTimers({ shouldAdvanceTime: true })
   vi.setSystemTime(new Date(2026, 5, 15))
   vi.mocked(useYearSummary).mockReturnValue(makeHook())
+  session.currency = 'BRL'
 })
 
 afterEach(() => {
@@ -106,12 +108,12 @@ describe('AnnualView — headline figures', () => {
     vi.mocked(useYearSummary).mockReturnValue(makeHook({
       rows: [sampleRow],
       totals: {
-        income: { ...ZERO, BRL: 5000 },
-        debit: { ...ZERO, BRL: 1000 },
-        credit: { ...ZERO, BRL: 500 },
+        income: 5000,
+        debit: 1000,
+        credit: 500,
         saving: 300,
         adjustment: 0,
-        balance: { ...ZERO, BRL: 3200 },
+        balance: 3200,
         items: 7,
       },
     }))
@@ -128,50 +130,30 @@ describe('AnnualView — headline figures', () => {
 })
 
 describe('AnnualView — currency', () => {
-  it('hides the currency switch when only one currency has data', () => {
-    vi.mocked(useYearSummary).mockReturnValue(makeHook({ rows: [sampleRow] }))
+  it('shows amounts in the active currency without a switch of its own', () => {
+    session.currency = 'USD'
+    vi.mocked(useYearSummary).mockReturnValue(makeHook({
+      rows: [sampleRow],
+      totals: { income: 5000, debit: 1000, credit: 500, saving: 300, adjustment: 0, balance: 3200, items: 7 },
+    }))
     render(<AnnualView year={2025} onSelectMonth={vi.fn()} />)
+
     expect(screen.queryByRole('group', { name: 'Currency' })).not.toBeInTheDocument()
-  })
-
-  it('scopes the whole view to the chosen currency', () => {
-    const usdRow = makeRow({
-      monthKey: '2025-04',
-      income: { ...ZERO, USD: 800 },
-      debit: { ...ZERO, USD: 200 },
-      credit: { ...ZERO },
-      saving: 0,
-      adjustment: 0,
-      balance: { ...ZERO, USD: 600 },
-    })
-    vi.mocked(useYearSummary).mockReturnValue(makeHook({ rows: [sampleRow, usdRow] }))
-    render(<AnnualView year={2025} onSelectMonth={vi.fn()} />)
-
-    const group = screen.getByRole('group', { name: 'Currency' })
-    expect(within(group).getByRole('button', { name: 'BRL' })).toHaveAttribute('aria-pressed', 'true')
-
-    // BRL: March has data, April does not.
-    expect(within(table()).getByRole('button', { name: 'Open March' })).toBeInTheDocument()
-    expect(within(table()).queryByRole('button', { name: 'Open April' })).not.toBeInTheDocument()
-
-    fireEvent.click(within(group).getByRole('button', { name: 'USD' }))
-
-    // USD: the reverse.
-    expect(within(table()).getByRole('button', { name: 'Open April' })).toBeInTheDocument()
-    expect(within(table()).queryByRole('button', { name: 'Open March' })).not.toBeInTheDocument()
-    // Saving and adjustment are BRL-only, so those columns drop out.
-    expect(within(table()).queryByText('Adjustment')).not.toBeInTheDocument()
+    expect(screen.getByText('+US$ 3.200,00')).toBeInTheDocument()
+    expect(within(table()).getByText('Balance USD')).toBeInTheDocument()
+    // Saving and adjustment belong to every currency now.
+    expect(within(table()).getByText('Adjustment')).toBeInTheDocument()
   })
 })
 
 describe('AnnualView — chart', () => {
   const secondRow = makeRow({
     monthKey: '2025-09',
-    income: { ...ZERO, BRL: 2000 },
-    debit: { ...ZERO, BRL: 3500 },
-    credit: { ...ZERO },
+    income: 2000,
+    debit: 3500,
+    credit: 0,
     saving: 0,
-    balance: { ...ZERO, BRL: -1500 },
+    balance: -1500,
   })
 
   it('plots every month, disabling the ones without data', () => {

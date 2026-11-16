@@ -8,6 +8,7 @@ import type { Expense, Income } from '../types'
 import type { UseExpensesResult } from '../hooks/useExpenses'
 import type { UseIncomesResult } from '../hooks/useIncomes'
 
+vi.mock('../hooks/useSession', () => ({ useSession: () => ({ currency: 'BRL' }) }))
 vi.mock('../hooks/useExpenses')
 vi.mock('../hooks/useIncomes')
 vi.mock('../hooks/useToast', () => ({
@@ -18,21 +19,21 @@ const CUR = '2025-04'
 const PREV = '2025-03'
 
 const prevExpenses: Expense[] = [
-  { id: 'r', name: 'Rent', category: 'fixed', currency: 'BRL', debit: 1500, credit: 0 },
-  { id: 's', name: 'Sofa', category: 'other', currency: 'BRL', debit: 0, credit: 100, installments: 3 },
-  { id: 't', name: 'OldTV', category: 'other', currency: 'BRL', debit: 0, credit: 50, installments: 1 },
-  { id: 'c', name: 'Coffee', category: 'other', currency: 'BRL', debit: 0, credit: 25 },
+  { id: 'r', name: 'Rent', category: 'fixed', debit: 1500, credit: 0 },
+  { id: 's', name: 'Sofa', category: 'other', debit: 0, credit: 100, installments: 3 },
+  { id: 't', name: 'OldTV', category: 'other', debit: 0, credit: 50, installments: 1 },
+  { id: 'c', name: 'Coffee', category: 'other', debit: 0, credit: 25 },
 ]
 const curExpenses: Expense[] = [
-  { id: 'c2', name: 'Coffee', category: 'other', currency: 'BRL', debit: 0, credit: 25 },
+  { id: 'c2', name: 'Coffee', category: 'other', debit: 0, credit: 25 },
 ]
 
 const prevIncomes: Income[] = [
-  { id: 'sal', source: 'Salary', currency: 'BRL', amount: 5000 },
-  { id: 'bon', source: 'Bonus', currency: 'BRL', amount: 1000 },
+  { id: 'sal', source: 'Salary', amount: 5000 },
+  { id: 'bon', source: 'Bonus', amount: 1000 },
 ]
 const curIncomes: Income[] = [
-  { id: 'bon2', source: 'Bonus', currency: 'BRL', amount: 1000 },
+  { id: 'bon2', source: 'Bonus', amount: 1000 },
 ]
 
 const addExpense = vi.fn().mockResolvedValue(undefined)
@@ -44,11 +45,7 @@ function expResult(expenses: Expense[], add = vi.fn()): UseExpensesResult {
     closed: false,
     loading: false,
     error: null,
-    totals: {
-      BRL: { debit: 0, credit: 0, total: 0 },
-      USD: { debit: 0, credit: 0, total: 0 },
-      CLP: { debit: 0, credit: 0, total: 0 },
-    },
+    totals: { debit: 0, credit: 0, total: 0 },
     add,
     update: vi.fn(),
     remove: vi.fn(),
@@ -61,7 +58,7 @@ function incResult(incomes: Income[], add = vi.fn()): UseIncomesResult {
     closed: false,
     loading: false,
     error: null,
-    totals: { BRL: 0, USD: 0, CLP: 0 },
+    total: 0,
     add,
     update: vi.fn(),
     remove: vi.fn(),
@@ -150,7 +147,7 @@ describe('CopyFromPreviousModal — carried-over balance', () => {
   it('never offers the previous month\'s carried balance', () => {
     vi.mocked(useIncomes).mockImplementation((mk: string) =>
       mk === PREV
-        ? incResult([...prevIncomes, { id: 'cf', source: 'Balance from Feb 2025', currency: 'BRL', amount: 300, carryFrom: '2025-02' }])
+        ? incResult([...prevIncomes, { id: 'cf', source: 'Balance from Feb 2025', amount: 300, carryFrom: '2025-02' }])
         : incResult(curIncomes, addIncome),
     )
     render(<CopyFromPreviousModal monthKey={CUR} onClose={vi.fn()} onCopied={vi.fn()} />)

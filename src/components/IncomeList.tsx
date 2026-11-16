@@ -1,14 +1,14 @@
 import { useMemo, useState } from 'react'
 import { useIncomes } from '../hooks/useIncomes'
 import { useMonthClosing } from '../hooks/useMonthClosing'
+import { useSession } from '../hooks/useSession'
 import { useToast } from '../hooks/useToast'
 import { NumberInput } from './NumberInput'
 import { userMessage } from '../lib/errorMessages'
 import { round2, parseMoney } from '../lib/math'
+import { formatMoney } from '../lib/money'
 import { shortMonthLabel } from '../lib/months'
-import { CURRENCIES } from '../types'
-import type { Currency, Income } from '../types'
-import type { IncomeTotals } from '../hooks/useIncomes'
+import type { Income } from '../types'
 
 const FIELD = 'bg-panel-2 text-fg rounded px-1 border border-line focus:outline-none focus:border-brass'
 
@@ -117,22 +117,6 @@ function IncomeRow({ income, readOnly, onUpdate, onRemove }: RowProps) {
           </>
         )}
       </td>
-      <td className="px-2 py-1">
-        <select
-          className={`${FIELD} text-sm`}
-          value={income.currency}
-          disabled={locked}
-          onChange={async e => {
-            try {
-              await onUpdate(income.id, { currency: e.target.value as Currency })
-            } catch (err) {
-              toast(userMessage(err, 'Failed to update currency'), 'error')
-            }
-          }}
-        >
-          {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-      </td>
       <td
         className={`px-2 py-1 text-right ${locked ? '' : 'cursor-pointer'}`}
         onClick={() => { if (editField !== 'amount') startEdit('amount') }}
@@ -193,14 +177,13 @@ type AddFormProps = {
 
 function AddIncomeForm({ onAdd }: AddFormProps) {
   const [source, setSource] = useState('')
-  const [currency, setCurrency] = useState<Currency>('BRL')
   const [amount, setAmount] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
 
   async function handleAdd() {
     setFormError(null)
     try {
-      await onAdd({ source: source.trim(), currency, amount: parseMoney(amount) })
+      await onAdd({ source: source.trim(), amount: parseMoney(amount) })
       setSource('')
       setAmount('')
     } catch (err) {
@@ -218,16 +201,6 @@ function AddIncomeForm({ onAdd }: AddFormProps) {
             value={source}
             onChange={e => setSource(e.target.value)}
           />
-        </td>
-        <td className="px-2 py-1">
-          <select
-            className={`${FIELD} text-sm`}
-            value={currency}
-            onChange={e => setCurrency(e.target.value as Currency)}
-          >
-            <option value="BRL">BRL</option>
-            <option value="USD">USD</option>
-          </select>
         </td>
         <td className="px-2 py-1">
           <NumberInput
@@ -251,7 +224,7 @@ function AddIncomeForm({ onAdd }: AddFormProps) {
       </tr>
       {formError && (
         <tr>
-          <td colSpan={3} className="px-2 py-1 text-neg text-xs">
+          <td colSpan={2} className="px-2 py-1 text-neg text-xs">
             {formError}
           </td>
         </tr>
@@ -262,28 +235,17 @@ function AddIncomeForm({ onAdd }: AddFormProps) {
 
 // ── TotalsFooter ──────────────────────────────────────────────────────────────
 
-function fmtCurrency(value: number, currency: Currency): string {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 2 }).format(value)
-}
+function TotalsFooter({ total }: { total: number }) {
+  const { currency } = useSession()
 
-function TotalsFooter({ totals }: { totals: IncomeTotals }) {
-  const currencies = CURRENCIES
-  const active = currencies.filter(c => totals[c] !== 0)
-
-  if (active.length === 0) return null
+  if (total === 0) return null
 
   return (
-    <div className="border-t border-line pt-4 mt-4 space-y-2">
-      {active.map(c => (
-        <div
-          key={c}
-          data-testid={`income-totals-${c}`}
-          className="flex gap-6 text-sm text-dim [&_strong]:font-mono [&_strong]:tabular-nums [&_strong]:text-pos"
-        >
-          <span className="font-semibold text-faint w-10">{c}</span>
-          <span>Total: <strong>{fmtCurrency(totals[c], c)}</strong></span>
-        </div>
-      ))}
+    <div
+      data-testid="income-total"
+      className="border-t border-line pt-4 mt-4 flex gap-6 text-sm text-dim [&_strong]:font-mono [&_strong]:tabular-nums [&_strong]:text-pos"
+    >
+      <span>Total: <strong>{formatMoney(total, currency)}</strong></span>
     </div>
   )
 }
@@ -295,7 +257,7 @@ type Props = {
 }
 
 export function IncomeList({ monthKey }: Props) {
-  const { incomes, closed, loading, error, totals, add, update, remove } = useIncomes(monthKey)
+  const { incomes, closed, loading, error, total, add, update, remove } = useIncomes(monthKey)
   const [sortCol, setSortCol] = useState<IncomeSortCol>('source')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
 
@@ -325,7 +287,6 @@ export function IncomeList({ monthKey }: Props) {
             >
               Source <SortIndicator active={sortCol === 'source'} dir={sortDir} />
             </th>
-            <th className="px-2 py-1 text-left font-normal">Currency</th>
             <th
               className="px-2 py-1 text-right font-normal cursor-pointer hover:text-dim"
               onClick={() => toggleSort('amount')}
@@ -342,7 +303,7 @@ export function IncomeList({ monthKey }: Props) {
           {!closed && <AddIncomeForm onAdd={add} />}
         </tbody>
       </table>
-      <TotalsFooter totals={totals} />
+      <TotalsFooter total={total} />
     </div>
   )
 }

@@ -5,14 +5,15 @@ import { SettingsPage } from './SettingsPage'
 import { useSession } from '../hooks/useSession'
 import { tauriFileIO } from '../lib/tauriFileIO'
 import { chooseBackupPath } from '../lib/vaultDialogs'
-import { exportBackup } from '../lib/backup'
+import { exportBackup, importBackup } from '../lib/backup'
 import { readMonth, writeMonth } from '../lib/db'
 import { openMemoryStore } from '../test/memoryFileIO'
 import { deriveKey, generateSalt } from '../lib/crypto'
 import { uint8ArrayToBase64 } from '../lib/encoding'
 import type { LockTimeout } from '../contexts/session'
 import type { VaultStore } from '../lib/vaultStore'
-import type { MonthData } from '../types'
+import { scopeToCurrency } from '../lib/currencyStore'
+import type { Currency, MonthData } from '../types'
 
 const toast = vi.fn()
 
@@ -28,7 +29,7 @@ const BACKUP_PATH = 'D:\\backups\\october.coffer'
 
 const october: MonthData = {
   key: MONTH_KEY,
-  expenses: [{ id: 'e1', name: 'Rent', category: 'fixed', currency: 'BRL', debit: 1500, credit: 0 }],
+  expenses: [{ id: 'e1', name: 'Rent', category: 'fixed', debit: 1500, credit: 0 }],
   incomes: [],
   saving: 0,
   adjustment: 0,
@@ -42,23 +43,29 @@ async function makeVault(): Promise<{ db: VaultStore; key: CryptoKey }> {
   return { db, key: await deriveKey(PASSWORD, salt) }
 }
 
-function mockSession(db: VaultStore, key: CryptoKey, lockTimeout: LockTimeout = 15) {
+// `db` is the whole vault; the session works on its USD part to prove that backup and
+// restore reach every currency, not just the active one.
+function mockSession(db: VaultStore, key: CryptoKey, lockTimeout: LockTimeout = 15, currency: Currency = 'BRL') {
   const setLockTimeout = vi.fn<(value: LockTimeout) => Promise<void>>().mockResolvedValue()
+  const setCurrency = vi.fn<(value: Currency) => Promise<void>>().mockResolvedValue()
   vi.mocked(useSession).mockReturnValue({
     state: { status: 'unlocked', key },
-    db,
+    vault: db,
+    db: scopeToCurrency(db, currency),
+    currency,
     lockTimeout,
     setup: vi.fn(),
     login: vi.fn(),
     logout: vi.fn(),
     setLockTimeout,
+    setCurrency,
   })
-  return { setLockTimeout }
+  return { setLockTimeout, setCurrency }
 }
 
 async function backupFileOf(months: MonthData[]): Promise<File> {
   const source = await makeVault()
-  for (const m of months) await writeMonth(source.db, m.key, m, source.key)
+  for (const m of months) await writeMonth(scopeToCurrency(source.db, 'BRL'), m.key, m, source.key)
   const text = await exportBackup(source.db, source.key)
   return new File([text], 'backup.coffer', { type: 'application/octet-stream' })
 }
@@ -115,6 +122,35 @@ describe('SettingsPage', () => {
     })
   })
 
+  describe('currency', () => {
+    it('shows the active currency', () => {
+      mockSession(db, key, 15, 'USD')
+      renderPage()
+      expect(screen.getByLabelText('Active currency')).toHaveValue('USD')
+    })
+
+    it('switches as soon as another currency is chosen', async () => {
+      const { setCurrency } = mockSession(db, key)
+      renderPage()
+
+      await userEvent.selectOptions(screen.getByLabelText('Active currency'), 'CLP')
+
+      expect(setCurrency).toHaveBeenCalledWith('CLP')
+      await waitFor(() => expect(toast).toHaveBeenCalledWith('Now showing CLP'))
+    })
+
+    it('reports a failed switch', async () => {
+      const { setCurrency } = mockSession(db, key)
+      setCurrency.mockRejectedValue(new Error('disk full'))
+      renderPage()
+
+      await userEvent.selectOptions(screen.getByLabelText('Active currency'), 'USD')
+
+      await waitFor(() => expect(toast).toHaveBeenCalledWith(expect.any(String), 'error'))
+      expect(toast).not.toHaveBeenCalledWith('Now showing USD')
+    })
+  })
+
   describe('data', () => {
     it('opens the CSV import', async () => {
       mockSession(db, key)
@@ -133,9 +169,9 @@ describe('SettingsPage', () => {
     })
 
     it('saves an encrypted backup of the whole vault where the user chooses', async () => {
-      mockSession(db, key)
+      mockSession(db, key, 15, 'USD')
       vi.mocked(chooseBackupPath).mockResolvedValue(BACKUP_PATH)
-      await writeMonth(db, MONTH_KEY, october, key)
+      await writeMonth(scopeToCurrency(db, 'BRL'), MONTH_KEY, october, key)
       renderPage()
 
       await userEvent.click(screen.getByRole('button', { name: 'Save backup' }))
@@ -147,6 +183,12 @@ describe('SettingsPage', () => {
       expect(path).toBe(BACKUP_PATH)
       expect(text).toContain('ciphertext')
       expect(text).not.toContain('Rent')
+
+      // The BRL month is in the backup even though the session is on USD.
+      const restored = await openMemoryStore()
+      const file = new File([text], 'backup.coffer')
+      expect(await importBackup(file, restored, PASSWORD, key)).toBe(1)
+      expect(await restored.listMonths()).toEqual([`BRL:${MONTH_KEY}`])
     })
 
     it('saves nothing when the save dialog is cancelled', async () => {
@@ -185,7 +227,7 @@ describe('SettingsPage', () => {
     })
 
     it('restores a backup after asking for its password', async () => {
-      mockSession(db, key)
+      mockSession(db, key, 15, 'USD')
       const file = await backupFileOf([october])
       renderPage()
 
@@ -194,7 +236,7 @@ describe('SettingsPage', () => {
       await userEvent.click(screen.getByRole('button', { name: 'Restore' }))
 
       await waitFor(() => expect(toast).toHaveBeenCalledWith('1 month restored'))
-      expect(await readMonth(db, MONTH_KEY, key)).toEqual(october)
+      expect(await readMonth(scopeToCurrency(db, 'BRL'), MONTH_KEY, key)).toEqual(october)
       expect(screen.queryByLabelText('Backup password')).not.toBeInTheDocument()
     })
 

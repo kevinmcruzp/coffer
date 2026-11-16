@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react'
 import { useExpenses } from '../hooks/useExpenses'
 import { useIncomes } from '../hooks/useIncomes'
+import { useSession } from '../hooks/useSession'
 import { useToast } from '../hooks/useToast'
 import { userMessage } from '../lib/errorMessages'
-import type { Currency, Expense } from '../types'
+import { formatMoney } from '../lib/money'
+import type { Expense } from '../types'
 
 type Props = {
   monthKey: string
@@ -21,8 +23,8 @@ function expenseDedupeKey(name: string, category: string): string {
   return `${name.toLowerCase()}::${category}`
 }
 
-function incomeDedupeKey(source: string, currency: string): string {
-  return `${source.toLowerCase()}::${currency}`
+function incomeDedupeKey(source: string): string {
+  return source.toLowerCase()
 }
 
 // A recurring bill is copied verbatim; an ongoing parcel is copied with one
@@ -31,7 +33,6 @@ function copyExpense(e: Expense): Omit<Expense, 'id'> {
   const copy: Omit<Expense, 'id'> = {
     name: e.name,
     category: e.category,
-    currency: e.currency,
     debit: e.debit,
     credit: e.credit,
   }
@@ -41,10 +42,6 @@ function copyExpense(e: Expense): Omit<Expense, 'id'> {
   return copy
 }
 
-function fmt(value: number, currency: Currency): string {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 2 }).format(value)
-}
-
 export function CopyFromPreviousModal({ monthKey, onClose, onCopied }: Props) {
   const prevKey = prevMonthKey(monthKey)
   const { expenses: prevExpenses, loading: loadingPrevExp } = useExpenses(prevKey)
@@ -52,6 +49,7 @@ export function CopyFromPreviousModal({ monthKey, onClose, onCopied }: Props) {
   const { expenses: curExpenses, add: addExpense, loading: loadingCurExp } = useExpenses(monthKey)
   const { incomes: curIncomes, add: addIncome, loading: loadingCurInc } = useIncomes(monthKey)
   const { toast } = useToast()
+  const { currency } = useSession()
 
   const [selected, setSelected] = useState<Set<string> | null>(null)
   const [saving, setSaving] = useState(false)
@@ -62,7 +60,7 @@ export function CopyFromPreviousModal({ monthKey, onClose, onCopied }: Props) {
     [curExpenses],
   )
   const curIncomeKeys = useMemo(
-    () => new Set(curIncomes.map(i => incomeDedupeKey(i.source, i.currency))),
+    () => new Set(curIncomes.map(i => incomeDedupeKey(i.source))),
     [curIncomes],
   )
 
@@ -73,7 +71,7 @@ export function CopyFromPreviousModal({ monthKey, onClose, onCopied }: Props) {
       .map(i => ({
         id: `inc:${i.id}`,
         income: i,
-        duplicate: curIncomeKeys.has(incomeDedupeKey(i.source, i.currency)),
+        duplicate: curIncomeKeys.has(incomeDedupeKey(i.source)),
       })),
     [prevIncomes, curIncomeKeys],
   )
@@ -119,7 +117,7 @@ export function CopyFromPreviousModal({ monthKey, onClose, onCopied }: Props) {
       let count = 0
       for (const it of incomeItems) {
         if (it.duplicate || !effectiveSelected.has(it.id)) continue
-        await addIncome({ source: it.income.source, currency: it.income.currency, amount: it.income.amount })
+        await addIncome({ source: it.income.source, amount: it.income.amount })
         count++
       }
       for (const it of expenseItems) {
@@ -165,7 +163,7 @@ export function CopyFromPreviousModal({ monthKey, onClose, onCopied }: Props) {
                   <ItemRow
                     key={it.id}
                     label={it.income.source}
-                    detail={fmt(it.income.amount, it.income.currency)}
+                    detail={formatMoney(it.income.amount, currency)}
                     duplicate={it.duplicate}
                     checked={!it.duplicate && effectiveSelected.has(it.id)}
                     onToggle={() => toggle(it.id)}
@@ -179,7 +177,7 @@ export function CopyFromPreviousModal({ monthKey, onClose, onCopied }: Props) {
                   <ItemRow
                     key={it.id}
                     label={it.expense.name}
-                    detail={fmt(it.expense.debit + it.expense.credit, it.expense.currency)}
+                    detail={formatMoney(it.expense.debit + it.expense.credit, currency)}
                     badge={it.expense.installments ? `${it.expense.installments}x` : undefined}
                     duplicate={it.duplicate}
                     checked={!it.duplicate && effectiveSelected.has(it.id)}

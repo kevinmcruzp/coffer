@@ -1,5 +1,7 @@
 import { z } from 'zod'
+import { monthStoreKey } from './currencyStore'
 import type { VaultStore } from './vaultStore'
+import type { Currency } from '../types'
 
 // Filesystem primitives the file store needs. The desktop shell supplies the real ones;
 // keeping them this small lets the save/rotation logic be tested without a disk.
@@ -19,26 +21,46 @@ export const BACKUP_COPIES = 3
 // Vault file: plain JSON whose month values are AES-GCM ciphertexts. Settings hold the
 // salt and verification token, so the file alone (plus the password) opens the vault on
 // any machine. `format` tells it apart from a backup export, which shares the extension.
+// Version 2 keys each month by currency ("BRL:2026-11"); version 1 used the bare month.
 const vaultFileSchema = z.object({
   format: z.literal('coffer-vault'),
-  version: z.literal(1),
+  version: z.union([z.literal(1), z.literal(2)]),
   settings: z.record(z.string(), z.string()),
   months: z.record(z.string(), z.string()),
 })
 
-type VaultFile = z.infer<typeof vaultFileSchema>
+type VaultFile = {
+  format: 'coffer-vault'
+  version: 2
+  settings: Record<string, string>
+  months: Record<string, string>
+}
+
+// Version 1 vaults had no currency environments; all of their months become BRL.
+const VERSION_1_CURRENCY: Currency = 'BRL'
 
 function ownValue(record: Record<string, string>, key: string): string | undefined {
   return Object.hasOwn(record, key) ? record[key] : undefined
 }
 
 function emptyVault(): VaultFile {
-  return { format: 'coffer-vault', version: 1, settings: {}, months: {} }
+  return { format: 'coffer-vault', version: 2, settings: {}, months: {} }
+}
+
+// The upgrade only happens in memory; it reaches the disk with the next save, after the
+// file as found has been copied aside.
+function toCurrentVersion(file: z.infer<typeof vaultFileSchema>): VaultFile {
+  if (file.version === 2) return { ...file, version: 2 }
+  const months: Record<string, string> = {}
+  for (const [monthKey, ciphertext] of Object.entries(file.months)) {
+    months[monthStoreKey(VERSION_1_CURRENCY, monthKey)] = ciphertext
+  }
+  return { ...file, version: 2, months }
 }
 
 async function loadVault(io: VaultFileIO, path: string): Promise<VaultFile> {
   try {
-    return vaultFileSchema.parse(JSON.parse(await io.readText(path)))
+    return toCurrentVersion(vaultFileSchema.parse(JSON.parse(await io.readText(path))))
   } catch {
     throw new Error('This file is not a valid Coffer vault or is corrupted')
   }

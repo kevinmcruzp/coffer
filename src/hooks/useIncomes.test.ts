@@ -15,7 +15,6 @@ const MONTH_KEY = '2025-03'
 const baseIncome: Income = {
   id: 'i1',
   source: 'Salary',
-  currency: 'BRL',
   amount: 5000,
 }
 
@@ -29,11 +28,14 @@ function mockSession(db: VaultStore, key: CryptoKey) {
   vi.mocked(useSession).mockReturnValue({
     state: { status: 'unlocked', key },
     db,
+    vault: db,
+    currency: 'BRL',
     lockTimeout: 15,
     setup: vi.fn(),
     login: vi.fn(),
     logout: vi.fn(),
     setLockTimeout: vi.fn(),
+    setCurrency: vi.fn(),
   })
 }
 
@@ -56,7 +58,7 @@ describe('useIncomes — empty month', () => {
     const { result } = renderHook(() => useIncomes(MONTH_KEY))
     await waitFor(() => expect(result.current.loading).toBe(false))
 
-    expect(result.current.totals).toEqual({ BRL: 0, USD: 0, CLP: 0 })
+    expect(result.current.total).toBe(0)
   })
 })
 
@@ -90,7 +92,6 @@ describe('useIncomes — add', () => {
 
     const input: Omit<Income, 'id'> = {
       source: 'Freelance',
-      currency: 'USD',
       amount: 1200,
     }
 
@@ -112,7 +113,7 @@ describe('useIncomes — add', () => {
 
     await expect(
       act(async () => {
-        await result.current.add({ source: 'Bad', currency: 'BRL', amount: 0 })
+        await result.current.add({ source: 'Bad', amount: 0 })
       }),
     ).rejects.toThrow()
   })
@@ -126,7 +127,7 @@ describe('useIncomes — add', () => {
 
     await expect(
       act(async () => {
-        await result.current.add({ source: 'Bad', currency: 'BRL', amount: -100 })
+        await result.current.add({ source: 'Bad', amount: -100 })
       }),
     ).rejects.toThrow()
   })
@@ -197,15 +198,15 @@ describe('useIncomes — remove', () => {
 })
 
 describe('useIncomes — totals', () => {
-  it('computes total per currency', async () => {
+  it('sums every income of the month', async () => {
     const { db, key } = await makeContext()
     await writeMonth(db, MONTH_KEY, {
       key: MONTH_KEY,
       expenses: [],
       incomes: [
-        baseIncome, // BRL 5000
-        { id: 'i2', source: 'Bonus', currency: 'BRL', amount: 1000 },
-        { id: 'i3', source: 'Consulting', currency: 'USD', amount: 500 },
+        baseIncome, // 5000
+        { id: 'i2', source: 'Bonus', amount: 1000 },
+        { id: 'i3', source: 'Consulting', amount: 500 },
       ],
       saving: 0,
       adjustment: 0,
@@ -216,14 +217,13 @@ describe('useIncomes — totals', () => {
     const { result } = renderHook(() => useIncomes(MONTH_KEY))
     await waitFor(() => expect(result.current.loading).toBe(false))
 
-    expect(result.current.totals.BRL).toBe(6000)
-    expect(result.current.totals.USD).toBe(500)
+    expect(result.current.total).toBe(6500)
   })
 })
 
 describe('useIncomes — closed months and carried-over entries', () => {
   const closing = { balance: 0, closedAt: '2026-11-06T12:00:00.000Z' }
-  const carry: Income = { id: 'c1', source: 'Balance from Feb 2025', currency: 'BRL', amount: 300, carryFrom: '2025-02' }
+  const carry: Income = { id: 'c1', source: 'Balance from Feb 2025', amount: 300, carryFrom: '2025-02' }
 
   async function load(incomes: Income[], closed: boolean) {
     const { db, key } = await makeContext()
@@ -244,7 +244,7 @@ describe('useIncomes — closed months and carried-over entries', () => {
 
   it('rejects add, update and remove on a closed month', async () => {
     const { result } = await load([baseIncome], true)
-    await expect(result.current.add({ source: 'X', currency: 'BRL', amount: 1 })).rejects.toThrow(/closed/)
+    await expect(result.current.add({ source: 'X', amount: 1 })).rejects.toThrow(/closed/)
     await expect(result.current.update('i1', { amount: 1 })).rejects.toThrow(/closed/)
     await expect(result.current.remove('i1')).rejects.toThrow(/closed/)
   })
@@ -261,9 +261,9 @@ describe('useIncomes — closed months and carried-over entries', () => {
     expect(result.current.incomes[0].carryFrom).toBeUndefined()
   })
 
-  it('counts a negative carried-over entry in the totals', async () => {
+  it('counts a negative carried-over entry in the total', async () => {
     const { result } = await load([baseIncome, { ...carry, amount: -200 }], false)
-    expect(result.current.totals.BRL).toBe(4800)
+    expect(result.current.total).toBe(4800)
   })
 
   it('refreshes when the month is written elsewhere', async () => {

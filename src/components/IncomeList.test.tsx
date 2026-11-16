@@ -8,6 +8,7 @@ import type { UseIncomesResult } from '../hooks/useIncomes'
 import { useMonthClosing } from '../hooks/useMonthClosing'
 import type { UseMonthClosingResult } from '../hooks/useMonthClosing'
 
+vi.mock('../hooks/useSession', () => ({ useSession: () => ({ currency: 'BRL' }) }))
 vi.mock('../hooks/useIncomes')
 vi.mock('../hooks/useMonthClosing')
 
@@ -20,7 +21,6 @@ const MONTH_KEY = '2025-03'
 const baseIncome: Income = {
   id: 'i1',
   source: 'Salary',
-  currency: 'BRL',
   amount: 5000,
 }
 
@@ -30,7 +30,7 @@ function makeHook(overrides: Partial<UseIncomesResult> = {}): UseIncomesResult {
     closed: false,
     loading: false,
     error: null,
-    totals: { BRL: 0, USD: 0, CLP: 0 },
+    total: 0,
     add: vi.fn(),
     update: vi.fn(),
     remove: vi.fn(),
@@ -96,7 +96,6 @@ describe('IncomeList — add form', () => {
     await waitFor(() => {
       expect(add).toHaveBeenCalledWith({
         source: 'Freelance',
-        currency: 'BRL',
         amount: 1500,
       })
     })
@@ -197,22 +196,22 @@ describe('IncomeList — delete', () => {
 describe('IncomeList — totals', () => {
   it('renders totals for active currencies', () => {
     vi.mocked(useIncomes).mockReturnValue(
-      makeHook({ incomes: [baseIncome], totals: { BRL: 5000, USD: 0, CLP: 0 } }),
+      makeHook({ incomes: [baseIncome], total: 5000 }),
     )
     renderWithProviders(<IncomeList monthKey={MONTH_KEY} />)
 
-    expect(screen.getByTestId('income-totals-BRL')).toHaveTextContent('5.000')
+    expect(screen.getByTestId('income-total')).toHaveTextContent('5.000')
   })
 
   it('does not render totals section when all totals are zero', () => {
     renderWithProviders(<IncomeList monthKey={MONTH_KEY} />)
-    expect(screen.queryByTestId('income-totals-BRL')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('income-total')).not.toBeInTheDocument()
     expect(screen.queryByTestId('income-totals-USD')).not.toBeInTheDocument()
   })
 })
 
 describe('IncomeList — carried-over balance', () => {
-  const carry: Income = { id: 'c1', source: 'Balance from Oct 2026', currency: 'BRL', amount: 569.19, carryFrom: '2026-10' }
+  const carry: Income = { id: 'c1', source: 'Balance from Oct 2026', amount: 569.19, carryFrom: '2026-10' }
 
   it('marks the entry with the month it came from', () => {
     vi.mocked(useIncomes).mockReturnValue(makeHook({ incomes: [carry] }))
@@ -244,10 +243,10 @@ describe('IncomeList — carried-over balance', () => {
   it('shows the total when it is negative', () => {
     vi.mocked(useIncomes).mockReturnValue(makeHook({
       incomes: [{ ...carry, amount: -38.88 }],
-      totals: { BRL: -38.88, USD: 0, CLP: 0 },
+      total: -38.88,
     }))
     renderWithProviders(<IncomeList monthKey="2026-11" />)
-    expect(screen.getByTestId('income-totals-BRL')).toBeInTheDocument()
+    expect(screen.getByTestId('income-total')).toBeInTheDocument()
   })
 })
 

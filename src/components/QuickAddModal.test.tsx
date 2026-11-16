@@ -5,6 +5,7 @@ import { QuickAddModal } from './QuickAddModal'
 import { useExpenses } from '../hooks/useExpenses'
 import type { UseExpensesResult } from '../hooks/useExpenses'
 
+vi.mock('../hooks/useSession', () => ({ useSession: () => ({ currency: 'BRL' }) }))
 vi.mock('../hooks/useExpenses')
 
 function makeHook(overrides: Partial<UseExpensesResult> = {}): UseExpensesResult {
@@ -13,7 +14,7 @@ function makeHook(overrides: Partial<UseExpensesResult> = {}): UseExpensesResult
     closed: false,
     loading: false,
     error: null,
-    totals: { BRL: { debit: 0, credit: 0, total: 0 }, USD: { debit: 0, credit: 0, total: 0 }, CLP: { debit: 0, credit: 0, total: 0 } },
+    totals: { debit: 0, credit: 0, total: 0 },
     add: vi.fn().mockResolvedValue(undefined),
     update: vi.fn().mockResolvedValue(undefined),
     remove: vi.fn().mockResolvedValue(undefined),

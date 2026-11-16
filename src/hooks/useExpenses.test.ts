@@ -16,7 +16,6 @@ const baseExpense: Expense = {
   id: 'e1',
   name: 'Rent',
   category: 'fixed',
-  currency: 'BRL',
   debit: 1500,
   credit: 0,
 }
@@ -31,11 +30,14 @@ function mockSession(db: VaultStore, key: CryptoKey) {
   vi.mocked(useSession).mockReturnValue({
     state: { status: 'unlocked', key },
     db,
+    vault: db,
+    currency: 'BRL',
     lockTimeout: 15,
     setup: vi.fn(),
     login: vi.fn(),
     logout: vi.fn(),
     setLockTimeout: vi.fn(),
+    setCurrency: vi.fn(),
   })
 }
 
@@ -58,8 +60,7 @@ describe('useExpenses — empty month', () => {
     const { result } = renderHook(() => useExpenses(MONTH_KEY))
     await waitFor(() => expect(result.current.loading).toBe(false))
 
-    expect(result.current.totals.BRL).toEqual({ debit: 0, credit: 0, total: 0 })
-    expect(result.current.totals.USD).toEqual({ debit: 0, credit: 0, total: 0 })
+    expect(result.current.totals).toEqual({ debit: 0, credit: 0, total: 0 })
   })
 })
 
@@ -94,7 +95,6 @@ describe('useExpenses — add', () => {
     const input: Omit<Expense, 'id'> = {
       name: 'Coffee',
       category: 'other',
-      currency: 'BRL',
       debit: 0,
       credit: 25,
     }
@@ -120,7 +120,6 @@ describe('useExpenses — add', () => {
         await result.current.add({
           name: 'Bad',
           category: 'other',
-          currency: 'BRL',
           debit: 0,
           credit: 0,        })
       }),
@@ -139,7 +138,6 @@ describe('useExpenses — add', () => {
         await result.current.add({
           name: 'Bad',
           category: 'other',
-          currency: 'BRL',
           debit: -10,
           credit: 0,        })
       }),
@@ -212,14 +210,14 @@ describe('useExpenses — remove', () => {
 })
 
 describe('useExpenses — totals', () => {
-  it('computes totals per currency', async () => {
+  it('computes debit, credit and overall totals', async () => {
     const { db, key } = await makeContext()
     await writeMonth(db, MONTH_KEY, {
       key: MONTH_KEY,
       expenses: [
-        baseExpense, // BRL debit 1500
-        { id: 'e2', name: 'Bill', category: 'other', currency: 'BRL', debit: 0, credit: 200 },
-        { id: 'e3', name: 'Sub', category: 'other', currency: 'USD', debit: 0, credit: 15 },
+        baseExpense, // debit 1500
+        { id: 'e2', name: 'Bill', category: 'other', debit: 0, credit: 200 },
+        { id: 'e3', name: 'Sub', category: 'other', debit: 0, credit: 15 },
       ],
       incomes: [],
       saving: 0,
@@ -231,8 +229,7 @@ describe('useExpenses — totals', () => {
     const { result } = renderHook(() => useExpenses(MONTH_KEY))
     await waitFor(() => expect(result.current.loading).toBe(false))
 
-    expect(result.current.totals.BRL).toEqual({ debit: 1500, credit: 200, total: 1700 })
-    expect(result.current.totals.USD).toEqual({ debit: 0, credit: 15, total: 15 })
+    expect(result.current.totals).toEqual({ debit: 1500, credit: 215, total: 1715 })
   })
 })
 
@@ -256,8 +253,8 @@ describe('useExpenses — closed month', () => {
 
   it('rejects add, update and remove', async () => {
     const result = await loadClosed()
-    const { name, category, currency, debit, credit } = baseExpense
-    await expect(result.current.add({ name, category, currency, debit, credit })).rejects.toThrow(/closed/)
+    const { name, category, debit, credit } = baseExpense
+    await expect(result.current.add({ name, category, debit, credit })).rejects.toThrow(/closed/)
     await expect(result.current.update(baseExpense.id, { debit: 1 })).rejects.toThrow(/closed/)
     await expect(result.current.remove(baseExpense.id)).rejects.toThrow(/closed/)
   })

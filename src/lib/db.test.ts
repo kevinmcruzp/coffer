@@ -13,7 +13,6 @@ const sampleMonth: MonthData = {
       id: 'e1',
       name: 'Rent',
       category: 'fixed',
-      currency: 'BRL',
       debit: 1500,
       credit: 0,
     },
@@ -22,7 +21,6 @@ const sampleMonth: MonthData = {
     {
       id: 'i1',
       source: 'Salary',
-      currency: 'USD',
       amount: 5000,
     },
   ],

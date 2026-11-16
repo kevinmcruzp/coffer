@@ -15,7 +15,6 @@ export const expenseSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1, 'Name cannot be empty').max(100),
   category: z.enum(['fixed', 'other']),
-  currency: z.enum(['BRL', 'USD', 'CLP']),
   debit: z.number().min(0, 'Debit value cannot be negative'),
   credit: z.number().min(0, 'Credit value cannot be negative'),
   // min(1): 1 means the last parcel of a parceled purchase.
@@ -32,7 +31,6 @@ export const monthKeySchema = z
 export const incomeSchema = z.object({
   id: z.string().min(1),
   source: z.string().min(1, 'Source cannot be empty').max(100),
-  currency: z.enum(['BRL', 'USD', 'CLP']),
   amount: z.number(),
   carryFrom: monthKeySchema.optional(),
 }).refine(

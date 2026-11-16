@@ -1,14 +1,15 @@
 import { useMemo, useState } from 'react'
 import { useExpenses } from '../hooks/useExpenses'
+import { useSession } from '../hooks/useSession'
 import { useToast } from '../hooks/useToast'
 import { CopyFromPreviousModal } from './CopyFromPreviousModal'
 import { NumberInput } from './NumberInput'
 import { ParcelsInfo } from './ParcelsInfo'
 import { userMessage } from '../lib/errorMessages'
 import { round2, parseMoney } from '../lib/math'
-import { CURRENCIES } from '../types'
-import type { Category, Currency, Expense } from '../types'
-import type { Totals } from '../hooks/useExpenses'
+import { formatMoney } from '../lib/money'
+import type { Category, Expense } from '../types'
+import type { ExpenseTotals } from '../hooks/useExpenses'
 
 const FIELD = 'bg-panel-2 text-fg rounded px-1 border border-line focus:outline-none focus:border-brass'
 
@@ -186,22 +187,6 @@ function ExpenseRow({ expense, readOnly, onUpdate, onRemove }: RowProps) {
           </>
         )}
       </td>
-      <td className="px-2 py-1">
-        <select
-          className={`${FIELD} text-sm`}
-          value={expense.currency}
-          disabled={readOnly}
-          onChange={async e => {
-            try {
-              await onUpdate(expense.id, { currency: e.target.value as Currency })
-            } catch (err) {
-              toast(userMessage(err, 'Failed to update currency'), 'error')
-            }
-          }}
-        >
-          {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-      </td>
       <td
         className={`px-2 py-1 text-right ${readOnly ? '' : 'cursor-pointer'}`}
         onClick={() => { if (editField !== 'debit') startEdit('debit') }}
@@ -291,8 +276,8 @@ type AddFormProps = {
 }
 
 function AddExpenseForm({ category, onAdd }: AddFormProps) {
+  const { currency } = useSession()
   const [name, setName] = useState('')
-  const [currency, setCurrency] = useState<Currency>('BRL')
   const [debit, setDebit] = useState('')
   const [credit, setCredit] = useState('')
   const [parcels, setParcels] = useState('')
@@ -309,7 +294,6 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
       await onAdd({
         name: name.trim(),
         category,
-        currency,
         debit: parseMoney(debit),
         credit: perParcel,
         ...(isParceled ? { installments: parcelsNum } : {}),
@@ -333,16 +317,6 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
             value={name}
             onChange={e => setName(e.target.value)}
           />
-        </td>
-        <td className="px-2 py-1">
-          <select
-            className={`${FIELD} text-sm`}
-            value={currency}
-            onChange={e => setCurrency(e.target.value as Currency)}
-          >
-            <option value="BRL">BRL</option>
-            <option value="USD">USD</option>
-          </select>
         </td>
         <td className="px-2 py-1">
           <NumberInput
@@ -392,14 +366,14 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
       </tr>
       {isParceled && (
         <tr data-testid="parcel-hint">
-          <td colSpan={6} className="px-2 pb-2 text-xs text-brass/90">
-            ↳ {parcelsNum}× de {fmtCurrency(perParcel, currency)} = {fmtCurrency(round2(perParcel * parcelsNum), currency)}
+          <td colSpan={5} className="px-2 pb-2 text-xs text-brass/90">
+            ↳ {parcelsNum}× de {formatMoney(perParcel, currency)} = {formatMoney(round2(perParcel * parcelsNum), currency)}
           </td>
         </tr>
       )}
       {formError && (
         <tr>
-          <td colSpan={6} className="px-2 py-1 text-neg text-xs">
+          <td colSpan={5} className="px-2 py-1 text-neg text-xs">
             {formError}
           </td>
         </tr>
@@ -438,7 +412,6 @@ function ExpenseGroup({ label, category, expenses, onUpdate, onRemove, onAdd, re
             >
               Name <SortIndicator active={sortCol === 'name'} dir={sortDir} />
             </th>
-            <th className="px-2 py-1 text-left font-normal">Currency</th>
             <th
               className="px-2 py-1 text-right font-normal cursor-pointer hover:text-dim"
               onClick={() => onSort('debit')}
@@ -473,30 +446,19 @@ function ExpenseGroup({ label, category, expenses, onUpdate, onRemove, onAdd, re
 
 // ── TotalsFooter ─────────────────────────────────────────────────────────────
 
-function fmtCurrency(value: number, currency: Currency): string {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 2 }).format(value)
-}
+function TotalsFooter({ totals }: { totals: ExpenseTotals }) {
+  const { currency } = useSession()
 
-function TotalsFooter({ totals }: { totals: Totals }) {
-  const currencies = CURRENCIES
-  const active = currencies.filter(c => totals[c].total > 0)
-
-  if (active.length === 0) return null
+  if (totals.total === 0) return null
 
   return (
-    <div className="border-t border-line pt-4 mt-4 space-y-2">
-      {active.map(c => (
-        <div
-          key={c}
-          data-testid={`totals-${c}`}
-          className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-dim [&_strong]:font-mono [&_strong]:tabular-nums [&_strong]:text-fg"
-        >
-          <span className="font-semibold text-faint w-10">{c}</span>
-          <span>Debit: <strong>{fmtCurrency(totals[c].debit, c)}</strong></span>
-          <span>Credit: <strong>{fmtCurrency(totals[c].credit, c)}</strong></span>
-          <span>Total: <strong>{fmtCurrency(totals[c].total, c)}</strong></span>
-        </div>
-      ))}
+    <div
+      data-testid="totals"
+      className="border-t border-line pt-4 mt-4 flex flex-wrap gap-x-6 gap-y-1 text-sm text-dim [&_strong]:font-mono [&_strong]:tabular-nums [&_strong]:text-fg"
+    >
+      <span>Debit: <strong>{formatMoney(totals.debit, currency)}</strong></span>
+      <span>Credit: <strong>{formatMoney(totals.credit, currency)}</strong></span>
+      <span>Total: <strong>{formatMoney(totals.total, currency)}</strong></span>
     </div>
   )
 }

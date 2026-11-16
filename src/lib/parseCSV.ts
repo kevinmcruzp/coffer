@@ -2,7 +2,7 @@
  * CSV import format (exported from the Google Sheets template):
  *
  * Row 1: column label headers (ignored)
- * Row 2: summary — col[6]=Sobreajuste, col[8]=Receitas, col[11]=Poupança (BRL values)
+ * Row 2: summary — col[6]=Sobreajuste, col[8]=Receitas, col[11]=Poupança
  * Row 3: expense column headers (ignored)
  * Rows 4+: expense rows until an empty row or a row starting with "UTILIDADES"
  *   col[0]: category — "Fixo" or "Outros" (carry-forward; blank means same as previous)
@@ -12,7 +12,7 @@
  *
  * - Separator: comma (,)
  * - Encoding: UTF-8
- * - Currency: all values are BRL
+ * - Currency: amounts are imported as plain numbers into the active currency; a "BRL" prefix is ignored
  * - Receitas total is imported as a single income entry with source "Receitas"
  */
 
@@ -23,7 +23,7 @@ export type ParseCSVResult =
   | { ok: true; data: Omit<MonthData, 'key'> }
   | { ok: false; error: string }
 
-function parseBRLAmount(raw: string): number {
+function parseAmount(raw: string): number {
   const cleaned = raw
     .trim()
     .replace(/BRL\s*/g, '')
@@ -68,9 +68,9 @@ export function parseCSV(text: string): ParseCSVResult {
 
   // Row 2 (index 1): summary
   const summaryRow = splitCSVRow(lines[1])
-  const adjustment = parseBRLAmount(summaryRow[6] ?? '')
-  const receitasTotal = parseBRLAmount(summaryRow[8] ?? '')
-  const saving = parseBRLAmount(summaryRow[11] ?? '')
+  const adjustment = parseAmount(summaryRow[6] ?? '')
+  const receitasTotal = parseAmount(summaryRow[8] ?? '')
+  const saving = parseAmount(summaryRow[11] ?? '')
 
   const expenses: Expense[] = []
   let currentCategory: Category = 'fixed'
@@ -88,8 +88,8 @@ export function parseCSV(text: string): ParseCSVResult {
     if (rawCat === 'Fixo') currentCategory = 'fixed'
     else if (rawCat === 'Outros') currentCategory = 'other'
 
-    const debit = Math.max(0, parseBRLAmount(cols[2] ?? ''))
-    const credit = Math.max(0, parseBRLAmount(cols[3] ?? ''))
+    const debit = Math.max(0, parseAmount(cols[2] ?? ''))
+    const credit = Math.max(0, parseAmount(cols[3] ?? ''))
 
     if (debit === 0 && credit === 0) continue
 
@@ -97,14 +97,13 @@ export function parseCSV(text: string): ParseCSVResult {
       id: crypto.randomUUID(),
       name,
       category: currentCategory,
-      currency: 'BRL',
       debit,
       credit,
     })
   }
 
   const incomes: Income[] = receitasTotal > 0
-    ? [{ id: crypto.randomUUID(), source: 'Receitas', currency: 'BRL', amount: receitasTotal }]
+    ? [{ id: crypto.randomUUID(), source: 'Receitas', amount: receitasTotal }]
     : []
 
   return {

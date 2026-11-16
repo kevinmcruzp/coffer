@@ -21,11 +21,14 @@ function mockSession(db: VaultStore, key: CryptoKey) {
   vi.mocked(useSession).mockReturnValue({
     state: { status: 'unlocked', key },
     db,
+    vault: db,
+    currency: 'BRL',
     lockTimeout: 15,
     setup: vi.fn(),
     login: vi.fn(),
     logout: vi.fn(),
     setLockTimeout: vi.fn(),
+    setCurrency: vi.fn(),
   })
 }
 
@@ -134,7 +137,7 @@ describe('useMonthMeta — setAdjustment', () => {
     await writeMonth(db, MONTH_KEY, {
       key: MONTH_KEY,
       expenses: [],
-      incomes: [{ id: 'i1', source: 'Salary', currency: 'BRL', amount: 5000 }],
+      incomes: [{ id: 'i1', source: 'Salary', amount: 5000 }],
       saving: 300,
       adjustment: 0,
       budget: 0,

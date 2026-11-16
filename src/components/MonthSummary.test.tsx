@@ -10,6 +10,7 @@ import type { UseIncomesResult } from '../hooks/useIncomes'
 import type { UseMonthMetaResult } from '../hooks/useMonthMeta'
 import type { UseMonthClosingResult } from '../hooks/useMonthClosing'
 
+vi.mock('../hooks/useSession', () => ({ useSession: () => ({ currency: 'BRL' }) }))
 vi.mock('../hooks/useExpenses')
 vi.mock('../hooks/useIncomes')
 vi.mock('../hooks/useMonthMeta')
@@ -26,11 +27,7 @@ function mockData(closed: boolean) {
     closed,
     loading: false,
     error: null,
-    totals: {
-      BRL: { debit: 0, credit: 0, total: 0 },
-      USD: { debit: 0, credit: 0, total: 0 },
-      CLP: { debit: 0, credit: 0, total: 0 },
-    },
+    totals: { debit: 0, credit: 0, total: 0 },
     add: vi.fn(),
     update: vi.fn(),
     remove: vi.fn(),
@@ -40,7 +37,7 @@ function mockData(closed: boolean) {
     closed,
     loading: false,
     error: null,
-    totals: { BRL: 569.19, USD: 0, CLP: 0 },
+    total: 569.19,
     add: vi.fn(),
     update: vi.fn(),
     remove: vi.fn(),
