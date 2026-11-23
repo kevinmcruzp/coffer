@@ -267,3 +267,24 @@ describe('IncomeList — closed month', () => {
     expect(screen.queryByDisplayValue('Salary')).not.toBeInTheDocument()
   })
 })
+
+describe('IncomeList — empty month', () => {
+  it('invites the first income when the month has none', () => {
+    renderWithProviders(<IncomeList monthKey={MONTH_KEY} />)
+    expect(screen.getByTestId('income-empty')).toHaveTextContent(/add your first income/i)
+    expect(screen.getByPlaceholderText('Source')).toBeInTheDocument()
+  })
+
+  it('does not invite once the month has an income', () => {
+    vi.mocked(useIncomes).mockReturnValue(makeHook({ incomes: [baseIncome] }))
+    renderWithProviders(<IncomeList monthKey={MONTH_KEY} />)
+    expect(screen.queryByTestId('income-empty')).not.toBeInTheDocument()
+  })
+
+  it('says nothing was recorded when a closed month has no income', () => {
+    vi.mocked(useIncomes).mockReturnValue(makeHook({ closed: true }))
+    renderWithProviders(<IncomeList monthKey={MONTH_KEY} />)
+    expect(screen.getByTestId('income-empty')).toHaveTextContent(/no income was recorded/i)
+    expect(screen.getByTestId('income-empty')).not.toHaveTextContent(/add your first/i)
+  })
+})

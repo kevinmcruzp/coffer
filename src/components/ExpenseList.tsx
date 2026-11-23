@@ -526,6 +526,13 @@ function ExpenseListBody({ monthKey, onOpenCopy }: BodyProps) {
           </button>
         </div>
       )}
+      {expenses.length === 0 && (
+        <p data-testid="expense-empty" className="text-dim text-sm mb-3">
+          {closed
+            ? 'No expenses were recorded this month.'
+            : 'No expenses this month yet — add your first expense under Fixed or Others, or use Copy from previous month.'}
+        </p>
+      )}
       <div className="flex flex-wrap gap-3 mb-3 items-center">
         <FilterBar
           search={search}
@@ -564,7 +571,7 @@ function ExpenseListBody({ monthKey, onOpenCopy }: BodyProps) {
           onSort={toggleSort}
         />
       )}
-      {isFiltering && filtered.length === 0 && (
+      {isFiltering && filtered.length === 0 && expenses.length > 0 && (
         <p className="text-faint text-sm text-center py-8">No expenses match the current filters.</p>
       )}
       <TotalsFooter totals={totals} />

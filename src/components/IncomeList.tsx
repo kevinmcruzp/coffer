@@ -278,6 +278,13 @@ export function IncomeList({ monthKey }: Props) {
 
   return (
     <div>
+      {incomes.length === 0 && (
+        <p data-testid="income-empty" className="text-dim text-sm mb-3">
+          {closed
+            ? 'No income was recorded this month.'
+            : 'No income this month yet — add your first income in the row below.'}
+        </p>
+      )}
       <table className="w-full text-sm text-fg">
         <thead>
           <tr className="text-faint text-[11px] uppercase tracking-[0.06em] border-b border-line select-none">

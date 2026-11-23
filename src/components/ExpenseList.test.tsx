@@ -374,3 +374,36 @@ describe('ExpenseList — closed month', () => {
     expect(screen.queryByDisplayValue('Alpha')).not.toBeInTheDocument()
   })
 })
+
+describe('ExpenseList — empty month', () => {
+  beforeEach(() => {
+    vi.mocked(useExpenses).mockReturnValue(makeHookResult())
+  })
+
+  it('invites the first expense when the month has none', () => {
+    render(<ExpenseList monthKey="2025-03" />)
+    expect(screen.getByTestId('expense-empty')).toHaveTextContent(/add your first expense/i)
+    expect(screen.getByTestId('expense-empty')).toHaveTextContent(/copy from previous month/i)
+    expect(within(screen.getByTestId('group-fixed')).getByPlaceholderText(/name/i)).toBeInTheDocument()
+  })
+
+  it('does not invite once the month has an expense', () => {
+    vi.mocked(useExpenses).mockReturnValue(makeHookResult({ expenses: [expenseA] }))
+    render(<ExpenseList monthKey="2025-03" />)
+    expect(screen.queryByTestId('expense-empty')).not.toBeInTheDocument()
+  })
+
+  it('shows only the invitation, not the no-match message, when filtering an empty month', async () => {
+    render(<ExpenseList monthKey="2025-03" />)
+    await userEvent.type(screen.getByPlaceholderText(/search/i), 'rent')
+    expect(screen.getByTestId('expense-empty')).toBeInTheDocument()
+    expect(screen.queryByText(/no expenses match/i)).not.toBeInTheDocument()
+  })
+
+  it('says nothing was recorded when a closed month has no expenses', () => {
+    vi.mocked(useExpenses).mockReturnValue(makeHookResult({ closed: true }))
+    render(<ExpenseList monthKey="2025-03" />)
+    expect(screen.getByTestId('expense-empty')).toHaveTextContent(/no expenses were recorded/i)
+    expect(screen.getByTestId('expense-empty')).not.toHaveTextContent(/add your first/i)
+  })
+})
