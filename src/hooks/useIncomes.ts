@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { readMonth, writeMonth } from '../lib/db'
 import { incomeSchema, parseOrThrow } from '../lib/schemas'
 import { userMessage } from '../lib/errorMessages'
+import { AppError } from '../lib/appError'
+import type { Message } from '../lib/i18n'
 import { round2 } from '../lib/math'
 import { useSession } from './useSession'
 import { useMonthRevision } from './useMonthRevision'
@@ -12,7 +14,7 @@ export type UseIncomesResult = {
   incomes: Income[]
   closed: boolean
   loading: boolean
-  error: string | null
+  error: Message | null
   total: number
   add: (input: Omit<Income, 'id'>) => Promise<void>
   update: (id: string, changes: Partial<Omit<Income, 'id'>>) => Promise<void>
@@ -22,12 +24,12 @@ export type UseIncomesResult = {
 type FetchState = {
   resolvedKey: string | null
   monthData: MonthData | null
-  error: string | null
+  error: Message | null
 }
 
 function assertNotCarried(income: Income): void {
   if (income.carryFrom) {
-    throw new Error('This balance comes from closing the previous month. Reopen and close that month to change it.')
+    throw new AppError('error.carriedIncome')
   }
 }
 
@@ -61,7 +63,7 @@ export function useIncomes(monthKey: string): UseIncomesResult {
             error: null,
           })
         } else {
-          setFetchState({ resolvedKey: monthKey, monthData: null, error: userMessage(err, 'Failed to load incomes') })
+          setFetchState({ resolvedKey: monthKey, monthData: null, error: userMessage(err, 'error.loadIncomes') })
         }
       })
 

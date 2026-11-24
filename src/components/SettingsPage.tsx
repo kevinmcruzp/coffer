@@ -1,32 +1,19 @@
 import { useState, type ReactNode } from 'react'
 import { useSession } from '../hooks/useSession'
 import { useToast } from '../hooks/useToast'
+import { useLocale } from '../hooks/useLocale'
 import { LOCK_TIMEOUT_OPTIONS, parseLockTimeout, type LockTimeout } from '../contexts/session'
 import { exportBackup, importBackup } from '../lib/backup'
 import { saveBackupFile } from '../lib/backupFile'
 import { parseCurrency } from '../lib/currencyStore'
 import { userMessage } from '../lib/errorMessages'
+import { LANGUAGES, LANGUAGE_NAMES, parseLanguage } from '../lib/i18n'
 import { CURRENCIES } from '../types'
-import type { Currency } from '../types'
 
 type Props = {
   // Location of the vault file on disk.
   vaultPath: string
   onImport: () => void
-}
-
-const LOCK_TIMEOUT_LABELS: Record<LockTimeout, string> = {
-  5: '5 minutes',
-  15: '15 minutes',
-  30: '30 minutes',
-  60: '1 hour',
-  never: 'Never',
-}
-
-const CURRENCY_LABELS: Record<Currency, string> = {
-  BRL: 'BRL — Brazilian real',
-  USD: 'USD — US dollar',
-  CLP: 'CLP — Chilean peso',
 }
 
 const SELECT =
@@ -59,18 +46,30 @@ function Row({ title, hint, children }: { title: ReactNode; hint: string; childr
 export function SettingsPage({ vaultPath, onImport }: Props) {
   const { state, vault, currency, lockTimeout, setLockTimeout, setCurrency } = useSession()
   const { toast } = useToast()
+  const { t, language, setLanguage } = useLocale()
   const [restoreFile, setRestoreFile] = useState<File | null>(null)
   const [restorePassword, setRestorePassword] = useState('')
   const [restoring, setRestoring] = useState(false)
 
   const cryptoKey = state.status === 'unlocked' ? state.key : null
 
+  function lockTimeoutLabel(option: LockTimeout): string {
+    if (option === 'never') return t('settings.never')
+    if (option === 60) return t('settings.oneHour')
+    return t('settings.minutes', { count: option })
+  }
+
+  function handleLanguage(raw: string) {
+    const next = parseLanguage(raw)
+    if (next) setLanguage(next)
+  }
+
   async function handleLockTimeout(raw: string) {
     try {
       await setLockTimeout(parseLockTimeout(raw))
-      toast('Auto-lock updated')
+      toast(t('settings.autoLockUpdated'))
     } catch (err) {
-      toast(userMessage(err, 'Failed to save settings'), 'error')
+      toast(t(userMessage(err, 'settings.saveFailed')), 'error')
     }
   }
 
@@ -78,19 +77,19 @@ export function SettingsPage({ vaultPath, onImport }: Props) {
     const next = parseCurrency(raw)
     try {
       await setCurrency(next)
-      toast(`Now showing ${next}`)
+      toast(t('settings.nowShowing', { currency: next }))
     } catch (err) {
-      toast(userMessage(err, 'Failed to save settings'), 'error')
+      toast(t(userMessage(err, 'settings.saveFailed')), 'error')
     }
   }
 
   async function handleBackup() {
     if (!vault || !cryptoKey) return
     try {
-      const saved = await saveBackupFile(await exportBackup(vault, cryptoKey), vaultPath)
-      if (saved) toast('Backup saved')
+      const saved = await saveBackupFile(await exportBackup(vault, cryptoKey), vaultPath, t('dialog.saveBackup'))
+      if (saved) toast(t('settings.backupSaved'))
     } catch (err) {
-      toast(userMessage(err, 'Failed to create backup. Please try again.'), 'error')
+      toast(t(userMessage(err, 'settings.backupFailed')), 'error')
     }
   }
 
@@ -104,9 +103,9 @@ export function SettingsPage({ vaultPath, onImport }: Props) {
     setRestoring(true)
     try {
       const count = await importBackup(restoreFile, vault, restorePassword, cryptoKey)
-      toast(`${count} month${count !== 1 ? 's' : ''} restored`)
+      toast(count === 1 ? t('settings.restoredOne') : t('settings.restoredMany', { count }))
     } catch (err) {
-      toast(userMessage(err, 'Failed to restore backup. Please try again.'), 'error')
+      toast(t(userMessage(err, 'settings.restoreFailed')), 'error')
     }
     setRestoring(false)
     closeRestore()
@@ -114,20 +113,38 @@ export function SettingsPage({ vaultPath, onImport }: Props) {
 
   return (
     <div className="space-y-8">
-      <Section title="Vault">
+      <Section title={t('settings.vault')}>
         <div className="px-4 py-3.5">
-          <p className="text-sm text-fg">Vault file</p>
+          <p className="text-sm text-fg">{t('settings.vaultFile')}</p>
           <p className="text-xs text-dim font-mono break-all pt-1">{vaultPath}</p>
-          <p className="text-xs text-faint pt-1.5">
-            Everything is stored in this one encrypted file. Copy it to move your finances to another computer.
-          </p>
+          <p className="text-xs text-faint pt-1.5">{t('settings.vaultHint')}</p>
         </div>
       </Section>
 
-      <Section title="Currency">
+      <Section title={t('settings.language')}>
         <Row
-          title={<label htmlFor="currency">Active currency</label>}
-          hint="Each currency is a separate ledger with its own months, budget and closing. Switching never converts or moves anything."
+          title={<label htmlFor="language">{t('settings.language')}</label>}
+          hint={t('settings.languageHint')}
+        >
+          <select
+            id="language"
+            value={language}
+            onChange={e => handleLanguage(e.target.value)}
+            className={SELECT}
+          >
+            {LANGUAGES.map(option => (
+              <option key={option} value={option} lang={option}>
+                {LANGUAGE_NAMES[option]}
+              </option>
+            ))}
+          </select>
+        </Row>
+      </Section>
+
+      <Section title={t('settings.currency')}>
+        <Row
+          title={<label htmlFor="currency">{t('settings.activeCurrency')}</label>}
+          hint={t('settings.currencyHint')}
         >
           <select
             id="currency"
@@ -137,17 +154,17 @@ export function SettingsPage({ vaultPath, onImport }: Props) {
           >
             {CURRENCIES.map(option => (
               <option key={option} value={option}>
-                {CURRENCY_LABELS[option]}
+                {option} — {t(`currency.${option}`)}
               </option>
             ))}
           </select>
         </Row>
       </Section>
 
-      <Section title="Security">
+      <Section title={t('settings.security')}>
         <Row
-          title={<label htmlFor="lock-timeout">Auto-lock after inactivity</label>}
-          hint="The vault locks itself after this long without activity. You can also lock it any time."
+          title={<label htmlFor="lock-timeout">{t('settings.autoLock')}</label>}
+          hint={t('settings.autoLockHint')}
         >
           <select
             id="lock-timeout"
@@ -157,24 +174,18 @@ export function SettingsPage({ vaultPath, onImport }: Props) {
           >
             {LOCK_TIMEOUT_OPTIONS.map(option => (
               <option key={option} value={String(option)}>
-                {LOCK_TIMEOUT_LABELS[option]}
+                {lockTimeoutLabel(option)}
               </option>
             ))}
           </select>
         </Row>
       </Section>
 
-      <Section title="Backup">
-        <Row
-          title="Encrypted backup"
-          hint="One file with every month of every currency, readable only with your master password. Keep a copy somewhere safe."
-        >
-          <button onClick={handleBackup} className={ACTION_BUTTON}>Save backup</button>
+      <Section title={t('settings.backup')}>
+        <Row title={t('settings.encryptedBackup')} hint={t('settings.backupHint')}>
+          <button onClick={handleBackup} className={ACTION_BUTTON}>{t('settings.saveBackup')}</button>
         </Row>
-        <Row
-          title="Restore from a backup"
-          hint="Months in the backup replace the months with the same date and currency in this vault."
-        >
+        <Row title={t('settings.restoreTitle')} hint={t('settings.restoreHint')}>
           {restoreFile ? (
             <form
               onSubmit={e => { e.preventDefault(); handleRestore() }}
@@ -182,8 +193,8 @@ export function SettingsPage({ vaultPath, onImport }: Props) {
             >
               <input
                 type="password"
-                aria-label="Backup password"
-                placeholder="Backup password"
+                aria-label={t('settings.backupPassword')}
+                placeholder={t('settings.backupPassword')}
                 value={restorePassword}
                 onChange={e => setRestorePassword(e.target.value)}
                 autoFocus
@@ -194,19 +205,19 @@ export function SettingsPage({ vaultPath, onImport }: Props) {
                 disabled={restoring}
                 className="px-3 py-1.5 text-xs font-semibold text-ink bg-brass hover:brightness-110 rounded-lg transition disabled:opacity-50"
               >
-                {restoring ? 'Restoring…' : 'Restore'}
+                {restoring ? t('settings.restoring') : t('settings.restore')}
               </button>
               <button type="button" onClick={closeRestore} className="px-2 py-1.5 text-xs text-dim hover:text-fg">
-                Cancel
+                {t('common.cancel')}
               </button>
             </form>
           ) : (
             <label className={ACTION_BUTTON}>
-              Choose file
+              {t('settings.chooseFile')}
               <input
                 type="file"
                 accept=".coffer"
-                aria-label="Restore backup"
+                aria-label={t('settings.restoreBackup')}
                 className="hidden"
                 onChange={e => {
                   setRestoreFile(e.target.files?.[0] ?? null)
@@ -218,9 +229,9 @@ export function SettingsPage({ vaultPath, onImport }: Props) {
         </Row>
       </Section>
 
-      <Section title="Spreadsheet">
-        <Row title="Import a month from CSV" hint={`Bring a month over from the spreadsheet into ${currency}. You review it before saving.`}>
-          <button onClick={onImport} aria-label="Import CSV" className={ACTION_BUTTON}>Import</button>
+      <Section title={t('settings.spreadsheet')}>
+        <Row title={t('settings.importTitle')} hint={t('settings.importHint', { currency })}>
+          <button onClick={onImport} aria-label={t('settings.importCsv')} className={ACTION_BUTTON}>{t('settings.import')}</button>
         </Row>
       </Section>
     </div>

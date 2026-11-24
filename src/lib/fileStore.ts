@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { AppError } from './appError'
 import { monthStoreKey } from './currencyStore'
 import type { VaultStore } from './vaultStore'
 import type { Currency } from '../types'
@@ -62,7 +63,7 @@ async function loadVault(io: VaultFileIO, path: string): Promise<VaultFile> {
   try {
     return toCurrentVersion(vaultFileSchema.parse(JSON.parse(await io.readText(path))))
   } catch {
-    throw new Error('This file is not a valid Coffer vault or is corrupted')
+    throw new AppError('error.invalidVault')
   }
 }
 

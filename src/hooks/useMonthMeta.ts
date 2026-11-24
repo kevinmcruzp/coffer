@@ -4,6 +4,8 @@ import { monthDataSchema } from '../lib/schemas'
 import { useSession } from './useSession'
 import { useMonthRevision } from './useMonthRevision'
 import { assertMonthOpen, emptyMonth } from '../lib/closing'
+import { userMessage } from '../lib/errorMessages'
+import type { Message } from '../lib/i18n'
 import type { MonthData } from '../types'
 
 export type UseMonthMetaResult = {
@@ -11,7 +13,7 @@ export type UseMonthMetaResult = {
   adjustment: number
   budget: number
   loading: boolean
-  error: string | null
+  error: Message | null
   setSaving: (value: number) => Promise<void>
   setAdjustment: (value: number) => Promise<void>
   setBudget: (value: number) => Promise<void>
@@ -20,7 +22,7 @@ export type UseMonthMetaResult = {
 type FetchState = {
   resolvedKey: string | null
   monthData: MonthData | null
-  error: string | null
+  error: Message | null
 }
 
 export function useMonthMeta(monthKey: string): UseMonthMetaResult {
@@ -49,7 +51,7 @@ export function useMonthMeta(monthKey: string): UseMonthMetaResult {
         if (msg.includes('not found')) {
           setFetchState({ resolvedKey: monthKey, monthData: emptyMonth(monthKey), error: null })
         } else {
-          setFetchState({ resolvedKey: monthKey, monthData: null, error: msg })
+          setFetchState({ resolvedKey: monthKey, monthData: null, error: userMessage(err, 'error.loadMonth') })
         }
       })
 

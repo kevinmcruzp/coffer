@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { SettingsPage } from './SettingsPage'
+import { LocaleProvider } from '../contexts/LocaleContext'
 import { useSession } from '../hooks/useSession'
 import { tauriFileIO } from '../lib/tauriFileIO'
 import { chooseBackupPath } from '../lib/vaultDialogs'
@@ -83,6 +84,45 @@ describe('SettingsPage', () => {
   function renderPage() {
     return render(<SettingsPage vaultPath={VAULT_PATH} onImport={onImport} />)
   }
+
+  describe('language', () => {
+    function renderWithLocale() {
+      return render(
+        <LocaleProvider>
+          <SettingsPage vaultPath={VAULT_PATH} onImport={onImport} />
+        </LocaleProvider>,
+      )
+    }
+
+    beforeEach(() => {
+      localStorage.clear()
+      vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['en-US'])
+    })
+
+    afterEach(() => vi.restoreAllMocks())
+
+    it('lists every language in its own name and shows the one in use', () => {
+      mockSession(db, key)
+      renderWithLocale()
+      const select = screen.getByLabelText('Language')
+      expect(select).toHaveValue('en')
+      expect(within(select).getAllByRole('option').map(o => o.textContent))
+        .toEqual(['English', 'Português (Brasil)', 'Español'])
+    })
+
+    it('translates the page as soon as another language is chosen', async () => {
+      mockSession(db, key)
+      renderWithLocale()
+
+      await userEvent.selectOptions(screen.getByLabelText('Language'), 'pt-BR')
+
+      expect(screen.getByLabelText('Idioma')).toHaveValue('pt-BR')
+      expect(screen.getByLabelText('Bloquear após inatividade')).toBeInTheDocument()
+      expect(screen.getByRole('option', { name: '1 hora' })).toBeInTheDocument()
+      expect(screen.getByRole('option', { name: 'BRL — Real brasileiro' })).toBeInTheDocument()
+      expect(localStorage.getItem('coffer-language')).toBe('pt-BR')
+    })
+  })
 
   describe('auto-lock', () => {
     it('shows the current timeout', () => {
@@ -177,7 +217,10 @@ describe('SettingsPage', () => {
       await userEvent.click(screen.getByRole('button', { name: 'Save backup' }))
 
       await waitFor(() => expect(toast).toHaveBeenCalledWith('Backup saved'))
-      expect(chooseBackupPath).toHaveBeenCalledWith(expect.stringMatching(/^coffer-backup-\d{4}-\d{2}-\d{2}\.coffer$/))
+      expect(chooseBackupPath).toHaveBeenCalledWith(
+        expect.stringMatching(/^coffer-backup-\d{4}-\d{2}-\d{2}\.coffer$/),
+        'Save a backup',
+      )
       expect(tauriFileIO.writeText).toHaveBeenCalledOnce()
       const [path, text] = vi.mocked(tauriFileIO.writeText).mock.calls[0]
       expect(path).toBe(BACKUP_PATH)

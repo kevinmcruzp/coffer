@@ -1,10 +1,12 @@
 import { useState, type FormEvent } from 'react'
+import { useLocale } from '../hooks/useLocale'
 
 type Props = {
   onLogin: (password: string) => Promise<void>
 }
 
 export function LoginScreen({ onLogin }: Props) {
+  const { t } = useLocale()
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -19,7 +21,7 @@ export function LoginScreen({ onLogin }: Props) {
     try {
       await onLogin(password)
     } catch {
-      setError('Incorrect password. Please try again.')
+      setError(t('login.incorrect'))
       setLoading(false)
     }
   }
@@ -29,13 +31,13 @@ export function LoginScreen({ onLogin }: Props) {
       <div className="w-full max-w-sm space-y-6">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold text-fg">Coffer</h1>
-          <p className="text-sm text-dim">Enter your master password to unlock.</p>
+          <p className="text-sm text-dim">{t('login.intro')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
             <label className="text-sm text-dim" htmlFor="password">
-              Master password
+              {t('auth.masterPassword')}
             </label>
             <input
               id="password"
@@ -45,7 +47,7 @@ export function LoginScreen({ onLogin }: Props) {
               autoComplete="current-password"
               autoFocus
               className="w-full rounded-lg bg-panel-2 px-3 py-2 text-fg placeholder-faint focus:outline-none focus:ring-2 focus:ring-brass"
-              placeholder="Your master password"
+              placeholder={t('login.placeholder')}
             />
           </div>
 
@@ -56,7 +58,7 @@ export function LoginScreen({ onLogin }: Props) {
             disabled={!canSubmit}
             className="w-full rounded-lg bg-brass px-4 py-2 font-semibold text-ink transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {loading ? 'Unlocking…' : 'Unlock'}
+            {loading ? t('login.submitting') : t('login.submit')}
           </button>
         </form>
       </div>

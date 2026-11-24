@@ -1,3 +1,5 @@
+import { useLocale } from '../hooks/useLocale'
+
 type Slice = { label: string; value: number; color: string }
 
 type Props = {
@@ -20,6 +22,7 @@ function arcPath(startDeg: number, endDeg: number): string {
 }
 
 export function PieChart({ slices, title }: Props) {
+  const { t } = useLocale()
   const total = slices.reduce((s, x) => s + x.value, 0)
 
   if (total === 0) {
@@ -28,7 +31,7 @@ export function PieChart({ slices, title }: Props) {
         {title && <p className="text-xs text-faint">{title}</p>}
         <svg viewBox="0 0 100 100" className="w-24 h-24">
           <circle cx={CX} cy={CY} r={R} fill="#1D252A" />
-          <text x={CX} y={CY + 4} textAnchor="middle" fontSize={8} fill="#6A7772">No data</text>
+          <text x={CX} y={CY + 4} textAnchor="middle" fontSize={8} fill="#6A7772">{t('common.noData')}</text>
         </svg>
       </div>
     )

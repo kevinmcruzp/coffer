@@ -1,3 +1,4 @@
+import { AppError } from './appError'
 import { encrypt, decrypt, deriveKey } from './crypto'
 import { uint8ArrayToBase64, base64ToUint8Array } from './encoding'
 import { readMonth, writeMonths } from './db'
@@ -80,12 +81,12 @@ export async function importBackup(
   try {
     const parsed = JSON.parse(text) as BackupEnvelope
     if (parsed.version !== 1 || !parsed.salt || !parsed.ciphertext) {
-      throw new Error('Invalid backup format')
+      throw new AppError('error.backupFormat')
     }
     envelope = parsed
   } catch (err) {
-    if (err instanceof Error && err.message.startsWith('Invalid')) throw err
-    throw new Error('Invalid backup file or wrong password')
+    if (err instanceof AppError) throw err
+    throw new AppError('error.backupPassword')
   }
 
   const backupKey = await deriveKey(password, base64ToUint8Array(envelope.salt))
@@ -94,7 +95,7 @@ export async function importBackup(
   try {
     compressedB64 = await decrypt(envelope.ciphertext, backupKey)
   } catch {
-    throw new Error('Invalid backup file or wrong password')
+    throw new AppError('error.backupPassword')
   }
 
   let payload: BackupPayload
@@ -102,12 +103,12 @@ export async function importBackup(
     const json = await decompress(base64ToUint8Array(compressedB64))
     const parsed = JSON.parse(json) as BackupPayload
     if ((parsed.version !== 1 && parsed.version !== 2) || typeof parsed.months !== 'object' || parsed.months === null) {
-      throw new Error('Invalid backup format')
+      throw new AppError('error.backupFormat')
     }
     payload = parsed
   } catch (err) {
-    if (err instanceof Error && err.message.startsWith('Invalid')) throw err
-    throw new Error('Corrupted backup file')
+    if (err instanceof AppError) throw err
+    throw new AppError('error.backupCorrupted')
   }
 
   // Everything is validated before anything is written: one bad month aborts the restore.
@@ -115,7 +116,7 @@ export async function importBackup(
   for (const [storeKey, monthData] of Object.entries(payload.months)) {
     const location = monthLocation(payload.version, storeKey)
     const parsed = monthDataSchema.safeParse(monthData)
-    if (!location || !parsed.success) throw new Error('Corrupted backup file')
+    if (!location || !parsed.success) throw new AppError('error.backupCorrupted')
     // The key a month is filed under is the one that counts.
     const month: MonthData = { ...parsed.data, key: location.monthKey }
     byCurrency.set(location.currency, [...(byCurrency.get(location.currency) ?? []), month])

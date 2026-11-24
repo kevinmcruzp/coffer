@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useLocale } from '../hooks/useLocale'
 import { MIN_YEAR, maxYear } from '../lib/months'
 import { ChevronLeftIcon, ChevronRightIcon } from './Icons'
 import { Popover } from './Popover'
@@ -17,13 +18,14 @@ function pageStart(year: number): number {
 // on the active year's page.
 function YearGrid({ year, max, onSelect }: { year: number; max: number; onSelect: (year: number) => void }) {
   const [start, setStart] = useState(() => pageStart(year))
+  const { t } = useLocale()
   const currentYear = new Date().getFullYear()
 
   return (
     <PickerPanel
       title={`${start}–${start + PAGE_SIZE - 1}`}
-      prevLabel="Previous years"
-      nextLabel="Next years"
+      prevLabel={t('picker.previousYears')}
+      nextLabel={t('picker.nextYears')}
       onPrev={() => setStart(s => Math.max(MIN_YEAR, s - PAGE_SIZE))}
       onNext={() => setStart(s => s + PAGE_SIZE)}
       prevDisabled={start <= MIN_YEAR}
@@ -51,20 +53,21 @@ type Props = {
 
 export function YearNavigator({ year, onChange }: Props) {
   const max = maxYear()
+  const { t } = useLocale()
 
   return (
     <div className="flex items-center gap-2">
       <button
         onClick={() => onChange(year - 1)}
         disabled={year <= MIN_YEAR}
-        aria-label="Previous year"
+        aria-label={t('picker.previousYear')}
         className={ARROW}
       >
         <ChevronLeftIcon className="w-4 h-4" />
       </button>
 
       <Popover
-        label="Select year"
+        label={t('picker.selectYear')}
         trigger={String(year)}
         triggerClassName="font-serif text-lg font-semibold min-w-36 text-center px-2 py-1 rounded-lg text-fg tabular-nums hover:bg-panel-2 hover:text-brass transition-colors"
         panelClassName="w-64"
@@ -81,7 +84,7 @@ export function YearNavigator({ year, onChange }: Props) {
       <button
         onClick={() => onChange(year + 1)}
         disabled={year >= max}
-        aria-label="Next year"
+        aria-label={t('picker.nextYear')}
         className={ARROW}
       >
         <ChevronRightIcon className="w-4 h-4" />

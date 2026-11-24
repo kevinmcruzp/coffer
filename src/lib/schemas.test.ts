@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { expenseSchema, incomeSchema, monthKeySchema, monthDataSchema } from './schemas'
+import { AppError } from './appError'
+import { expenseSchema, incomeSchema, monthKeySchema, monthDataSchema, parseOrThrow } from './schemas'
 
 const validExpense = {
   id: 'e1',
@@ -212,5 +213,28 @@ describe('month closing in schemas', () => {
 
   it('rejects an invalid carryFrom key', () => {
     expect(incomeSchema.safeParse({ ...income, carryFrom: 'Sept' }).success).toBe(false)
+  })
+})
+
+describe('parseOrThrow', () => {
+  it('throws the first problem as a translatable message', () => {
+    let thrown: unknown
+    try {
+      parseOrThrow(expenseSchema, { ...validExpense, name: '' })
+    } catch (err) {
+      thrown = err
+    }
+    expect(thrown).toBeInstanceOf(AppError)
+    expect((thrown as AppError).userMessage).toEqual({ key: 'validation.nameEmpty' })
+    expect((thrown as AppError).message).toBe('Name cannot be empty')
+  })
+
+  it('reports an amount-less expense', () => {
+    expect(() => parseOrThrow(expenseSchema, { ...validExpense, debit: 0, credit: 0 }))
+      .toThrow('Enter a debit or credit amount greater than zero')
+  })
+
+  it('returns the parsed value when it is valid', () => {
+    expect(parseOrThrow(expenseSchema, validExpense)).toEqual(validExpense)
   })
 })

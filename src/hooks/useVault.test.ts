@@ -96,7 +96,7 @@ describe('useVault', () => {
 
       expect(result.current.state).toEqual({
         status: 'choosing',
-        error: expect.stringContaining('not a valid Coffer vault'),
+        error: { key: 'error.invalidVault' },
       })
       expect(io.files.get(PATH)).toBe('something else entirely')
     })
@@ -141,7 +141,7 @@ describe('useVault', () => {
       await waitFor(() =>
         expect(result.current.state).toEqual({
           status: 'choosing',
-          error: expect.stringContaining('was not found'),
+          error: expect.objectContaining({ key: 'error.vaultNotFound' }),
         }),
       )
       expect(io.files.size).toBe(0)

@@ -4,7 +4,8 @@ import { writeMonth } from '../lib/db'
 import { monthKeySchema } from '../lib/schemas'
 import { userMessage } from '../lib/errorMessages'
 import { useSession } from '../hooks/useSession'
-import { formatMoney } from '../lib/money'
+import { useLocale } from '../hooks/useLocale'
+import type { Message } from '../lib/i18n'
 import type { MonthData } from '../types'
 
 type PreviewData = {
@@ -18,12 +19,13 @@ type Props = {
 
 export function ImportScreen({ onDone }: Props) {
   const { state, db, currency } = useSession()
+  const { t, money } = useLocale()
   const cryptoKey = state.status === 'unlocked' ? state.key : null
 
   const fileRef = useRef<HTMLInputElement>(null)
   const [monthKey, setMonthKey] = useState('')
   const [preview, setPreview] = useState<PreviewData | null>(null)
-  const [parseError, setParseError] = useState<string | null>(null)
+  const [parseError, setParseError] = useState<Message | null>(null)
   const [overwriteWarning, setOverwriteWarning] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -39,7 +41,7 @@ export function ImportScreen({ onDone }: Props) {
     const result = parseCSV(text)
 
     if (!result.ok) {
-      setParseError(result.error)
+      setParseError({ key: result.error })
       return
     }
 
@@ -57,7 +59,7 @@ export function ImportScreen({ onDone }: Props) {
 
     const keyValidation = monthKeySchema.safeParse(preview.monthKey)
     if (!keyValidation.success) {
-      setParseError('Invalid month — use YYYY-MM format')
+      setParseError({ key: 'import.invalidMonth' })
       return
     }
 
@@ -75,7 +77,7 @@ export function ImportScreen({ onDone }: Props) {
       await writeMonth(db, preview.monthKey, monthData, cryptoKey)
       onDone()
     } catch (err) {
-      setParseError(userMessage(err, 'Failed to save data. Please try again.'))
+      setParseError(userMessage(err, 'import.saveFailed'))
       setSaving(false)
     }
   }
@@ -83,7 +85,7 @@ export function ImportScreen({ onDone }: Props) {
   function handleFileClick() {
     const keyValidation = monthKeySchema.safeParse(monthKey)
     if (!keyValidation.success) {
-      setParseError('Enter a valid month (YYYY-MM) before selecting the file')
+      setParseError({ key: 'import.monthFirst' })
       return
     }
     setParseError(null)
@@ -94,15 +96,12 @@ export function ImportScreen({ onDone }: Props) {
     <main className="min-h-screen bg-ink text-fg p-6">
       <div className="max-w-2xl mx-auto space-y-6">
         <div>
-          <h1 className="text-xl font-semibold">Import CSV</h1>
-          <p className="text-xs text-faint mt-1">
-            Expected format: exported from the Coffer Google Sheets template —
-            summary on row 2, expenses from row 4 with Fixo / Outros categories.
-          </p>
+          <h1 className="text-xl font-semibold">{t('import.title')}</h1>
+          <p className="text-xs text-faint mt-1">{t('import.format')}</p>
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm text-dim">Month (YYYY-MM)</label>
+          <label className="text-sm text-dim">{t('import.month')}</label>
           <input
             type="text"
             placeholder="2025-01"
@@ -116,7 +115,7 @@ export function ImportScreen({ onDone }: Props) {
           onClick={handleFileClick}
           className="bg-panel-2 hover:bg-panel-2 border border-line rounded px-4 py-2 text-sm"
         >
-          Select CSV file
+          {t('import.selectFile')}
         </button>
         <input
           ref={fileRef}
@@ -127,28 +126,28 @@ export function ImportScreen({ onDone }: Props) {
         />
 
         {parseError && (
-          <p className="text-neg text-sm">{parseError}</p>
+          <p className="text-neg text-sm">{t(parseError)}</p>
         )}
 
         {preview && (
           <div className="space-y-4">
-            <h2 className="text-sm font-medium text-dim">Preview — {preview.monthKey}</h2>
+            <h2 className="text-sm font-medium text-dim">{t('import.preview', { month: preview.monthKey })}</h2>
 
             <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="text-dim text-left border-b border-line">
-                    <th className="py-2 pr-4">Name</th>
-                    <th className="py-2 pr-4">Category</th>
-                    <th className="py-2 pr-4 text-right">Debit</th>
-                    <th className="py-2 text-right">Credit</th>
+                    <th className="py-2 pr-4">{t('common.name')}</th>
+                    <th className="py-2 pr-4">{t('import.category')}</th>
+                    <th className="py-2 pr-4 text-right">{t('payment.debit')}</th>
+                    <th className="py-2 text-right">{t('payment.credit')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {preview.data.expenses.map((e) => (
                     <tr key={e.id} className="border-b border-line-soft">
                       <td className="py-1 pr-4">{e.name}</td>
-                      <td className="py-1 pr-4 text-dim">{e.category}</td>
+                      <td className="py-1 pr-4 text-dim">{t(`category.${e.category}`)}</td>
                       <td className="py-1 pr-4 text-right">{e.debit > 0 ? e.debit.toFixed(2) : '—'}</td>
                       <td className="py-1 text-right">{e.credit > 0 ? e.credit.toFixed(2) : '—'}</td>
                     </tr>
@@ -159,15 +158,15 @@ export function ImportScreen({ onDone }: Props) {
 
             <div className="text-sm text-dim space-y-1">
               {preview.data.incomes[0] && (
-                <p>Income: {formatMoney(preview.data.incomes[0].amount, currency)}</p>
+                <p>{t('summary.income')}: {money(preview.data.incomes[0].amount, currency)}</p>
               )}
-              <p>Saving: {formatMoney(preview.data.saving, currency)}</p>
-              <p>Adjustment: {formatMoney(preview.data.adjustment, currency)}</p>
+              <p>{t('summary.saving')}: {money(preview.data.saving, currency)}</p>
+              <p>{t('summary.adjustment')}: {money(preview.data.adjustment, currency)}</p>
             </div>
 
             {overwriteWarning && (
               <p className="text-brass text-sm">
-                Month {preview.monthKey} already exists. Confirm again to overwrite.
+                {t('import.overwriteWarning', { month: preview.monthKey })}
               </p>
             )}
 
@@ -177,13 +176,13 @@ export function ImportScreen({ onDone }: Props) {
                 disabled={saving}
                 className="bg-brass text-ink rounded px-4 py-2 text-sm font-medium hover:brightness-110 disabled:opacity-50"
               >
-                {saving ? 'Saving…' : overwriteWarning ? 'Overwrite' : 'Save'}
+                {saving ? t('common.saving') : overwriteWarning ? t('import.overwrite') : t('common.save')}
               </button>
               <button
                 onClick={onDone}
                 className="text-dim hover:text-fg text-sm px-4 py-2"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             </div>
           </div>

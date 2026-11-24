@@ -17,11 +17,12 @@
  */
 
 import { round2 } from './math'
+import type { MessageKey } from './i18n'
 import type { Category, Expense, Income, MonthData } from '../types'
 
 export type ParseCSVResult =
   | { ok: true; data: Omit<MonthData, 'key'> }
-  | { ok: false; error: string }
+  | { ok: false; error: MessageKey }
 
 function parseAmount(raw: string): number {
   const cleaned = raw
@@ -63,7 +64,7 @@ export function parseCSV(text: string): ParseCSVResult {
   const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')
 
   if (lines.length < 3) {
-    return { ok: false, error: 'File has too few rows — expected at least 3' }
+    return { ok: false, error: 'import.tooFewRows' }
   }
 
   // Row 2 (index 1): summary

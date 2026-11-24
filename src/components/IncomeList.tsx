@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react'
 import { useIncomes } from '../hooks/useIncomes'
+import { useLocale } from '../hooks/useLocale'
 import { useMonthClosing } from '../hooks/useMonthClosing'
 import { useSession } from '../hooks/useSession'
 import { useToast } from '../hooks/useToast'
 import { NumberInput } from './NumberInput'
 import { userMessage } from '../lib/errorMessages'
 import { round2, parseMoney } from '../lib/math'
-import { formatMoney } from '../lib/money'
-import { shortMonthLabel } from '../lib/months'
+import type { Message } from '../lib/i18n'
 import type { Income } from '../types'
 
 const FIELD = 'bg-panel-2 text-fg rounded px-1 border border-line focus:outline-none focus:border-brass'
@@ -38,14 +38,13 @@ function SortIndicator({ active, dir }: { active: boolean; dir: SortDir }) {
 // month was reopened after closing (the carried amount may no longer match it).
 function CarryNote({ incomeId, carryFrom }: { incomeId: string; carryFrom: string }) {
   const { closing, loading } = useMonthClosing(carryFrom)
-  const source = shortMonthLabel(carryFrom)
+  const { t, shortMonthLabel } = useLocale()
+  const month = shortMonthLabel(carryFrom)
   const stale = !loading && closing === null
 
   return (
     <span data-testid={`carry-${incomeId}`} className={`block text-xs ${stale ? 'text-neg' : 'text-brass'}`}>
-      {stale
-        ? `⚠ ${source} was reopened — close it again to update this balance`
-        : `↳ Closing of ${source}`}
+      {stale ? t('income.carryStale', { month }) : t('income.carryNote', { month })}
     </span>
   )
 }
@@ -66,6 +65,11 @@ function IncomeRow({ income, readOnly, onUpdate, onRemove }: RowProps) {
   const [draft, setDraft] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const { toast } = useToast()
+  const { t, shortMonthLabel } = useLocale()
+  // A carried balance is named after its month in the language being shown.
+  const source = income.carryFrom
+    ? t('income.carrySource', { month: shortMonthLabel(income.carryFrom) })
+    : income.source
 
   function startEdit(field: 'source' | 'amount') {
     if (locked) return
@@ -86,7 +90,7 @@ function IncomeRow({ income, readOnly, onUpdate, onRemove }: RowProps) {
     try {
       await onUpdate(income.id, changes)
     } catch (err) {
-      toast(userMessage(err, 'Failed to update income'), 'error')
+      toast(t(userMessage(err, 'income.updateFailed')), 'error')
     }
     setEditField(null)
   }
@@ -112,7 +116,7 @@ function IncomeRow({ income, readOnly, onUpdate, onRemove }: RowProps) {
           />
         ) : (
           <>
-            <span className={locked ? '' : 'border-b border-dashed border-transparent group-hover:border-faint'}>{income.source}</span>
+            <span className={locked ? '' : 'border-b border-dashed border-transparent group-hover:border-faint'}>{source}</span>
             {income.carryFrom && <CarryNote incomeId={income.id} carryFrom={income.carryFrom} />}
           </>
         )}
@@ -146,22 +150,22 @@ function IncomeRow({ income, readOnly, onUpdate, onRemove }: RowProps) {
               className="text-xs text-neg underline"
               onClick={() => onRemove(income.id)}
             >
-              Confirm
+              {t('common.confirm')}
             </button>
             <button
               className="text-xs text-dim underline"
               onClick={() => setConfirmDelete(false)}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
           </span>
         ) : (
           <button
             className="text-xs text-faint hover:text-neg"
-            aria-label={`Delete ${income.source}`}
+            aria-label={t('common.deleteItem', { name: income.source })}
             onClick={() => setConfirmDelete(true)}
           >
-            Delete
+            {t('common.delete')}
           </button>
         )}
       </td>
@@ -178,7 +182,8 @@ type AddFormProps = {
 function AddIncomeForm({ onAdd }: AddFormProps) {
   const [source, setSource] = useState('')
   const [amount, setAmount] = useState('')
-  const [formError, setFormError] = useState<string | null>(null)
+  const [formError, setFormError] = useState<Message | null>(null)
+  const { t } = useLocale()
 
   async function handleAdd() {
     setFormError(null)
@@ -187,7 +192,7 @@ function AddIncomeForm({ onAdd }: AddFormProps) {
       setSource('')
       setAmount('')
     } catch (err) {
-      setFormError(userMessage(err, 'Failed to add income'))
+      setFormError(userMessage(err, 'income.addFailed'))
     }
   }
 
@@ -197,7 +202,7 @@ function AddIncomeForm({ onAdd }: AddFormProps) {
         <td className="px-2 py-1">
           <input
             className={`${FIELD} w-full placeholder-faint`}
-            placeholder="Source"
+            placeholder={t('income.source')}
             value={source}
             onChange={e => setSource(e.target.value)}
           />
@@ -206,7 +211,7 @@ function AddIncomeForm({ onAdd }: AddFormProps) {
           <NumberInput
             min="0.01"
             step="0.01"
-            aria-label="Amount"
+            aria-label={t('common.amount')}
             placeholder="0.00"
             className={`${FIELD} w-28 text-right placeholder-faint`}
             value={amount}
@@ -218,14 +223,14 @@ function AddIncomeForm({ onAdd }: AddFormProps) {
             className="text-xs text-pos hover:text-pos"
             onClick={handleAdd}
           >
-            Add
+            {t('common.add')}
           </button>
         </td>
       </tr>
       {formError && (
         <tr>
           <td colSpan={2} className="px-2 py-1 text-neg text-xs">
-            {formError}
+            {t(formError)}
           </td>
         </tr>
       )}
@@ -237,6 +242,7 @@ function AddIncomeForm({ onAdd }: AddFormProps) {
 
 function TotalsFooter({ total }: { total: number }) {
   const { currency } = useSession()
+  const { t, money } = useLocale()
 
   if (total === 0) return null
 
@@ -245,7 +251,7 @@ function TotalsFooter({ total }: { total: number }) {
       data-testid="income-total"
       className="border-t border-line pt-4 mt-4 flex gap-6 text-sm text-dim [&_strong]:font-mono [&_strong]:tabular-nums [&_strong]:text-pos"
     >
-      <span>Total: <strong>{formatMoney(total, currency)}</strong></span>
+      <span>{t('common.total')}: <strong>{money(total, currency)}</strong></span>
     </div>
   )
 }
@@ -260,6 +266,7 @@ export function IncomeList({ monthKey }: Props) {
   const { incomes, closed, loading, error, total, add, update, remove } = useIncomes(monthKey)
   const [sortCol, setSortCol] = useState<IncomeSortCol>('source')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
+  const { t } = useLocale()
 
   function toggleSort(col: IncomeSortCol) {
     if (col === sortCol) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -269,20 +276,18 @@ export function IncomeList({ monthKey }: Props) {
   const sorted = useMemo(() => sortIncomes(incomes, sortCol, sortDir), [incomes, sortCol, sortDir])
 
   if (loading) {
-    return <div className="text-dim text-sm text-center py-8">Loading…</div>
+    return <div className="text-dim text-sm text-center py-8">{t('common.loading')}</div>
   }
 
   if (error) {
-    return <div className="text-neg text-sm text-center py-8">{error}</div>
+    return <div className="text-neg text-sm text-center py-8">{t(error)}</div>
   }
 
   return (
     <div>
       {incomes.length === 0 && (
         <p data-testid="income-empty" className="text-dim text-sm mb-3">
-          {closed
-            ? 'No income was recorded this month.'
-            : 'No income this month yet — add your first income in the row below.'}
+          {closed ? t('income.emptyClosed') : t('income.empty')}
         </p>
       )}
       <table className="w-full text-sm text-fg">
@@ -292,13 +297,13 @@ export function IncomeList({ monthKey }: Props) {
               className="px-2 py-1 text-left font-normal cursor-pointer hover:text-dim"
               onClick={() => toggleSort('source')}
             >
-              Source <SortIndicator active={sortCol === 'source'} dir={sortDir} />
+              {t('income.source')} <SortIndicator active={sortCol === 'source'} dir={sortDir} />
             </th>
             <th
               className="px-2 py-1 text-right font-normal cursor-pointer hover:text-dim"
               onClick={() => toggleSort('amount')}
             >
-              Amount <SortIndicator active={sortCol === 'amount'} dir={sortDir} />
+              {t('common.amount')} <SortIndicator active={sortCol === 'amount'} dir={sortDir} />
             </th>
             <th className="px-2 py-1 font-normal" />
           </tr>

@@ -3,18 +3,22 @@ import { openFileStore, type VaultFileIO } from '../lib/fileStore'
 import { tauriFileIO } from '../lib/tauriFileIO'
 import { chooseExistingVaultPath, chooseNewVaultPath } from '../lib/vaultDialogs'
 import { userMessage } from '../lib/errorMessages'
+import { AppError } from '../lib/appError'
+import type { Message } from '../lib/i18n'
+import { useLocale } from './useLocale'
 import type { VaultStore } from '../lib/vaultStore'
 
 // Only the location of the vault file is remembered here — never its contents or the key.
 const LAST_VAULT_KEY = 'coffer-vault-path'
 
+// Each dialog takes its window title.
 export type VaultDialogs = {
-  chooseNewVaultPath: () => Promise<string | null>
-  chooseExistingVaultPath: () => Promise<string | null>
+  chooseNewVaultPath: (title: string) => Promise<string | null>
+  chooseExistingVaultPath: (title: string) => Promise<string | null>
 }
 
 export type VaultState =
-  | { status: 'choosing'; error: string | null }
+  | { status: 'choosing'; error: Message | null }
   | { status: 'opening' }
   | { status: 'open'; path: string; store: VaultStore }
 
@@ -31,20 +35,21 @@ const DEFAULT_DIALOGS: VaultDialogs = { chooseNewVaultPath, chooseExistingVaultP
 async function load(io: VaultFileIO, path: string, mustExist: boolean): Promise<VaultState> {
   try {
     if (mustExist && !(await io.exists(path))) {
-      throw new Error(`The vault at ${path} was not found. It may have been moved or renamed.`)
+      throw new AppError('error.vaultNotFound', { path })
     }
     const store = await openFileStore(io, path)
     localStorage.setItem(LAST_VAULT_KEY, path)
     return { status: 'open', path, store }
   } catch (err) {
     localStorage.removeItem(LAST_VAULT_KEY)
-    return { status: 'choosing', error: userMessage(err, 'Could not open the vault. Please try again.') }
+    return { status: 'choosing', error: userMessage(err, 'error.openVault') }
   }
 }
 
 // Which vault file the desktop app is working on: lets the user create or open one,
 // and reopens the last one on the next launch.
 export function useVault(io: VaultFileIO = tauriFileIO, dialogs: VaultDialogs = DEFAULT_DIALOGS): UseVaultResult {
+  const { t } = useLocale()
   const [state, setState] = useState<VaultState>(() =>
     localStorage.getItem(LAST_VAULT_KEY) === null ? { status: 'choosing', error: null } : { status: 'opening' },
   )
@@ -68,8 +73,8 @@ export function useVault(io: VaultFileIO = tauriFileIO, dialogs: VaultDialogs = 
     setState(await load(io, path, mustExist))
   }
 
-  const create = async () => openAt(await dialogs.chooseNewVaultPath(), false)
-  const open = async () => openAt(await dialogs.chooseExistingVaultPath(), true)
+  const create = async () => openAt(await dialogs.chooseNewVaultPath(t('dialog.createVault')), false)
+  const open = async () => openAt(await dialogs.chooseExistingVaultPath(t('dialog.openVault')), true)
 
   function close() {
     localStorage.removeItem(LAST_VAULT_KEY)

@@ -1,9 +1,11 @@
+import { useLocale } from '../hooks/useLocale'
 import { InfoTip } from './InfoTip'
 
 export function ParcelsInfo() {
+  const { t } = useLocale()
   return (
-    <InfoTip label="Parcels" align="end">
-      Splits the credit amount into N monthly installments. Applies only when Credit is above 0 and N is 2 or more.
+    <InfoTip label={t('common.parcels')} align="end">
+      {t('parcels.info')}
     </InfoTip>
   )
 }

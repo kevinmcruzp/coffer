@@ -58,7 +58,7 @@ describe('ExpenseList', () => {
   })
 
   it('shows error message when error is set', () => {
-    vi.mocked(useExpenses).mockReturnValue(makeHookResult({ error: 'Failed to decrypt' }))
+    vi.mocked(useExpenses).mockReturnValue(makeHookResult({ error: { key: 'error.detail', params: { detail: 'Failed to decrypt' } } }))
     render(<ExpenseList monthKey="2025-03" />)
     expect(screen.getByText(/failed to decrypt/i)).toBeInTheDocument()
   })
@@ -179,9 +179,9 @@ describe('ExpenseList', () => {
     }))
     render(<ExpenseList monthKey="2025-03" />)
 
-    expect(screen.getByTestId('totals')).toHaveTextContent('R$ 1.500,00')
-    expect(screen.getByTestId('totals')).toHaveTextContent('R$ 200,00')
-    expect(screen.getByTestId('totals')).toHaveTextContent('R$ 1.700,00')
+    expect(screen.getByTestId('totals')).toHaveTextContent('R$1,500.00')
+    expect(screen.getByTestId('totals')).toHaveTextContent('R$200.00')
+    expect(screen.getByTestId('totals')).toHaveTextContent('R$1,700.00')
   })
 
   it('hides the totals row while there is nothing to total', () => {

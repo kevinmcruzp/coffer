@@ -23,7 +23,7 @@ function makeHook(overrides: Partial<UseYearSummaryResult> = {}): UseYearSummary
     },
     loading: false,
     error: null,
-    warning: null,
+    failedMonths: [],
     ...overrides,
   }
 }
@@ -122,9 +122,9 @@ describe('AnnualView — headline figures', () => {
     expect(screen.getByText('Spent')).toBeInTheDocument()
     expect(screen.getByText('Net')).toBeInTheDocument()
     // Spent is debit + credit, a figure the hook does not provide as a column.
-    expect(screen.getByText('R$ 1.500,00')).toBeInTheDocument()
+    expect(screen.getByText('R$1,500.00')).toBeInTheDocument()
     // Net carries an explicit sign so the figure never relies on colour alone.
-    expect(screen.getByText('+R$ 3.200,00')).toBeInTheDocument()
+    expect(screen.getByText('+R$3,200.00')).toBeInTheDocument()
     expect(screen.getByText('1 of 12 months')).toBeInTheDocument()
   })
 })
@@ -139,7 +139,7 @@ describe('AnnualView — currency', () => {
     render(<AnnualView year={2025} onSelectMonth={vi.fn()} />)
 
     expect(screen.queryByRole('group', { name: 'Currency' })).not.toBeInTheDocument()
-    expect(screen.getByText('+US$ 3.200,00')).toBeInTheDocument()
+    expect(screen.getByText('+$3,200.00')).toBeInTheDocument()
     expect(within(table()).getByText('Balance USD')).toBeInTheDocument()
     // Saving and adjustment belong to every currency now.
     expect(within(table()).getByText('Adjustment')).toBeInTheDocument()
@@ -161,8 +161,8 @@ describe('AnnualView — chart', () => {
     render(<AnnualView year={2025} onSelectMonth={vi.fn()} />)
 
     const chart = screen.getByRole('figure')
-    expect(within(chart).getByRole('button', { name: 'Mar: +3.200' })).toBeEnabled()
-    expect(within(chart).getByRole('button', { name: 'Sep: -1.500' })).toBeEnabled()
+    expect(within(chart).getByRole('button', { name: 'Mar: +3,200' })).toBeEnabled()
+    expect(within(chart).getByRole('button', { name: 'Sep: -1,500' })).toBeEnabled()
     expect(within(chart).getByRole('button', { name: 'Apr: no data' })).toBeDisabled()
   })
 
@@ -171,7 +171,7 @@ describe('AnnualView — chart', () => {
     const onSelectMonth = vi.fn()
     render(<AnnualView year={2025} onSelectMonth={onSelectMonth} />)
 
-    fireEvent.click(within(screen.getByRole('figure')).getByRole('button', { name: 'Mar: +3.200' }))
+    fireEvent.click(within(screen.getByRole('figure')).getByRole('button', { name: 'Mar: +3,200' }))
     expect(onSelectMonth).toHaveBeenCalledWith('2025-03')
   })
 
@@ -191,7 +191,7 @@ describe('AnnualView — states', () => {
   })
 
   it('shows the error instead of a table', () => {
-    vi.mocked(useYearSummary).mockReturnValue(makeHook({ error: 'Failed to load annual data' }))
+    vi.mocked(useYearSummary).mockReturnValue(makeHook({ error: { key: 'error.loadAnnual' } }))
     render(<AnnualView year={2025} onSelectMonth={vi.fn()} />)
     expect(screen.getByText('Failed to load annual data')).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
@@ -200,10 +200,10 @@ describe('AnnualView — states', () => {
   it('surfaces a partial-read warning alongside the data', () => {
     vi.mocked(useYearSummary).mockReturnValue(makeHook({
       rows: [sampleRow],
-      warning: 'Could not load 1 month(s): 2025-08',
+      failedMonths: ['2025-08', '2025-09'],
     }))
     render(<AnnualView year={2025} onSelectMonth={vi.fn()} />)
-    expect(screen.getByText('Could not load 1 month(s): 2025-08')).toBeInTheDocument()
+    expect(screen.getByText('Could not load these months: Aug 2025, Sep 2025')).toBeInTheDocument()
     expect(screen.getByRole('table')).toBeInTheDocument()
   })
 })

@@ -1,11 +1,15 @@
 import { z, ZodError } from 'zod'
+import { AppError } from './appError'
+import { isMessageKey } from './i18n'
 
 export function parseOrThrow<T>(schema: z.ZodType<T>, value: unknown): T {
   try {
     return schema.parse(value)
   } catch (err) {
     if (err instanceof ZodError) {
-      throw new Error(err.issues.map(i => i.message).join('; '))
+      // Messages below are message keys; the first one is what the user needs to fix.
+      const first = err.issues[0]?.message ?? ''
+      throw isMessageKey(first) ? new AppError(first) : new Error(err.issues.map(i => i.message).join('; '))
     }
     throw err
   }
@@ -13,31 +17,31 @@ export function parseOrThrow<T>(schema: z.ZodType<T>, value: unknown): T {
 
 export const expenseSchema = z.object({
   id: z.string().min(1),
-  name: z.string().min(1, 'Name cannot be empty').max(100),
+  name: z.string().min(1, 'validation.nameEmpty').max(100),
   category: z.enum(['fixed', 'other']),
-  debit: z.number().min(0, 'Debit value cannot be negative'),
-  credit: z.number().min(0, 'Credit value cannot be negative'),
+  debit: z.number().min(0, 'validation.debitNegative'),
+  credit: z.number().min(0, 'validation.creditNegative'),
   // min(1): 1 means the last parcel of a parceled purchase.
-  installments: z.number().int('Number of installments must be a whole number').min(1, 'Installments must be at least 1').optional(),
+  installments: z.number().int('validation.installmentsWhole').min(1, 'validation.installmentsMin').optional(),
 }).refine(
   (data) => data.debit > 0 || data.credit > 0,
-  { message: 'Enter a debit or credit amount greater than zero' },
+  { message: 'validation.expenseAmount' },
 )
 
 export const monthKeySchema = z
   .string()
-  .regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Invalid format — use YYYY-MM')
+  .regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'validation.monthFormat')
 
 export const incomeSchema = z.object({
   id: z.string().min(1),
-  source: z.string().min(1, 'Source cannot be empty').max(100),
+  source: z.string().min(1, 'validation.sourceEmpty').max(100),
   amount: z.number(),
   carryFrom: monthKeySchema.optional(),
 }).refine(
   // A carried-over balance may be negative (the previous month closed below zero);
   // every other income must be positive.
   (data) => data.carryFrom !== undefined ? data.amount !== 0 : data.amount > 0,
-  { message: 'Amount must be greater than zero', path: ['amount'] },
+  { message: 'validation.amountPositive', path: ['amount'] },
 )
 
 export const monthClosingSchema = z.object({
@@ -49,7 +53,7 @@ export const monthDataSchema = z.object({
   key: monthKeySchema,
   expenses: z.array(expenseSchema),
   incomes: z.array(incomeSchema),
-  saving: z.number().min(0, 'Saving cannot be negative'),
+  saving: z.number().min(0, 'validation.savingNegative'),
   adjustment: z.number(),
   budget: z.number().min(0).default(0),
   closing: monthClosingSchema.optional(),

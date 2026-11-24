@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MonthSummary } from './MonthSummary'
+import { LocaleProvider } from '../contexts/LocaleContext'
 import { useExpenses } from '../hooks/useExpenses'
 import { useIncomes } from '../hooks/useIncomes'
 import { useMonthMeta } from '../hooks/useMonthMeta'
@@ -81,7 +82,7 @@ describe('MonthSummary — closing an open month', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Close month' }))
 
-    expect(screen.getByTestId('close-confirm')).toHaveTextContent('R$ 569,19')
+    expect(screen.getByTestId('close-confirm')).toHaveTextContent('R$569.19')
     expect(screen.getByTestId('close-confirm')).toHaveTextContent('Nov 2026')
   })
 
@@ -125,8 +126,20 @@ describe('MonthSummary — closed month', () => {
     render(<MonthSummary monthKey={MONTH_KEY} />)
 
     const status = screen.getByTestId('closing-status')
-    expect(status).toHaveTextContent('Closed on 06/11/2026')
-    expect(status).toHaveTextContent('R$ 569,19 carried to Nov 2026')
+    expect(status).toHaveTextContent('Closed on 11/6/2026')
+    expect(status).toHaveTextContent('R$569.19 carried to Nov 2026')
+  })
+
+  it('reads in the chosen language, amounts and dates included', () => {
+    localStorage.setItem('coffer-language', 'pt-BR')
+    mockClosing({ closing: { balance: 569.19, closedAt: '2026-11-06T12:00:00.000Z' } })
+    render(<LocaleProvider><MonthSummary monthKey={MONTH_KEY} /></LocaleProvider>)
+
+    const status = screen.getByTestId('closing-status')
+    expect(status).toHaveTextContent('Fechado em 06/11/2026')
+    expect(status).toHaveTextContent('R$ 569,19 levado para Nov 2026')
+    expect(screen.getByRole('button', { name: 'Reabrir' })).toBeInTheDocument()
+    localStorage.clear()
   })
 
   it('disables saving, adjustment and budget inputs', () => {

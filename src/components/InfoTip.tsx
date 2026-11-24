@@ -1,3 +1,4 @@
+import { useLocale } from '../hooks/useLocale'
 import { Popover } from './Popover'
 
 type Props = {
@@ -8,7 +9,8 @@ type Props = {
 }
 
 export function InfoTip({ label, align, children }: Props) {
-  const name = `About ${label}`
+  const { t } = useLocale()
+  const name = t('common.aboutField', { label })
   return (
     <Popover
       label={name}

@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
 import { useExpenses } from '../hooks/useExpenses'
 import { useIncomes } from '../hooks/useIncomes'
+import { useLocale } from '../hooks/useLocale'
 import { useSession } from '../hooks/useSession'
 import { useToast } from '../hooks/useToast'
 import { userMessage } from '../lib/errorMessages'
-import { formatMoney } from '../lib/money'
+import type { Message } from '../lib/i18n'
 import type { Expense } from '../types'
 
 type Props = {
@@ -50,10 +51,12 @@ export function CopyFromPreviousModal({ monthKey, onClose, onCopied }: Props) {
   const { incomes: curIncomes, add: addIncome, loading: loadingCurInc } = useIncomes(monthKey)
   const { toast } = useToast()
   const { currency } = useSession()
+  const { t, money, shortMonthLabel } = useLocale()
+  const prevLabel = shortMonthLabel(prevKey)
 
   const [selected, setSelected] = useState<Set<string> | null>(null)
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<Message | null>(null)
 
   const curExpenseKeys = useMemo(
     () => new Set(curExpenses.map(e => expenseDedupeKey(e.name, e.category))),
@@ -125,11 +128,11 @@ export function CopyFromPreviousModal({ monthKey, onClose, onCopied }: Props) {
         await addExpense(copyExpense(it.expense))
         count++
       }
-      toast(`${count} item${count !== 1 ? 's' : ''} copied`)
+      toast(count === 1 ? t('copy.copiedOne') : t('copy.copiedMany', { count }))
       onCopied?.()
       onClose()
     } catch (err) {
-      setError(userMessage(err, 'Failed to copy items'))
+      setError(userMessage(err, 'copy.failed'))
       setSaving(false)
     }
   }
@@ -141,29 +144,29 @@ export function CopyFromPreviousModal({ monthKey, onClose, onCopied }: Props) {
     >
       <div className="w-full sm:max-w-sm bg-panel border border-line rounded-t-2xl sm:rounded-2xl p-5 space-y-4 max-h-[85vh] flex flex-col">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-fg">Copy from {prevKey}</h2>
+          <h2 className="text-sm font-semibold text-fg">{t('copy.title', { month: prevLabel })}</h2>
           <button
             onClick={onClose}
             className="text-faint hover:text-fg text-lg leading-none"
-            aria-label="Close"
+            aria-label={t('common.close')}
           >
             ×
           </button>
         </div>
 
         {loading ? (
-          <p className="text-dim text-sm text-center py-8">Loading…</p>
+          <p className="text-dim text-sm text-center py-8">{t('common.loading')}</p>
         ) : isEmpty ? (
-          <p className="text-faint text-sm text-center py-8">Nothing to copy from {prevKey}.</p>
+          <p className="text-faint text-sm text-center py-8">{t('copy.nothing', { month: prevLabel })}</p>
         ) : (
           <div className="overflow-y-auto space-y-4">
             {incomeItems.length > 0 && (
-              <Section title="Income">
+              <Section title={t('app.income')}>
                 {incomeItems.map(it => (
                   <ItemRow
                     key={it.id}
                     label={it.income.source}
-                    detail={formatMoney(it.income.amount, currency)}
+                    detail={money(it.income.amount, currency)}
                     duplicate={it.duplicate}
                     checked={!it.duplicate && effectiveSelected.has(it.id)}
                     onToggle={() => toggle(it.id)}
@@ -172,12 +175,12 @@ export function CopyFromPreviousModal({ monthKey, onClose, onCopied }: Props) {
               </Section>
             )}
             {expenseItems.length > 0 && (
-              <Section title="Expenses">
+              <Section title={t('app.expenses')}>
                 {expenseItems.map(it => (
                   <ItemRow
                     key={it.id}
                     label={it.expense.name}
-                    detail={formatMoney(it.expense.debit + it.expense.credit, currency)}
+                    detail={money(it.expense.debit + it.expense.credit, currency)}
                     badge={it.expense.installments ? `${it.expense.installments}x` : undefined}
                     duplicate={it.duplicate}
                     checked={!it.duplicate && effectiveSelected.has(it.id)}
@@ -189,7 +192,7 @@ export function CopyFromPreviousModal({ monthKey, onClose, onCopied }: Props) {
           </div>
         )}
 
-        {error && <p className="text-neg text-xs">{error}</p>}
+        {error && <p className="text-neg text-xs">{t(error)}</p>}
 
         {!loading && !isEmpty && (
           <button
@@ -197,7 +200,7 @@ export function CopyFromPreviousModal({ monthKey, onClose, onCopied }: Props) {
             disabled={saving || selectedCount === 0}
             className="w-full bg-brass text-ink font-semibold rounded-lg py-2 text-sm hover:brightness-110 disabled:opacity-50 transition-colors"
           >
-            {saving ? 'Copying…' : `Copy selected (${selectedCount})`}
+            {saving ? t('copy.copying') : t('copy.submit', { count: selectedCount })}
           </button>
         )}
       </div>
@@ -224,6 +227,7 @@ type ItemRowProps = {
 }
 
 function ItemRow({ label, detail, badge, duplicate, checked, onToggle }: ItemRowProps) {
+  const { t } = useLocale()
   return (
     <label className={`flex items-center gap-3 py-1 text-sm ${duplicate ? 'opacity-40' : 'cursor-pointer'}`}>
       <input
@@ -237,7 +241,7 @@ function ItemRow({ label, detail, badge, duplicate, checked, onToggle }: ItemRow
       <span className="flex-1 text-fg">
         {label}
         {badge && <span className="ml-2 text-xs text-brass">({badge})</span>}
-        {duplicate && <span className="ml-2 text-xs text-faint">already here</span>}
+        {duplicate && <span className="ml-2 text-xs text-faint">{t('copy.alreadyHere')}</span>}
       </span>
       <span className="text-dim">{detail}</span>
     </label>

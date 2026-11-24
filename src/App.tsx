@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { SessionProvider } from './contexts/SessionContext'
+import { LocaleProvider } from './contexts/LocaleContext'
+import { useLocale } from './hooks/useLocale'
 import { useSession } from './hooks/useSession'
 import { useCurrentMonth } from './hooks/useCurrentMonth'
 import { useVault } from './hooks/useVault'
@@ -44,16 +46,16 @@ import { useMonthMeta } from './hooks/useMonthMeta'
 import { useMonthClosing } from './hooks/useMonthClosing'
 import { yearOf } from './lib/months'
 import { round2 } from './lib/math'
-import { formatMoney } from './lib/money'
+import type { MessageKey } from './lib/i18n'
 
 type LedgerTab = 'expenses' | 'income' | 'summary' | 'annual'
 type Tab = LedgerTab | 'settings'
 
-const TABS: { id: LedgerTab; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: 'expenses', label: 'Expenses', Icon: ExpensesIcon },
-  { id: 'income', label: 'Income', Icon: IncomeIcon },
-  { id: 'summary', label: 'Summary', Icon: SummaryIcon },
-  { id: 'annual', label: 'Annual', Icon: AnnualIcon },
+const TABS: { id: LedgerTab; label: MessageKey; Icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: 'expenses', label: 'app.expenses', Icon: ExpensesIcon },
+  { id: 'income', label: 'app.income', Icon: IncomeIcon },
+  { id: 'summary', label: 'app.summary', Icon: SummaryIcon },
+  { id: 'annual', label: 'app.annual', Icon: AnnualIcon },
 ]
 
 function NavItem({
@@ -91,12 +93,13 @@ function BudgetBadge({ monthKey }: { monthKey: string }) {
   const { totals } = useExpenses(monthKey)
   const { budget } = useMonthMeta(monthKey)
   const { currency } = useSession()
+  const { t, money } = useLocale()
   if (budget === 0) return null
   const excess = round2(totals.total - budget)
   if (excess <= 0) return null
   return (
     <span className="text-xs text-neg font-medium px-2.5 py-0.5 rounded-full bg-neg/10 border border-neg/40 tabular-nums whitespace-nowrap">
-      +{formatMoney(excess, currency)} over budget
+      {t('app.overBudget', { amount: money(excess, currency) })}
     </span>
   )
 }
@@ -109,6 +112,7 @@ type VaultFile = {
 
 function MainApp({ vaultPath }: { vaultPath: string }) {
   const { logout, currency } = useSession()
+  const { t } = useLocale()
   const [theme, toggleTheme] = useTheme()
   const { monthKey, canGoBack, goBack, goForward, goTo } = useCurrentMonth(currentMonthKey())
   const { closing } = useMonthClosing(monthKey)
@@ -134,11 +138,11 @@ function MainApp({ vaultPath }: { vaultPath: string }) {
         </div>
 
         <nav className="flex md:flex-col gap-1 md:gap-0.5 shrink-0">
-          <p className="hidden md:block text-[10px] uppercase tracking-[0.11em] text-faint px-2 pb-1.5">Ledger</p>
+          <p className="hidden md:block text-[10px] uppercase tracking-[0.11em] text-faint px-2 pb-1.5">{t('app.ledger')}</p>
           {TABS.map(({ id, label, Icon }) => (
             <NavItem
               key={id}
-              label={label}
+              label={t(label)}
               active={tab === id}
               // Opening Annual lands on the year of the month you were browsing.
               onClick={() => { if (id === 'annual') setAnnualYear(yearOf(monthKey)); setTab(id) }}
@@ -152,32 +156,32 @@ function MainApp({ vaultPath }: { vaultPath: string }) {
 
         <div className="hidden md:flex items-center gap-2 text-[11.5px] text-dim px-2.5 py-2 border border-line rounded-lg bg-panel-2">
           <LockIcon className="w-3.5 h-3.5 text-brass" />
-          Encrypted · Local only
+          {t('app.encryptedLocal')}
         </div>
 
         <div className="flex gap-1.5 shrink-0">
           <button
             onClick={toggleTheme}
-            aria-label="Toggle theme"
+            aria-label={t('app.toggleTheme')}
             className="shrink-0 flex items-center justify-center px-2.5 py-2 rounded-lg border border-line text-dim hover:text-brass hover:border-brass transition-colors"
           >
             {theme === 'dark' ? <SunIcon className="w-4 h-4" /> : <MoonIcon className="w-4 h-4" />}
           </button>
           <button
             onClick={() => setTab('settings')}
-            aria-label="Settings"
+            aria-label={t('app.settings')}
             aria-current={tab === 'settings' ? 'page' : undefined}
             className={`flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg border transition-colors text-xs ${
               tab === 'settings' ? 'border-brass text-fg bg-brass-soft' : 'border-line text-dim hover:text-fg hover:border-brass'
             }`}
           >
-            <SettingsIcon className="w-4 h-4" /><span className="hidden md:inline">Settings</span>
+            <SettingsIcon className="w-4 h-4" /><span className="hidden md:inline">{t('app.settings')}</span>
           </button>
           <button
             onClick={logout}
             className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg border border-line text-dim hover:text-fg hover:border-brass transition-colors text-xs"
           >
-            <LockIcon className="w-4 h-4" /><span className="hidden md:inline">Lock</span>
+            <LockIcon className="w-4 h-4" /><span className="hidden md:inline">{t('app.lock')}</span>
           </button>
         </div>
       </aside>
@@ -185,7 +189,7 @@ function MainApp({ vaultPath }: { vaultPath: string }) {
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="flex items-center gap-3 md:gap-4 px-4 md:px-7 py-3.5 border-b border-line">
-          {tab === 'settings' && <h1 className="font-serif text-xl font-semibold tracking-tight py-1">Settings</h1>}
+          {tab === 'settings' && <h1 className="font-serif text-xl font-semibold tracking-tight py-1">{t('app.settings')}</h1>}
           {tab === 'annual' && <YearNavigator year={annualYear} onChange={setAnnualYear} />}
           {isMonthTab && (
             <MonthNavigator monthKey={monthKey} canGoBack={canGoBack} goBack={goBack} goForward={goForward} goTo={goTo} />
@@ -193,8 +197,8 @@ function MainApp({ vaultPath }: { vaultPath: string }) {
           {tab !== 'settings' && (
             <button
               onClick={() => setTab('settings')}
-              title="Active currency — change it in Settings"
-              aria-label={`Active currency: ${currency}`}
+              title={t('app.currencyTitle')}
+              aria-label={t('app.currencyLabel', { currency })}
               className="text-xs font-mono text-dim px-2 py-0.5 rounded-md border border-line hover:text-brass hover:border-brass transition-colors"
             >
               {currency}
@@ -206,7 +210,7 @@ function MainApp({ vaultPath }: { vaultPath: string }) {
               data-testid="closed-badge"
               className="text-xs text-brass font-medium px-2.5 py-0.5 rounded-full bg-brass-soft border border-brass/40 whitespace-nowrap"
             >
-              Closed
+              {t('app.closed')}
             </span>
           )}
           {tab !== 'settings' && (
@@ -215,11 +219,11 @@ function MainApp({ vaultPath }: { vaultPath: string }) {
               <button
                 onClick={() => setQuickAdd(true)}
                 disabled={closing !== null}
-                title={closing ? 'This month is closed. Reopen it in Summary to add expenses.' : undefined}
+                title={closing ? t('app.quickAddClosed') : undefined}
                 className="inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-2 rounded-lg bg-brass text-ink hover:brightness-110 transition disabled:opacity-40 disabled:hover:brightness-100 disabled:cursor-not-allowed"
-                aria-label="Quick add expense"
+                aria-label={t('app.quickAdd')}
               >
-                <PlusIcon className="w-4 h-4" /><span className="hidden sm:inline">Add</span>
+                <PlusIcon className="w-4 h-4" /><span className="hidden sm:inline">{t('common.add')}</span>
               </button>
             </>
           )}
@@ -246,20 +250,22 @@ function MainApp({ vaultPath }: { vaultPath: string }) {
 }
 
 function Loading() {
+  const { t } = useLocale()
   return (
     <main className="flex min-h-screen items-center justify-center bg-ink">
-      <span className="text-dim text-sm">Loading…</span>
+      <span className="text-dim text-sm">{t('common.loading')}</span>
     </main>
   )
 }
 
 // Shown under the password screens so a wrong or unwanted vault is never a dead end.
 function VaultFooter({ path, onSwitch }: VaultFile) {
+  const { t } = useLocale()
   return (
     <footer className="fixed inset-x-0 bottom-4 px-4 flex flex-col items-center gap-1 text-xs text-faint">
       <span className="max-w-full truncate font-mono">{path}</span>
       <button onClick={onSwitch} className="text-dim hover:text-brass underline underline-offset-2">
-        Use another vault
+        {t('app.useAnotherVault')}
       </button>
     </footer>
   )
@@ -306,10 +312,12 @@ function VaultApp() {
 
 export default function App() {
   return (
-    <ErrorBoundary>
-      <ToastProvider>
-        <VaultApp />
-      </ToastProvider>
-    </ErrorBoundary>
+    <LocaleProvider>
+      <ErrorBoundary>
+        <ToastProvider>
+          <VaultApp />
+        </ToastProvider>
+      </ErrorBoundary>
+    </LocaleProvider>
   )
 }

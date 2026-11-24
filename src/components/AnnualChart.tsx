@@ -1,4 +1,4 @@
-import { MONTH_ABBR } from '../lib/months'
+import { useLocale } from '../hooks/useLocale'
 
 export type ChartColumn = {
   /** Zero-based month index. */
@@ -21,6 +21,7 @@ const MIN_BAR_H = 2
 // Diverging column chart: sign is carried by position (above/below the zero
 // baseline) as well as hue, so it stays readable for red-green colour blindness.
 export function AnnualChart({ columns, format, onSelect }: Props) {
+  const { t, monthAbbr } = useLocale()
   const values = columns.filter(c => c.value !== null).map(c => c.value!)
   if (values.length === 0) return null
 
@@ -45,7 +46,7 @@ export function AnnualChart({ columns, format, onSelect }: Props) {
 
   return (
     <figure className="space-y-2">
-      <figcaption className="text-[11px] text-faint uppercase tracking-[0.1em]">Balance by month</figcaption>
+      <figcaption className="text-[11px] text-faint uppercase tracking-[0.1em]">{t('annual.chartTitle')}</figcaption>
 
       <div className="relative">
         <div className="flex gap-1">
@@ -57,8 +58,10 @@ export function AnnualChart({ columns, format, onSelect }: Props) {
               ? Math.max(Math.round(Math.abs(value) * scale), MIN_BAR_H)
               : 0
             const showLabel = has && labelled.has(col.index)
-            const name = MONTH_ABBR[col.index]
-            const text = has ? `${name}: ${format(value)}` : `${name}: no data`
+            const name = monthAbbr(col.index)
+            const text = has
+              ? t('common.labelValue', { label: name, value: format(value) })
+              : t('annual.chartNoData', { month: name })
 
             return (
               <button

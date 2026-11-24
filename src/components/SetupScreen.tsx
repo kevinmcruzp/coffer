@@ -1,10 +1,12 @@
 import { useState, type FormEvent } from 'react'
+import { useLocale } from '../hooks/useLocale'
 
 type Props = {
   onSetup: (password: string) => Promise<void>
 }
 
 export function SetupScreen({ onSetup }: Props) {
+  const { t } = useLocale()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [acknowledged, setAcknowledged] = useState(false)
@@ -24,7 +26,7 @@ export function SetupScreen({ onSetup }: Props) {
     try {
       await onSetup(password)
     } catch {
-      setError('Failed to set up. Please try again.')
+      setError(t('setup.failed'))
       setLoading(false)
     }
   }
@@ -33,14 +35,14 @@ export function SetupScreen({ onSetup }: Props) {
     <main className="flex min-h-screen items-center justify-center bg-ink px-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold text-fg">Welcome to Coffer</h1>
-          <p className="text-sm text-dim">Create a master password to encrypt your data.</p>
+          <h1 className="text-2xl font-semibold text-fg">{t('app.welcome')}</h1>
+          <p className="text-sm text-dim">{t('setup.intro')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
             <label className="text-sm text-dim" htmlFor="password">
-              Master password
+              {t('auth.masterPassword')}
             </label>
             <input
               id="password"
@@ -49,16 +51,16 @@ export function SetupScreen({ onSetup }: Props) {
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="new-password"
               className="w-full rounded-lg bg-panel-2 px-3 py-2 text-fg placeholder-faint focus:outline-none focus:ring-2 focus:ring-brass"
-              placeholder="At least 8 characters"
+              placeholder={t('setup.passwordPlaceholder')}
             />
             {passwordTooShort && (
-              <p className="text-xs text-neg">Password must be at least 8 characters.</p>
+              <p className="text-xs text-neg">{t('setup.tooShort')}</p>
             )}
           </div>
 
           <div className="space-y-1">
             <label className="text-sm text-dim" htmlFor="confirm">
-              Confirm password
+              {t('setup.confirm')}
             </label>
             <input
               id="confirm"
@@ -67,18 +69,15 @@ export function SetupScreen({ onSetup }: Props) {
               onChange={(e) => setConfirm(e.target.value)}
               autoComplete="new-password"
               className="w-full rounded-lg bg-panel-2 px-3 py-2 text-fg placeholder-faint focus:outline-none focus:ring-2 focus:ring-brass"
-              placeholder="Repeat your password"
+              placeholder={t('setup.confirmPlaceholder')}
             />
             {mismatch && (
-              <p className="text-xs text-neg">Passwords do not match.</p>
+              <p className="text-xs text-neg">{t('setup.mismatch')}</p>
             )}
           </div>
 
           <div className="rounded-lg border border-neg/40 bg-neg/10 p-3 space-y-2">
-            <p className="text-xs text-neg leading-relaxed">
-              If you forget this password, all your data will be unrecoverable — there is no reset.
-              Write it down somewhere safe.
-            </p>
+            <p className="text-xs text-neg leading-relaxed">{t('setup.warning')}</p>
             <label className="flex items-start gap-2 text-xs text-neg cursor-pointer">
               <input
                 type="checkbox"
@@ -86,7 +85,7 @@ export function SetupScreen({ onSetup }: Props) {
                 onChange={(e) => setAcknowledged(e.target.checked)}
                 className="mt-0.5 accent-neg"
               />
-              <span>I understand there is no password recovery.</span>
+              <span>{t('setup.acknowledge')}</span>
             </label>
           </div>
 
@@ -97,7 +96,7 @@ export function SetupScreen({ onSetup }: Props) {
             disabled={!canSubmit}
             className="w-full rounded-lg bg-brass px-4 py-2 font-semibold text-ink transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {loading ? 'Setting up…' : 'Create vault'}
+            {loading ? t('setup.submitting') : t('setup.submit')}
           </button>
         </form>
       </div>

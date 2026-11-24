@@ -1,13 +1,15 @@
 import { useMemo, useState } from 'react'
 import { useExpenses } from '../hooks/useExpenses'
+import { useLocale } from '../hooks/useLocale'
 import { useSession } from '../hooks/useSession'
 import { useToast } from '../hooks/useToast'
 import { CopyFromPreviousModal } from './CopyFromPreviousModal'
 import { NumberInput } from './NumberInput'
 import { ParcelsInfo } from './ParcelsInfo'
+import { Interpolate } from './Interpolate'
 import { userMessage } from '../lib/errorMessages'
 import { round2, parseMoney } from '../lib/math'
-import { formatMoney } from '../lib/money'
+import type { Message } from '../lib/i18n'
 import type { Category, Expense } from '../types'
 import type { ExpenseTotals } from '../hooks/useExpenses'
 
@@ -80,29 +82,30 @@ function ToggleGroup<T extends string>({
 }
 
 function FilterBar({ search, onSearch, category, onCategory, payment, onPayment }: FilterBarProps) {
+  const { t } = useLocale()
   return (
     <div className="flex flex-wrap gap-3 items-center">
       <input
         type="search"
-        placeholder="Search…"
+        placeholder={t('common.search')}
         value={search}
         onChange={e => onSearch(e.target.value)}
         className="bg-panel border border-line rounded-lg px-3 py-1 text-sm text-fg placeholder-faint focus:outline-none focus:border-brass w-40"
       />
       <ToggleGroup
         options={[
-          { value: 'all', label: 'All' },
-          { value: 'fixed', label: 'Fixed' },
-          { value: 'other', label: 'Others' },
+          { value: 'all', label: t('common.all') },
+          { value: 'fixed', label: t('category.fixed') },
+          { value: 'other', label: t('category.other') },
         ]}
         value={category}
         onChange={onCategory}
       />
       <ToggleGroup
         options={[
-          { value: 'all', label: 'All' },
-          { value: 'debit', label: 'Debit' },
-          { value: 'credit', label: 'Credit' },
+          { value: 'all', label: t('common.all') },
+          { value: 'debit', label: t('payment.debit') },
+          { value: 'credit', label: t('payment.credit') },
         ]}
         value={payment}
         onChange={onPayment}
@@ -125,6 +128,7 @@ function ExpenseRow({ expense, readOnly, onUpdate, onRemove }: RowProps) {
   const [draft, setDraft] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const { toast } = useToast()
+  const { t } = useLocale()
 
   function startEdit(field: 'name' | 'debit' | 'credit') {
     if (readOnly) return
@@ -149,7 +153,7 @@ function ExpenseRow({ expense, readOnly, onUpdate, onRemove }: RowProps) {
     try {
       await onUpdate(expense.id, changes)
     } catch (err) {
-      toast(userMessage(err, 'Failed to update expense'), 'error')
+      toast(t(userMessage(err, 'expenses.updateFailed')), 'error')
     }
     setEditField(null)
   }
@@ -245,22 +249,22 @@ function ExpenseRow({ expense, readOnly, onUpdate, onRemove }: RowProps) {
               className="text-xs text-neg underline"
               onClick={() => onRemove(expense.id)}
             >
-              Confirm
+              {t('common.confirm')}
             </button>
             <button
               className="text-xs text-dim underline"
               onClick={() => setConfirmDelete(false)}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
           </span>
         ) : (
           <button
             className="text-xs text-faint hover:text-neg"
-            aria-label={`Delete ${expense.name}`}
+            aria-label={t('common.deleteItem', { name: expense.name })}
             onClick={() => setConfirmDelete(true)}
           >
-            Delete
+            {t('common.delete')}
           </button>
         )}
       </td>
@@ -277,11 +281,12 @@ type AddFormProps = {
 
 function AddExpenseForm({ category, onAdd }: AddFormProps) {
   const { currency } = useSession()
+  const { t, money } = useLocale()
   const [name, setName] = useState('')
   const [debit, setDebit] = useState('')
   const [credit, setCredit] = useState('')
   const [parcels, setParcels] = useState('')
-  const [formError, setFormError] = useState<string | null>(null)
+  const [formError, setFormError] = useState<Message | null>(null)
 
   const parcelsNum = parseInt(parcels, 10)
   const creditNum = parseFloat(credit) || 0
@@ -303,7 +308,7 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
       setCredit('')
       setParcels('')
     } catch (err) {
-      setFormError(userMessage(err, 'Failed to add expense'))
+      setFormError(userMessage(err, 'expenses.addFailed'))
     }
   }
 
@@ -313,7 +318,7 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
         <td className="px-2 py-1">
           <input
             className={`${FIELD} w-full placeholder-faint`}
-            placeholder="Name"
+            placeholder={t('common.name')}
             value={name}
             onChange={e => setName(e.target.value)}
           />
@@ -322,7 +327,7 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
           <NumberInput
             min="0"
             step="0.01"
-            aria-label="Debit"
+            aria-label={t('payment.debit')}
             placeholder="0.00"
             className={`${FIELD} w-24 text-right placeholder-faint`}
             value={debit}
@@ -333,7 +338,7 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
           <NumberInput
             min="0"
             step="0.01"
-            aria-label="Credit"
+            aria-label={t('payment.credit')}
             placeholder="0.00"
             className={`${FIELD} w-24 text-right placeholder-faint`}
             value={credit}
@@ -347,7 +352,7 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
               min="1"
               step="1"
               placeholder="1"
-              aria-label="Parcels"
+              aria-label={t('common.parcels')}
               className={`${FIELD} w-12 text-center text-sm placeholder-faint`}
               value={parcels}
               onChange={e => setParcels(e.target.value)}
@@ -360,21 +365,25 @@ function AddExpenseForm({ category, onAdd }: AddFormProps) {
             className="text-xs text-pos hover:text-pos"
             onClick={handleAdd}
           >
-            Add
+            {t('common.add')}
           </button>
         </td>
       </tr>
       {isParceled && (
         <tr data-testid="parcel-hint">
           <td colSpan={5} className="px-2 pb-2 text-xs text-brass/90">
-            ↳ {parcelsNum}× de {formatMoney(perParcel, currency)} = {formatMoney(round2(perParcel * parcelsNum), currency)}
+            {t('common.parcelHint', {
+              count: parcelsNum,
+              each: money(perParcel, currency),
+              total: money(round2(perParcel * parcelsNum), currency),
+            })}
           </td>
         </tr>
       )}
       {formError && (
         <tr>
           <td colSpan={5} className="px-2 py-1 text-neg text-xs">
-            {formError}
+            {t(formError)}
           </td>
         </tr>
       )}
@@ -398,6 +407,7 @@ type GroupProps = {
 }
 
 function ExpenseGroup({ label, category, expenses, onUpdate, onRemove, onAdd, readOnly, sortCol, sortDir, onSort }: GroupProps) {
+  const { t } = useLocale()
   return (
     <section data-testid={`group-${category}`} className="mb-6">
       <h2 className="text-[11px] font-semibold text-brass uppercase tracking-[0.11em] mb-2">
@@ -410,25 +420,25 @@ function ExpenseGroup({ label, category, expenses, onUpdate, onRemove, onAdd, re
               className="px-2 py-1 text-left font-normal cursor-pointer hover:text-dim"
               onClick={() => onSort('name')}
             >
-              Name <SortIndicator active={sortCol === 'name'} dir={sortDir} />
+              {t('common.name')} <SortIndicator active={sortCol === 'name'} dir={sortDir} />
             </th>
             <th
               className="px-2 py-1 text-right font-normal cursor-pointer hover:text-dim"
               onClick={() => onSort('debit')}
             >
-              Debit <SortIndicator active={sortCol === 'debit'} dir={sortDir} />
+              {t('payment.debit')} <SortIndicator active={sortCol === 'debit'} dir={sortDir} />
             </th>
             <th
               className="px-2 py-1 text-right font-normal cursor-pointer hover:text-dim"
               onClick={() => onSort('credit')}
             >
-              Credit <SortIndicator active={sortCol === 'credit'} dir={sortDir} />
+              {t('payment.credit')} <SortIndicator active={sortCol === 'credit'} dir={sortDir} />
             </th>
             <th
               className="px-2 py-1 text-right font-normal cursor-pointer hover:text-dim"
               onClick={() => onSort('total')}
             >
-              Total <SortIndicator active={sortCol === 'total'} dir={sortDir} />
+              {t('common.total')} <SortIndicator active={sortCol === 'total'} dir={sortDir} />
             </th>
             <th className="px-2 py-1 font-normal" />
           </tr>
@@ -448,6 +458,7 @@ function ExpenseGroup({ label, category, expenses, onUpdate, onRemove, onAdd, re
 
 function TotalsFooter({ totals }: { totals: ExpenseTotals }) {
   const { currency } = useSession()
+  const { t, money } = useLocale()
 
   if (totals.total === 0) return null
 
@@ -456,9 +467,9 @@ function TotalsFooter({ totals }: { totals: ExpenseTotals }) {
       data-testid="totals"
       className="border-t border-line pt-4 mt-4 flex flex-wrap gap-x-6 gap-y-1 text-sm text-dim [&_strong]:font-mono [&_strong]:tabular-nums [&_strong]:text-fg"
     >
-      <span>Debit: <strong>{formatMoney(totals.debit, currency)}</strong></span>
-      <span>Credit: <strong>{formatMoney(totals.credit, currency)}</strong></span>
-      <span>Total: <strong>{formatMoney(totals.total, currency)}</strong></span>
+      <span>{t('payment.debit')}: <strong>{money(totals.debit, currency)}</strong></span>
+      <span>{t('payment.credit')}: <strong>{money(totals.credit, currency)}</strong></span>
+      <span>{t('common.total')}: <strong>{money(totals.total, currency)}</strong></span>
     </div>
   )
 }
@@ -480,6 +491,7 @@ function ExpenseListBody({ monthKey, onOpenCopy }: BodyProps) {
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>('all')
   const [sortCol, setSortCol] = useState<ExpenseSortCol>('name')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
+  const { t } = useLocale()
 
   function toggleSort(col: ExpenseSortCol) {
     if (col === sortCol) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -503,11 +515,11 @@ function ExpenseListBody({ monthKey, onOpenCopy }: BodyProps) {
   )
 
   if (loading) {
-    return <div className="text-dim text-sm text-center py-8">Loading…</div>
+    return <div className="text-dim text-sm text-center py-8">{t('common.loading')}</div>
   }
 
   if (error) {
-    return <div className="text-neg text-sm text-center py-8">{error}</div>
+    return <div className="text-neg text-sm text-center py-8">{t(error)}</div>
   }
 
   const isFiltering = search !== '' || categoryFilter !== 'all' || paymentFilter !== 'all'
@@ -522,15 +534,13 @@ function ExpenseListBody({ monthKey, onOpenCopy }: BodyProps) {
             onClick={onOpenCopy}
             className="text-xs text-dim hover:text-fg px-3 py-1.5 rounded-lg border border-line hover:border-brass transition-colors"
           >
-            Copy from previous month
+            {t('expenses.copyPrevious')}
           </button>
         </div>
       )}
       {expenses.length === 0 && (
         <p data-testid="expense-empty" className="text-dim text-sm mb-3">
-          {closed
-            ? 'No expenses were recorded this month.'
-            : 'No expenses this month yet — add your first expense under Fixed or Others, or use Copy from previous month.'}
+          {closed ? t('expenses.emptyClosed') : t('expenses.empty')}
         </p>
       )}
       <div className="flex flex-wrap gap-3 mb-3 items-center">
@@ -545,7 +555,7 @@ function ExpenseListBody({ monthKey, onOpenCopy }: BodyProps) {
       </div>
       {categoryFilter !== 'other' && (
         <ExpenseGroup
-          label="Fixed"
+          label={t('category.fixed')}
           category="fixed"
           expenses={fixed}
           onUpdate={update}
@@ -559,7 +569,7 @@ function ExpenseListBody({ monthKey, onOpenCopy }: BodyProps) {
       )}
       {categoryFilter !== 'fixed' && (
         <ExpenseGroup
-          label="Others"
+          label={t('category.other')}
           category="other"
           expenses={others}
           onUpdate={update}
@@ -572,12 +582,13 @@ function ExpenseListBody({ monthKey, onOpenCopy }: BodyProps) {
         />
       )}
       {isFiltering && filtered.length === 0 && expenses.length > 0 && (
-        <p className="text-faint text-sm text-center py-8">No expenses match the current filters.</p>
+        <p className="text-faint text-sm text-center py-8">{t('expenses.noMatch')}</p>
       )}
       <TotalsFooter totals={totals} />
       {expenses.length > 0 && !closed && (
         <p className="text-xs text-faint mt-3">
-          Tap any name or amount to edit inline · <span className="font-mono">Enter</span> saves
+          {t('common.editHint')} ·{' '}
+          <Interpolate text={t('common.enterSaves')} values={{ key: <span className="font-mono">Enter</span> }} />
         </p>
       )}
     </div>

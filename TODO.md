@@ -215,17 +215,24 @@ Objetivo: app instalável e funcional sem internet.
 
 ---
 
-## Iteração 15 — Internacionalização (i18n)
+## Iteração 15 — Internacionalização (i18n) ✅
 
 Objetivo: suporte a English, Português (pt-BR) e Español.
 
-- [ ] Decidir: biblioteca de i18n (ex: `react-i18next`) vs. solução própria leve (dicionários tipados + hook) — projeto deve continuar enxuto
-- [ ] Extrair todos os textos da UI para arquivos de tradução (`en`, `pt-BR`, `es`)
-- [ ] Idioma padrão detectado do browser (`navigator.language`), fallback `en`
-- [ ] Seletor de idioma na página de Settings (Iteração 36)
-- [ ] Persistir idioma escolhido via `VaultStore.writeSetting`
-- [ ] Formatar moedas e datas conforme locale selecionado (`Intl.NumberFormat`, `Intl.DateTimeFormat`)
-- [ ] Testes: renderização correta por locale
+Decisões tomadas:
+- Dicionários tipados próprios (`src/locales/`), sem biblioteca: `en` é a fonte das chaves, `pt-BR`/`es` tipados contra ele
+- Idioma guardado no `localStorage` (`coffer-language`), não no cofre: vale desde a escolha do cofre e é preferência da máquina
+- Valores, meses e datas seguem o idioma (`en` → `R$1,234.56`; `pt-BR` → `R$ 1.234,56`)
+- Erros para o usuário viram `AppError`/`Message` (chave + parâmetros), traduzidos só na hora de mostrar
+
+- [x] Decidir: biblioteca de i18n vs. solução própria leve — dicionários tipados + hook `useLocale`
+- [x] Extrair todos os textos da UI para arquivos de tradução (`en`, `pt-BR`, `es`)
+- [x] Idioma padrão detectado do sistema (`navigator.languages`), fallback `en`
+- [x] Seletor de idioma na página de Settings
+- [x] Persistir idioma escolhido (`localStorage`, como o tema)
+- [x] Formatar moedas, meses e datas conforme o idioma (`Intl.NumberFormat`, `Intl.DateTimeFormat`)
+- [x] Mensagens de erro e validação traduzidas (`AppError`, chaves nos schemas Zod)
+- [x] Testes: placeholders iguais em todos os dicionários, detecção, persistência, formatação e telas em pt-BR
 
 ---
 
@@ -676,6 +683,19 @@ Assinatura, auto-updater e builds macOS/Linux ficam na Fase 2.1.
 
 ---
 
+## Iteração 40 — Primeiro uso guiado ✅
+
+Decisões tomadas:
+- O convite aparece acima da tabela, que continua visível: a linha de adicionar é o próprio caminho
+- Mês fechado e vazio diz só que nada foi registrado, sem convidar a adicionar
+- Filtro num mês vazio mostra o convite, não "No expenses match"
+
+- [x] Receitas: mês sem receitas convida a adicionar a primeira
+- [x] Despesas: mês sem despesas convida a adicionar a primeira ou copiar do mês anterior
+- [x] Testes: convite no mês vazio, ausente com lançamentos, texto de mês fechado, filtro em mês vazio
+
+---
+
 ## Simplificação para o usuário comum — ordem sugerida
 
 1. ~~Iteração 37 (cofre em arquivo) → 38 (app desktop)~~ ✅
@@ -683,7 +703,6 @@ Assinatura, auto-updater e builds macOS/Linux ficam na Fase 2.1.
 3. ~~Iteração 34 (moeda única por ambiente)~~ ✅
 
 Ideias ainda sem iteração:
-- [ ] Primeiro uso guiado: mês vazio mostra "Adicione sua primeira receita" em vez de tabela vazia
 - [ ] Chave de recuperação imprimível no setup (mexe na decisão de autenticação — discutir antes)
 
 ---

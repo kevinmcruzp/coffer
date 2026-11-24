@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { IncomeList } from './IncomeList'
+import { LocaleProvider } from '../contexts/LocaleContext'
 import { ToastProvider } from './Toast'
 import { useIncomes } from '../hooks/useIncomes'
 import type { Income } from '../types'
@@ -64,7 +65,7 @@ describe('IncomeList — loading and error states', () => {
   })
 
   it('shows error message', () => {
-    vi.mocked(useIncomes).mockReturnValue(makeHook({ error: 'Decryption failed' }))
+    vi.mocked(useIncomes).mockReturnValue(makeHook({ error: { key: 'error.detail', params: { detail: 'Decryption failed' } } }))
     renderWithProviders(<IncomeList monthKey={MONTH_KEY} />)
     expect(screen.getByText('Decryption failed')).toBeInTheDocument()
   })
@@ -200,7 +201,7 @@ describe('IncomeList — totals', () => {
     )
     renderWithProviders(<IncomeList monthKey={MONTH_KEY} />)
 
-    expect(screen.getByTestId('income-total')).toHaveTextContent('5.000')
+    expect(screen.getByTestId('income-total')).toHaveTextContent('R$5,000.00')
   })
 
   it('does not render totals section when all totals are zero', () => {
@@ -217,6 +218,15 @@ describe('IncomeList — carried-over balance', () => {
     vi.mocked(useIncomes).mockReturnValue(makeHook({ incomes: [carry] }))
     renderWithProviders(<IncomeList monthKey="2026-11" />)
     expect(screen.getByTestId('carry-c1')).toHaveTextContent('Closing of Oct 2026')
+  })
+
+  it('is named after its month in the language being shown', () => {
+    localStorage.setItem('coffer-language', 'pt-BR')
+    vi.mocked(useIncomes).mockReturnValue(makeHook({ incomes: [carry] }))
+    render(<LocaleProvider><ToastProvider><IncomeList monthKey="2026-11" /></ToastProvider></LocaleProvider>)
+    expect(screen.getByTestId('source-c1')).toHaveTextContent('Saldo de Out 2026')
+    expect(screen.getByTestId('carry-c1')).toHaveTextContent('Fechamento de Out 2026')
+    localStorage.clear()
   })
 
   it('cannot be edited or deleted', () => {

@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useExpenses } from '../hooks/useExpenses'
+import { useLocale } from '../hooks/useLocale'
 import { useSession } from '../hooks/useSession'
 import { NumberInput } from './NumberInput'
 import { ParcelsInfo } from './ParcelsInfo'
 import { userMessage } from '../lib/errorMessages'
 import { round2, parseMoney } from '../lib/math'
-import { formatMoney } from '../lib/money'
+import type { Message } from '../lib/i18n'
 
 type Props = {
   monthKey: string
@@ -15,11 +16,12 @@ type Props = {
 export function QuickAddModal({ monthKey, onClose }: Props) {
   const { add } = useExpenses(monthKey)
   const { currency } = useSession()
+  const { t, money, shortMonthLabel } = useLocale()
   const [name, setName] = useState('')
   const [debit, setDebit] = useState('')
   const [credit, setCredit] = useState('')
   const [parcels, setParcels] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<Message | null>(null)
   const [saving, setSaving] = useState(false)
 
   const parcelsNum = parseInt(parcels, 10)
@@ -41,12 +43,12 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
       })
       onClose()
     } catch (err) {
-      setError(userMessage(err, 'Failed to add expense'))
+      setError(userMessage(err, 'expenses.addFailed'))
       setSaving(false)
     }
   }
 
-  const fmt = (v: number) => formatMoney(v, currency)
+  const fmt = (v: number) => money(v, currency)
 
   return (
     <div
@@ -55,11 +57,11 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
     >
       <div className="w-full sm:max-w-sm bg-panel border border-line rounded-t-2xl sm:rounded-2xl p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-fg">Quick add — {monthKey}</h2>
+          <h2 className="text-sm font-semibold text-fg">{t('quickAdd.title', { month: shortMonthLabel(monthKey) })}</h2>
           <button
             onClick={onClose}
             className="text-faint hover:text-fg text-lg leading-none"
-            aria-label="Close"
+            aria-label={t('common.close')}
           >
             ×
           </button>
@@ -69,7 +71,7 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
           <input
             autoFocus
             className="w-full bg-panel-2 border border-line rounded-lg px-3 py-2 text-fg text-sm placeholder-faint focus:outline-none focus:border-brass"
-            placeholder="Name"
+            placeholder={t('common.name')}
             value={name}
             onChange={e => setName(e.target.value)}
           />
@@ -78,8 +80,8 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
             <NumberInput
               min="0"
               step="0.01"
-              placeholder="Debit"
-              aria-label="Debit"
+              placeholder={t('payment.debit')}
+              aria-label={t('payment.debit')}
               className="flex-1 min-w-0 bg-panel-2 border border-line rounded-lg px-3 py-2 text-fg text-sm placeholder-faint focus:outline-none focus:border-brass"
               value={debit}
               onChange={e => setDebit(e.target.value)}
@@ -87,8 +89,8 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
             <NumberInput
               min="0"
               step="0.01"
-              placeholder="Credit"
-              aria-label="Credit"
+              placeholder={t('payment.credit')}
+              aria-label={t('payment.credit')}
               className="flex-1 min-w-0 bg-panel-2 border border-line rounded-lg px-3 py-2 text-fg text-sm placeholder-faint focus:outline-none focus:border-brass"
               value={credit}
               onChange={e => setCredit(e.target.value)}
@@ -98,7 +100,7 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
           <div className="space-y-1">
             <div className="flex items-center gap-1.5">
               <label className="block text-xs text-dim uppercase tracking-wider">
-                Parcels (optional)
+                {t('quickAdd.parcelsOptional')}
               </label>
               <ParcelsInfo />
             </div>
@@ -106,26 +108,26 @@ export function QuickAddModal({ monthKey, onClose }: Props) {
               min="1"
               step="1"
               placeholder="1"
-              aria-label="Parcels"
+              aria-label={t('common.parcels')}
               className="w-full bg-panel-2 border border-line rounded-lg px-3 py-2 text-fg text-sm placeholder-faint focus:outline-none focus:border-brass"
               value={parcels}
               onChange={e => setParcels(e.target.value)}
             />
             {isParceled && (
               <p data-testid="parcel-hint" className="text-xs text-brass/90 pt-1">
-                ↳ {parcelsNum}× de {fmt(perParcel)} = {fmt(round2(perParcel * parcelsNum))}
+                {t('common.parcelHint', { count: parcelsNum, each: fmt(perParcel), total: fmt(round2(perParcel * parcelsNum)) })}
               </p>
             )}
           </div>
 
-          {error && <p className="text-neg text-xs">{error}</p>}
+          {error && <p className="text-neg text-xs">{t(error)}</p>}
 
           <button
             type="submit"
             disabled={saving}
             className="w-full bg-brass text-ink font-semibold rounded-lg py-2 text-sm hover:brightness-110 disabled:opacity-50 transition-colors"
           >
-            {saving ? 'Adding…' : 'Add expense'}
+            {saving ? t('quickAdd.adding') : t('quickAdd.submit')}
           </button>
         </form>
       </div>

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { readMonth, writeMonth } from '../lib/db'
 import { expenseSchema, parseOrThrow } from '../lib/schemas'
 import { userMessage } from '../lib/errorMessages'
+import type { Message } from '../lib/i18n'
 import { round2 } from '../lib/math'
 import { useSession } from './useSession'
 import { useMonthRevision } from './useMonthRevision'
@@ -14,7 +15,7 @@ export type UseExpensesResult = {
   expenses: Expense[]
   closed: boolean
   loading: boolean
-  error: string | null
+  error: Message | null
   totals: ExpenseTotals
   add: (input: Omit<Expense, 'id'>) => Promise<void>
   update: (id: string, changes: Partial<Omit<Expense, 'id'>>) => Promise<void>
@@ -24,7 +25,7 @@ export type UseExpensesResult = {
 type FetchState = {
   resolvedKey: string | null
   monthData: MonthData | null
-  error: string | null
+  error: Message | null
 }
 
 function computeTotals(expenses: Expense[]): ExpenseTotals {
@@ -65,7 +66,7 @@ export function useExpenses(monthKey: string): UseExpensesResult {
             error: null,
           })
         } else {
-          setFetchState({ resolvedKey: monthKey, monthData: null, error: userMessage(err, 'Failed to load expenses') })
+          setFetchState({ resolvedKey: monthKey, monthData: null, error: userMessage(err, 'error.loadExpenses') })
         }
       })
 

@@ -3,6 +3,7 @@ import { readMonth, writeMonth, writeMonths } from '../lib/db'
 import { closeMonth, reopenMonth, monthBalance, emptyMonth } from '../lib/closing'
 import { nextMonthKey } from '../lib/months'
 import { userMessage } from '../lib/errorMessages'
+import type { Message } from '../lib/i18n'
 import { useSession } from './useSession'
 import { useMonthRevision } from './useMonthRevision'
 import type { VaultStore } from '../lib/vaultStore'
@@ -13,7 +14,7 @@ export type UseMonthClosingResult = {
   balance: number      // current balance — what closing now would carry forward
   nextKey: string
   loading: boolean
-  error: string | null
+  error: Message | null
   close: () => Promise<void>
   reopen: () => Promise<void>
 }
@@ -21,7 +22,7 @@ export type UseMonthClosingResult = {
 type FetchState = {
   resolvedKey: string | null
   monthData: MonthData | null
-  error: string | null
+  error: Message | null
 }
 
 async function readOrEmpty(db: VaultStore, monthKey: string, cryptoKey: CryptoKey): Promise<MonthData> {
@@ -54,7 +55,7 @@ export function useMonthClosing(monthKey: string): UseMonthClosingResult {
       })
       .catch((err: unknown) => {
         if (!cancelled) {
-          setFetchState({ resolvedKey: monthKey, monthData: null, error: userMessage(err, 'Failed to load month') })
+          setFetchState({ resolvedKey: monthKey, monthData: null, error: userMessage(err, 'error.loadMonth') })
         }
       })
 

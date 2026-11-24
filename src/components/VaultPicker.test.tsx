@@ -17,7 +17,7 @@ describe('VaultPicker', () => {
   })
 
   it('shows why the last attempt failed', () => {
-    render(<VaultPicker error="This file is not a valid Coffer vault" busy={false} onCreate={vi.fn()} onOpen={vi.fn()} />)
+    render(<VaultPicker error={{ key: 'error.invalidVault' }} busy={false} onCreate={vi.fn()} onOpen={vi.fn()} />)
     expect(screen.getByRole('alert')).toHaveTextContent('This file is not a valid Coffer vault')
   })
 

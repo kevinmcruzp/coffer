@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { readMonth } from '../lib/db'
 import { userMessage } from '../lib/errorMessages'
+import type { Message } from '../lib/i18n'
 import { round2 } from '../lib/math'
 import { monthBalance } from '../lib/closing'
 import { useSession } from './useSession'
@@ -26,8 +27,9 @@ export type UseYearSummaryResult = {
   rows: MonthRow[]
   totals: YearTotals
   loading: boolean
-  error: string | null
-  warning: string | null
+  error: Message | null
+  // Months of the year that could not be read; the rest are still shown.
+  failedMonths: string[]
 }
 
 function summarize(data: MonthData): YearTotals {
@@ -51,8 +53,8 @@ export function useYearSummary(year: number): UseYearSummaryResult {
 
   const [rows, setRows] = useState<MonthRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [warning, setWarning] = useState<string | null>(null)
+  const [error, setError] = useState<Message | null>(null)
+  const [failedMonths, setFailedMonths] = useState<string[]>([])
 
   useEffect(() => {
     if (!db || !cryptoKey) return
@@ -96,12 +98,12 @@ export function useYearSummary(year: number): UseYearSummaryResult {
         if (cancelled) return
         setRows(result)
         setError(null)
-        setWarning(failed.length > 0 ? `Could not load ${failed.length} month(s): ${failed.join(', ')}` : null)
+        setFailedMonths(failed)
         setLoading(false)
       })
       .catch(err => {
         if (cancelled) return
-        setError(userMessage(err, 'Failed to load annual data'))
+        setError(userMessage(err, 'error.loadAnnual'))
         setLoading(false)
       })
 
@@ -119,5 +121,5 @@ export function useYearSummary(year: number): UseYearSummaryResult {
     items: rows.reduce((acc, row) => acc + row.items, 0),
   }
 
-  return { rows, totals, loading, error, warning }
+  return { rows, totals, loading, error, failedMonths }
 }

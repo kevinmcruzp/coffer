@@ -2,10 +2,9 @@
 // linked income entry (`carryFrom`). Pure functions — persistence lives in useMonthClosing.
 
 import { round2 } from './math'
+import { AppError } from './appError'
 import { nextMonthKey, shortMonthLabel } from './months'
 import type { Income, MonthData } from '../types'
-
-export const CLOSED_MONTH_MESSAGE = 'This month is closed. Reopen it to make changes.'
 
 export function emptyMonth(key: string): MonthData {
   return { key, expenses: [], incomes: [], saving: 0, adjustment: 0, budget: 0 }
@@ -19,7 +18,7 @@ export function monthBalance(month: MonthData): number {
 }
 
 export function assertMonthOpen(month: MonthData): void {
-  if (month.closing) throw new Error(CLOSED_MONTH_MESSAGE)
+  if (month.closing) throw new AppError('error.monthClosed')
 }
 
 export function closeMonth(
@@ -27,12 +26,12 @@ export function closeMonth(
   next: MonthData,
   closedAt: string,
 ): { current: MonthData; next: MonthData } {
-  if (current.closing) throw new Error(`${shortMonthLabel(current.key)} is already closed`)
+  if (current.closing) throw new AppError('error.alreadyClosed', { month: { month: current.key } })
   if (next.key !== nextMonthKey(current.key)) {
     throw new Error(`${next.key} does not follow ${current.key}`)
   }
   if (next.closing) {
-    throw new Error(`${shortMonthLabel(next.key)} is closed. Reopen ${shortMonthLabel(next.key)} first.`)
+    throw new AppError('error.nextMonthClosed', { month: { month: next.key } })
   }
 
   const balance = monthBalance(current)
@@ -40,7 +39,8 @@ export function closeMonth(
   const others = next.incomes.filter(i => i.carryFrom !== current.key)
   const carry: Income | null = balance === 0 ? null : {
     id: existing?.id ?? crypto.randomUUID(),
-    source: `Balance from ${shortMonthLabel(current.key)}`,
+    // Stored text for the record; the ledger shows it translated from `carryFrom`.
+    source: `Balance from ${shortMonthLabel(current.key, 'en-US')}`,
     amount: balance,
     carryFrom: current.key,
   }
@@ -53,7 +53,7 @@ export function closeMonth(
 
 // Unfreezes the month. The carry entry stays in the next month; closing again updates it.
 export function reopenMonth(current: MonthData): MonthData {
-  if (!current.closing) throw new Error(`${shortMonthLabel(current.key)} is not closed`)
+  if (!current.closing) throw new AppError('error.notClosed', { month: { month: current.key } })
   const open: MonthData = { ...current }
   delete open.closing
   return open
