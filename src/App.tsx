@@ -129,7 +129,7 @@ function MainApp({ vaultPath }: { vaultPath: string }) {
   return (
     <div className="min-h-screen bg-ink text-fg flex flex-col md:flex-row">
       {/* Sidebar */}
-      <aside className="bg-panel border-b md:border-b-0 md:border-r border-line flex md:flex-col md:w-60 md:shrink-0 items-center md:items-stretch gap-3 md:gap-6 px-3 py-2.5 md:p-4 overflow-x-auto">
+      <aside className="bg-panel border-b md:border-b-0 md:border-r border-line flex md:flex-col md:w-60 md:shrink-0 items-center md:items-stretch gap-3 md:gap-6 px-3 py-2.5 md:p-4 overflow-x-auto md:overflow-x-visible">
         <div className="flex items-center gap-2.5 md:px-2 shrink-0">
           <span className="w-8 h-8 rounded-lg grid place-items-center bg-brass text-ink shrink-0">
             <LockIcon className="w-[17px] h-[17px]" />
@@ -159,7 +159,7 @@ function MainApp({ vaultPath }: { vaultPath: string }) {
           {t('app.encryptedLocal')}
         </div>
 
-        <div className="flex gap-1.5 shrink-0">
+        <div className="flex md:flex-wrap gap-1.5 shrink-0">
           <button
             onClick={toggleTheme}
             aria-label={t('app.toggleTheme')}
@@ -171,7 +171,7 @@ function MainApp({ vaultPath }: { vaultPath: string }) {
             onClick={() => setTab('settings')}
             aria-label={t('app.settings')}
             aria-current={tab === 'settings' ? 'page' : undefined}
-            className={`flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg border transition-colors text-xs ${
+            className={`flex-1 md:basis-full md:order-first flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg border transition-colors text-xs ${
               tab === 'settings' ? 'border-brass text-fg bg-brass-soft' : 'border-line text-dim hover:text-fg hover:border-brass'
             }`}
           >
